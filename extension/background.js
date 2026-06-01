@@ -1,0 +1,1 @@
+console.log("DialX Background Service Worker Loaded v0.1");
