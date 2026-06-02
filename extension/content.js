@@ -22,7 +22,7 @@ const PRIORITY_FOCUSED_BONUS = 5;
 const REPLY_REGISTER_DELAY_MS = 600;
 const SCAN_DEBOUNCE_MS = 600;
 const QUOTE_EXPAND_SCAN_DELAY_MS = 300;
-const MAX_AUTO_TRANSLATE_PER_VISIBLE_BATCH = 1;
+const MAX_AUTO_TRANSLATE_PER_VISIBLE_BATCH = 3;
 const MAX_UI_REGISTER_PER_SCAN = 12;
 const INTERSECTION_VISIBLE_RATIO = 0.25;
 const VISIBILITY_FLUSH_MS = 200;
@@ -32,7 +32,7 @@ let scanDebounceTimer = null;
 let visibilityFlushTimer = null;
 let suppressDomScan = false;
 
-const MAX_CONCURRENT_TRANSLATIONS = 1;
+const MAX_CONCURRENT_TRANSLATIONS = 2;
 
 const NON_FEED_REGION_SELECTOR = [
   '[data-testid="sidebarColumn"]',
@@ -1517,19 +1517,51 @@ function setupQuoteExpansionListeners() {
   );
 }
 
-function getControlBarForTweetText(el) {
-  const next = el?.nextElementSibling;
-  return next?.classList?.contains("dialx-control-bar") ? next : null;
+function controlBarSelector(postId) {
+  const value = window.CSS && CSS.escape ? CSS.escape(postId) : postId;
+  return `.dialx-control-bar[data-dialx-post-id="${value}"]`;
 }
 
-function elementHasControlBar(el) {
-  return Boolean(getControlBarForTweetText(el));
+/** The single connected DialX bar for a post, if one exists in the DOM. */
+function findExistingBar(postId) {
+  const bar = document.querySelector(controlBarSelector(postId));
+  return bar?.isConnected ? bar : null;
 }
 
-function elementHasControlBarForPost(el, postId) {
-  const bar = getControlBarForTweetText(el);
-  if (!bar) return false;
-  return !postId || bar.dataset.dialxPostId === postId;
+/** Keep exactly one bar per post; remove any duplicates left by re-renders. */
+function removeDuplicateBars(postId, keep) {
+  document.querySelectorAll(controlBarSelector(postId)).forEach((bar) => {
+    if (bar !== keep) bar.remove();
+  });
+}
+
+/**
+ * Ensure a post has exactly one control bar attached right after its text.
+ * The bar is owned by state.bar, so detection never depends on sibling order.
+ */
+function ensureControlBar(state, el, article) {
+  if (!state || !el?.isConnected) return false;
+
+  let bar = state.bar || findExistingBar(state.postId);
+
+  if (!bar) {
+    // No bar anywhere — create one.
+    bar = createControlBar(el, state.postId, state.isNews, state);
+    insertControlBar(el, bar, article);
+    requestAnimationFrame(() => repositionControlBar(el, bar, article));
+  } else if (!bar.parentNode) {
+    // Freshly created but not yet inserted.
+    insertControlBar(el, bar, article);
+    requestAnimationFrame(() => repositionControlBar(el, bar, article));
+  } else if (!el.parentNode?.contains(bar)) {
+    // Bar got detached from this text node by a re-render — move it back.
+    insertControlBar(el, bar, article);
+  }
+
+  state.bar = bar;
+  removeDuplicateBars(state.postId, bar);
+  state.updateMainButton?.();
+  return true;
 }
 
 function getTranslatableTextTargets() {
@@ -1642,20 +1674,7 @@ function ensurePostControlBar(state, article) {
   }
   if (!isInPrimaryFeed(state.postElement)) return false;
 
-  if (elementHasControlBarForPost(state.postElement, state.postId)) return true;
-
-  getControlBarForTweetText(state.postElement)?.remove();
-  const bar = createControlBar(
-    state.postElement,
-    state.postId,
-    state.isNews,
-    state
-  );
-  insertControlBar(state.postElement, bar, article);
-  requestAnimationFrame(() =>
-    repositionControlBar(state.postElement, bar, article)
-  );
-  return true;
+  return ensureControlBar(state, state.postElement, article || state.article);
 }
 
 const articleContentWatchers = new WeakMap();
@@ -1799,10 +1818,11 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
     if (!canOperate()) return;
 
     state.showingOriginal = !state.showingOriginal;
+    const target = state.postElement || postElement;
 
     if (state.showingOriginal) {
       suppressDomScan = true;
-      postElement.textContent = state.originalText;
+      target.textContent = state.originalText;
       requestAnimationFrame(() => {
         suppressDomScan = false;
       });
@@ -1810,12 +1830,12 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
       const dialect = resolvePostDialect(state);
       const cached = getCachedTranslation(state, dialect);
       if (cached) {
-        postElement.innerHTML = cached;
+        target.innerHTML = cached;
       } else {
         runQueuedTranslation(() => fetchTranslation(state, dialect), state.priority ?? PRIORITY_REPLY).then(
           (translated) => {
-            if (!state.showingOriginal) {
-              postElement.innerHTML = translated;
+            if (!state.showingOriginal && state.postElement?.isConnected) {
+              state.postElement.innerHTML = translated;
             }
           }
         );
@@ -1998,6 +2018,7 @@ function flushVisibleTranslations() {
 
   for (const [postId, state] of postStates) {
     if (!state || state.autoTranslated || state.autoTranslatePending) continue;
+    if (state.autoTranslateFailed) continue;
     if (!state.originalText?.trim()) continue;
     if (!state.postElement?.isConnected || !isInPrimaryFeed(state.postElement)) {
       continue;
@@ -2017,10 +2038,16 @@ function flushVisibleTranslations() {
     return b.priority - a.priority;
   });
 
+  let started = 0;
   for (const { postId } of candidates) {
     if (autoTranslateBudget <= 0) break;
     void maybeAutoTranslate(postId);
-    break;
+    started++;
+  }
+
+  // More visible posts than this batch could handle — continue after they settle.
+  if (candidates.length > started) {
+    scheduleVisibilityTranslateFlush();
   }
 }
 
@@ -2029,15 +2056,13 @@ async function maybeAutoTranslate(postId) {
 
   const state = postStates.get(postId);
   if (!state || state.autoTranslated) return;
-  if (state.autoTranslatePending) return;
+  if (state.autoTranslatePending || state.autoTranslateFailed) return;
   if (autoTranslateBudget <= 0) return;
   if (!state.originalText?.trim()) return;
   if (!state.postElement?.isConnected || !isInPrimaryFeed(state.postElement)) return;
   if (!isPostVisible(state)) return;
 
-  if (!elementHasControlBarForPost(state.postElement, state.postId)) {
-    if (!ensurePostControlBar(state, state.article)) return;
-  }
+  if (!ensurePostControlBar(state, state.article)) return;
 
   const dialect = getAutoTranslateDialect(state);
 
@@ -2073,44 +2098,14 @@ async function maybeAutoTranslate(postId) {
     maybeUnobserveArticle(state.article);
   } catch (e) {
     if (e.name !== "AbortError") {
+      state.autoTranslateFailed = true;
       console.error("Auto-translate error:", e);
     }
   } finally {
     state.autoTranslatePending = false;
     state.abortController = null;
-  }
-}
-
-function reconnectExistingPost(state, el, article, targetMeta = null) {
-  mergeOriginalText(state, el.innerText.trim());
-  state.postElement = el;
-  state.article = article;
-  if (targetMeta) {
-    state.priority = targetMeta.priority;
-    state.isQuoted = targetMeta.isQuoted;
-    state.cacheStatusId = targetMeta.cacheStatusId;
-  }
-  registeredPosts.add(el);
-  el.dataset.postId = state.postId;
-
-  if (!elementHasControlBarForPost(el, state.postId)) {
-    getControlBarForTweetText(el)?.remove();
-    const bar = createControlBar(el, state.postId, state.isNews, state);
-    insertControlBar(el, bar, article);
-    requestAnimationFrame(() => repositionControlBar(el, bar, article));
-  } else {
-    state.updateMainButton?.();
-  }
-
-  const dialect = getAutoTranslateDialect(state);
-  if (!state.showingOriginal) {
-    applyTranslated(state, dialect);
-  }
-
-  if (state.autoTranslated) return;
-
-  if (canAutoTranslate()) {
-    observeArticleForTranslation(article);
+    // Keep translating remaining visible posts once this one frees a slot.
+    scheduleVisibilityTranslateFlush();
   }
 }
 
@@ -2128,67 +2123,56 @@ function reconnectVisibleKnownPosts() {
   }
 }
 
+/**
+ * Register (or re-attach) a single post target. Uses a STABLE postId so the
+ * same logical post is never duplicated across React re-renders.
+ */
 function registerPostTarget(target, options = {}) {
   if (!canOperate()) return;
 
-  let { el, article, postId, cacheStatusId, isQuoted, priority } = target;
+  const { el, article, postId, cacheStatusId, isQuoted, priority } = target;
   if (!el?.isConnected || !article) return;
-  if (elementHasControlBarForPost(el, postId)) return;
 
-  const strayBar = getControlBarForTweetText(el);
-  if (strayBar && strayBar.dataset.dialxPostId !== postId) {
-    strayBar.remove();
+  let state = postStates.get(postId);
+
+  if (!state) {
+    const isNews = isNewsOrOfficialPost(article, el.innerText.trim());
+    const bar = createControlBar(el, postId, isNews); // creates and stores the state
+    state = postStates.get(postId);
+    state.postId = postId;
+    state.isNews = isNews;
+    state.showingOriginal = false;
+    state.bar = bar;
   }
 
-  let existingState = postStates.get(postId);
-  if (existingState && existingState.article !== article) {
-    postId = `${postId}-a${Math.random().toString(36).slice(2, 7)}`;
-    existingState = null;
-  }
-  if (existingState) {
-    reconnectExistingPost(existingState, el, article, {
-      el,
-      article,
-      postId,
-      cacheStatusId,
-      isQuoted,
-      priority
-    });
-    return;
-  }
-
-  const originalText = el.innerText.trim();
-  el.dataset.postId = postId;
-  registeredPosts.add(el);
-
-  const isNews = isNewsOrOfficialPost(article, originalText);
-
-  const bar = createControlBar(el, postId, isNews);
-  const state = postStates.get(postId);
-  state.postId = postId;
+  // Stable identity + refreshed element refs after a re-render.
   state.statusId = cacheStatusId;
   state.cacheStatusId = cacheStatusId;
   state.isQuoted = isQuoted;
-  state.isNews = isNews;
-  state.article = article;
   state.priority = priority;
+  state.article = article;
+  state.postElement = el;
   state.focalCell = getStatusPageFocalCell();
-  state.activeDialect = getAutoTranslateDialect(state);
-  state.showingOriginal = false;
+  if (!state.activeDialect) state.activeDialect = getAutoTranslateDialect(state);
+  el.dataset.postId = postId;
+  registeredPosts.add(el);
 
-  if (el.parentNode) {
-    insertControlBar(el, bar, article);
-    requestAnimationFrame(() => repositionControlBar(el, bar, article));
-  } else {
-    return;
+  // Keep original text current only while untranslated (avoids corruption).
+  if (!state.autoTranslated) {
+    mergeOriginalText(state, el.innerText.trim());
   }
 
-  const dialect = getAutoTranslateDialect(state);
-  if (applyTranslated(state, dialect)) {
-    ensurePostControlBar(state, article);
-    maybeUnobserveArticle(article);
-    return;
+  ensureControlBar(state, el, article);
+
+  // Restore the translated view after a re-render replaced the text node.
+  if (!state.showingOriginal) {
+    const dialect = state.activeDialect || getAutoTranslateDialect(state);
+    if (getCachedTranslation(state, dialect)) {
+      applyTranslated(state, dialect);
+    }
   }
+
+  observeArticleForTranslation(article);
 }
 
 function registerArticleTargets(article, options = {}) {
@@ -2233,8 +2217,10 @@ function collectArticlesForScan() {
 
   getTweetArticles().forEach((article) => {
     if (!shouldRegisterArticle(article)) return;
+    // The focal post is registered by registerStatusPageFocalPost — skip it
+    // here so it isn't registered twice.
     const focalCell = getStatusPageFocalCell();
-    if (focalCell?.contains(article) && focalCell.dataset.dialxFocalCell === "1") {
+    if (focalCell?.dataset.dialxFocalCell === "1" && focalCell.contains(article)) {
       return;
     }
     articlePriority.set(article, getArticleScanPriority(article));
@@ -2275,10 +2261,6 @@ function runPostScan({ reconnect = false } = {}) {
   let registered = 0;
   for (const article of sortArticles([...immediateArticles])) {
     if (registered >= MAX_UI_REGISTER_PER_SCAN) break;
-    const focalCell = getStatusPageFocalCell();
-    if (focalCell?.contains(article) && focalCell.dataset.dialxFocalCell === "1") {
-      continue;
-    }
     registerArticleTargets(article, { uiOnly: true });
     registered++;
   }
