@@ -30,7 +30,11 @@ const ARTICLE_UI_WATCH_DEBOUNCE_MS = 500;
 
 let scanDebounceTimer = null;
 let visibilityFlushTimer = null;
+let scrollScanTimer = null;
+let scrollScanListenerReady = false;
 let suppressDomScan = false;
+
+const SCROLL_SCAN_DEBOUNCE_MS = 250;
 
 const MAX_CONCURRENT_TRANSLATIONS = 2;
 
@@ -609,6 +613,10 @@ function shutdownDialx() {
     clearTimeout(scanDebounceTimer);
     scanDebounceTimer = null;
   }
+  if (scrollScanTimer) {
+    clearTimeout(scrollScanTimer);
+    scrollScanTimer = null;
+  }
   if (visibilityFlushTimer) {
     clearTimeout(visibilityFlushTimer);
     visibilityFlushTimer = null;
@@ -764,26 +772,47 @@ async function fetchTranslation(state, dialect, signal) {
 
 function applyTranslated(state, dialect) {
   const translated = getCachedTranslation(state, dialect);
-  if (!translated) return false;
+  if (!translated || !state.postElement) return false;
 
-  suppressDomScan = true;
-  state.postElement.setAttribute("data-dialx-ignore-mutations", "1");
-  state.postElement.innerHTML = translated;
+  // Idempotent: skip the DOM write when the translation is already on screen.
+  // Comparing against the normalized read-back avoids redundant writes (and
+  // flicker) during the frequent re-scans that keep status pages in sync.
+  const alreadyShown =
+    state.activeDialect === dialect &&
+    !state.showingOriginal &&
+    state.appliedHtml != null &&
+    state.postElement.innerHTML === state.appliedHtml;
+
+  if (!alreadyShown) {
+    suppressDomScan = true;
+    // On the timeline, permanently ignore mutations to translated posts for
+    // performance. On /status/ pages we must keep detecting X's re-renders so a
+    // reverted main/ancestor post can recover, so we rely on suppressDomScan
+    // (frame-scoped) instead of the permanent flag there.
+    if (!isOnStatusDetailPage()) {
+      state.postElement.setAttribute("data-dialx-ignore-mutations", "1");
+    }
+    state.postElement.innerHTML = translated;
+    state.appliedHtml = state.postElement.innerHTML;
+    requestAnimationFrame(() => {
+      suppressDomScan = false;
+    });
+  }
+
   state.activeDialect = dialect;
   state.showingOriginal = false;
   state.autoTranslated = true;
   state.updateMainButton?.();
-  protectTranslatedPost(state);
-  requestAnimationFrame(() => {
-    suppressDomScan = false;
-  });
   return true;
 }
 
 /** Skip promoted / sponsored posts on X. */
 function isAdvertisement(article) {
   if (!article) return false;
-  if (article.querySelector('[data-testid="placementTracking"]')) return true;
+  // NOTE: do NOT treat a descendant [data-testid="placementTracking"] as an ad —
+  // X wraps the video/media player of ordinary posts in it for impression
+  // tracking. Real promoted posts have it as an ANCESTOR, which isInPrimaryFeed
+  // already filters out via NON_FEED_REGION_SELECTOR.
   if (article.querySelector('[data-testid="promotedIndicator"]')) return true;
 
   const social = article.querySelector('[data-testid="socialContext"]');
@@ -969,10 +998,15 @@ function getAutoTranslateDialect(state) {
 
 function findShowMoreElement(article, tweetTextEl) {
   const quoteScope = tweetTextEl.closest('[data-testid="quoteTweet"]');
-  const byTestId = (quoteScope || article).querySelector(
+  // When placing the MAIN post's bar, ignore a "show more" that belongs to the
+  // embedded quote — otherwise the main bar lands inside the quote card.
+  const quoteContainer = quoteScope ? null : getEmbeddedQuoteContainer(article);
+  for (const link of (quoteScope || article).querySelectorAll(
     '[data-testid="tweet-text-show-more-link"]'
-  );
-  if (byTestId) return byTestId;
+  )) {
+    if (quoteContainer?.contains(link)) continue;
+    return link;
+  }
 
   const tweetRoot = getTweetRoot(article);
   const scope = quoteScope || tweetTextEl.parentElement || tweetRoot;
@@ -1828,17 +1862,15 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
       });
     } else {
       const dialect = resolvePostDialect(state);
-      const cached = getCachedTranslation(state, dialect);
-      if (cached) {
-        target.innerHTML = cached;
-      } else {
-        runQueuedTranslation(() => fetchTranslation(state, dialect), state.priority ?? PRIORITY_REPLY).then(
-          (translated) => {
-            if (!state.showingOriginal && state.postElement?.isConnected) {
-              state.postElement.innerHTML = translated;
-            }
+      if (!applyTranslated(state, dialect)) {
+        runQueuedTranslation(
+          () => fetchTranslation(state, dialect),
+          state.priority ?? PRIORITY_REPLY
+        ).then(() => {
+          if (!state.showingOriginal && state.postElement?.isConnected) {
+            applyTranslated(state, dialect);
           }
-        );
+        });
       }
     }
     state.updateMainButton();
@@ -2081,21 +2113,16 @@ async function maybeAutoTranslate(postId) {
   state.abortController = new AbortController();
 
   try {
-    const translated = await runQueuedTranslation(
+    await runQueuedTranslation(
       () => fetchTranslation(state, dialect, state.abortController.signal),
       state.priority
     );
     if (!state.postElement?.isConnected || state.showingOriginal) return;
-    suppressDomScan = true;
-    state.postElement.setAttribute("data-dialx-ignore-mutations", "1");
-    state.postElement.innerHTML = translated;
-    state.autoTranslated = true;
-    state.activeDialect = dialect;
-    state.updateMainButton?.();
-    requestAnimationFrame(() => {
-      suppressDomScan = false;
-    });
-    maybeUnobserveArticle(state.article);
+    // fetchTranslation has cached the result; applyTranslated handles the DOM
+    // write, the timeline-vs-status mutation flag, and idempotency.
+    if (applyTranslated(state, dialect)) {
+      maybeUnobserveArticle(state.article);
+    }
   } catch (e) {
     if (e.name !== "AbortError") {
       state.autoTranslateFailed = true;
@@ -2215,14 +2242,16 @@ let replyRegisterTimer = null;
 function collectArticlesForScan() {
   const articlePriority = new Map();
 
+  // registerStatusPageFocalPost owns the single focal /status/ post (its text can
+  // live outside the inner article shell). Skip ONLY that exact post here — every
+  // ancestor and comment must still be registered so the main post keeps its UI
+  // and translation when a comment is opened.
+  const focalCell = getStatusPageFocalCell();
+  const focalHandled = focalCell?.dataset.dialxFocalCell === "1";
+
   getTweetArticles().forEach((article) => {
     if (!shouldRegisterArticle(article)) return;
-    // The focal post is registered by registerStatusPageFocalPost — skip it
-    // here so it isn't registered twice.
-    const focalCell = getStatusPageFocalCell();
-    if (focalCell?.dataset.dialxFocalCell === "1" && focalCell.contains(article)) {
-      return;
-    }
+    if (focalHandled && isPrimaryDetailPagePost(article)) return;
     articlePriority.set(article, getArticleScanPriority(article));
   });
 
@@ -2260,9 +2289,14 @@ function runPostScan({ reconnect = false } = {}) {
 
   let registered = 0;
   for (const article of sortArticles([...immediateArticles])) {
-    if (registered >= MAX_UI_REGISTER_PER_SCAN) break;
+    // Always register posts that are actually on screen; only the off-screen
+    // prefetch is capped. Otherwise off-screen articles X keeps mounted above
+    // the viewport eat the budget and starve visible posts lower in the feed
+    // (e.g. video/quote posts), leaving them with no UI buttons or translation.
+    const onScreen = isElementInViewport(article, 0);
+    if (!onScreen && registered >= MAX_UI_REGISTER_PER_SCAN) continue;
     registerArticleTargets(article, { uiOnly: true });
-    registered++;
+    if (!onScreen) registered++;
   }
 
   if (reconnect) {
@@ -2278,9 +2312,10 @@ function runPostScan({ reconnect = false } = {}) {
       if (!canOperate()) return;
       let delayedCount = 0;
       for (const article of sortArticles([...delayedArticles])) {
-        if (delayedCount >= MAX_UI_REGISTER_PER_SCAN) break;
+        const onScreen = isElementInViewport(article, 0);
+        if (!onScreen && delayedCount >= MAX_UI_REGISTER_PER_SCAN) continue;
         registerArticleTargets(article, { uiOnly: true });
-        delayedCount++;
+        if (!onScreen) delayedCount++;
       }
     }, REPLY_REGISTER_DELAY_MS);
   }
@@ -2295,6 +2330,29 @@ function schedulePostScan(options = {}) {
     if (!canOperate()) return;
     runPostScan(options);
   }, SCAN_DEBOUNCE_MS);
+}
+
+/**
+ * Posts that scroll into view from X's already-mounted DOM window don't always
+ * trigger a mutation (removals are ignored, and unregistered articles aren't
+ * watched), so they'd never get registered. A short debounced scan after the
+ * scroll settles guarantees every newly-visible post gets its UI + translation.
+ */
+function setupScrollScan() {
+  if (scrollScanListenerReady) return;
+  scrollScanListenerReady = true;
+
+  const onScroll = () => {
+    if (!canOperate()) return;
+    if (scrollScanTimer) clearTimeout(scrollScanTimer);
+    scrollScanTimer = setTimeout(() => {
+      scrollScanTimer = null;
+      if (!canOperate()) return;
+      runPostScan();
+    }, SCROLL_SCAN_DEBOUNCE_MS);
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true, capture: true });
 }
 
 function watchSpaNavigation() {
@@ -2338,19 +2396,16 @@ function initObservers() {
       (entries) => {
         if (!canAutoTranslate()) return;
 
+        // Do NOT abort in-flight translations when a post scrolls out of view.
+        // The backend request is already sent and completes regardless; aborting
+        // only discards the result so it never gets cached, forcing a duplicate
+        // request when the post scrolls back. Letting it finish caches the result
+        // and dramatically reduces total requests.
         let sawVisible = false;
         for (const entry of entries) {
           if (entry.isIntersecting && entry.intersectionRatio >= INTERSECTION_VISIBLE_RATIO) {
             sawVisible = true;
-            continue;
-          }
-          for (const postId of getPostIdsForArticle(entry.target)) {
-            const state = postStates.get(postId);
-            if (state?.autoTranslatePending && state.abortController) {
-              state.abortController.abort();
-              state.autoTranslatePending = false;
-              state.abortController = null;
-            }
+            break;
           }
         }
         if (sawVisible) scheduleVisibilityTranslateFlush();
@@ -2374,6 +2429,7 @@ async function bootstrapDialx() {
   injectDialxStyles();
   initObservers();
   setupQuoteExpansionListeners();
+  setupScrollScan();
   watchExtensionContext();
   watchSpaNavigation();
   runPostScan();
