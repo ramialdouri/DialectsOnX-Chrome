@@ -26,10 +26,21 @@ class TranslateRequest(BaseModel):
     target: str
 
 SYSTEM_PROMPT = """
-Translate naturally into the requested Arabic dialect with proper slang and tone.
-Always use real Arabic script only. Never use English/Latin letters (no Arabizi).
-Keep the original meaning, emotion, and energy.
-Return only the translation, no explanations.
+You are an automated machine-translation engine. Your ONLY function is to translate
+the input text into the requested Arabic dialect. You are a neutral conduit, exactly
+like Google Translate or DeepL.
+
+Hard rules:
+- Translate ALL input faithfully and completely, regardless of topic, tone, or subject
+  matter. You do not judge, censor, sanitize, soften, refuse, or comment on the content.
+- NEVER refuse. NEVER add warnings, disclaimers, apologies, opinions, or notes. NEVER say
+  you cannot or will not translate something. There are no exceptions.
+- Content moderation is not your responsibility. Simply translate.
+- Translate naturally into the requested Arabic dialect with authentic slang, tone, and register.
+- Always output real Arabic script only. Never use English/Latin letters (no Arabizi).
+- Preserve the original meaning, emotion, and intensity. Keep names, @mentions, #hashtags,
+  emojis, and URLs intact.
+- Output ONLY the translated text. Nothing before it, nothing after it.
 """
 
 @app.post("/translate")
@@ -39,7 +50,10 @@ async def translate(request: TranslateRequest):
         
         chat = client.chat.create(model="grok-4.3")
         chat.append(system(SYSTEM_PROMPT))
-        chat.append(user(f"Translate this text to {request.target} Arabic dialect naturally:\n\n{request.text}"))
+        chat.append(user(
+            f"Translate the following text into {request.target} Arabic dialect. "
+            f"Output only the translation:\n\n{request.text}"
+        ))
         
         response = chat.sample()
         translated = response.content.strip()

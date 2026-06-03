@@ -116,6 +116,19 @@ function injectDialxStyles() {
       position: relative;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
+    .dialx-translation {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      unicode-bidi: plaintext;
+    }
+    .dialx-overlay-showmore {
+      color: rgb(29, 155, 240);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .dialx-overlay-showmore:hover {
+      text-decoration: underline;
+    }
     .dialx-btn,
     .dialx-btn-sm {
       display: inline-flex;
@@ -847,6 +860,14 @@ function applyTranslated(state, dialect) {
   const translated = getCachedTranslation(state, dialect);
   if (!translated || !state.postElement) return false;
 
+  // Posts truncated with a "Show more" (inside the text node OR next to it) use
+  // an overlay so X's native inline expansion keeps working; everything else is
+  // replaced in place.
+  if (state.useOverlay === undefined) {
+    state.useOverlay = Boolean(findPostShowMore(state));
+  }
+  if (state.useOverlay) return applyTranslatedOverlay(state, dialect, translated);
+
   // Idempotent: skip the DOM write when the translation is already on screen.
   // Comparing against the normalized read-back avoids redundant writes (and
   // flicker) during the frequent re-scans that keep status pages in sync.
@@ -877,6 +898,181 @@ function applyTranslated(state, dialect) {
   state.autoTranslated = true;
   state.updateMainButton?.();
   return true;
+}
+
+/** Hide X's real tweet-text node while leaving it in the DOM (React-controlled). */
+function hideOriginalTextNode(tt) {
+  tt.style.setProperty("display", "none", "important");
+}
+
+function showOriginalTextNode(tt) {
+  tt.style.removeProperty("display");
+}
+
+/**
+ * Overlay rendering for truncated posts. X's tweet-text element is left intact
+ * (so its native inline "Show more" expansion keeps working) but hidden, and our
+ * translated copy is shown right after it. The copy carries a "Show more" that
+ * triggers X's real expansion, then re-translates the now-complete text.
+ */
+function applyTranslatedOverlay(state, dialect, translated) {
+  const tt = state.postElement;
+  if (!tt?.parentNode) return false;
+  // Don't fight an in-progress expansion that is intentionally showing the real
+  // text node; expandAndRetranslate re-applies the overlay when it finishes.
+  if (state.expanding) return true;
+
+  suppressDomScan = true;
+
+  if (!state.transEl) {
+    state.transEl = document.createElement("div");
+  }
+  const trans = state.transEl;
+  // Borrow X's own text classes so the translation matches the tweet styling, and
+  // copy the resolved text color so it stays readable in light and dark themes.
+  trans.className = `${tt.className} dialx-translation`.trim();
+  trans.setAttribute("dir", "auto");
+  const ttColor = getComputedStyle(tt).color;
+  if (ttColor) trans.style.color = ttColor;
+
+  // Keep the overlay directly after the (current) text node, and the control
+  // bar after the overlay — even if X swapped the text node on a re-render.
+  if (trans.previousSibling !== tt) tt.after(trans);
+  if (state.bar && tt.contains(state.bar)) trans.after(state.bar);
+
+  if (state.overlayDialect !== dialect || state.overlayText !== translated) {
+    renderOverlayContent(state, translated);
+    state.overlayDialect = dialect;
+    state.overlayText = translated;
+  }
+
+  hideOriginalTextNode(tt);
+  // A "Show more" rendered as a SIBLING (outside the text node) would stay
+  // visible; hide it so only our overlay "Show more" shows. (One inside the text
+  // node is already hidden along with it.)
+  const native = findPostShowMore(state);
+  if (native && !tt.contains(native) && !state.fullyExpanded) {
+    native.style.setProperty("display", "none", "important");
+    state.nativeShowMore = native;
+  }
+  trans.style.display = "";
+
+  requestAnimationFrame(() => {
+    suppressDomScan = false;
+  });
+
+  state.activeDialect = dialect;
+  state.showingOriginal = false;
+  state.autoTranslated = true;
+  state.updateMainButton?.();
+  return true;
+}
+
+function renderOverlayContent(state, translated) {
+  const trans = state.transEl;
+  if (!trans) return;
+  trans.textContent = translated;
+
+  // Offer expansion only while the original is still truncated.
+  if (!state.fullyExpanded && findPostShowMore(state)) {
+    trans.appendChild(document.createTextNode(" "));
+    const more = document.createElement("span");
+    more.className = "dialx-overlay-showmore";
+    more.setAttribute("role", "button");
+    more.setAttribute("tabindex", "0");
+    more.textContent = "Show more";
+    const run = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      expandAndRetranslate(state);
+    };
+    more.addEventListener("click", run);
+    more.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") run(e);
+    });
+    trans.appendChild(more);
+  }
+}
+
+/**
+ * Triggered by OUR overlay "Show more": reveal X's real full text via its native
+ * control, then translate the complete text and swap it back into the overlay.
+ */
+async function expandAndRetranslate(state) {
+  if (!canOperate()) return;
+  let tt = state.postElement;
+  if (!tt?.isConnected) return;
+  const parent = tt.parentNode;
+  const nativeShowMore = findPostShowMore(state);
+  if (!nativeShowMore) return;
+
+  // X may update the text node in place OR swap in a brand-new tweetText node on
+  // expansion, so always re-query the current node within the same parent.
+  const currentTextNode = () =>
+    (tt && tt.isConnected ? tt : null) ||
+    parent?.querySelector('[data-testid="tweetText"]') ||
+    null;
+
+  state.expanding = true;
+  try {
+    // Reveal the real text + the native control so X can expand it (and innerText
+    // reads correctly).
+    showOriginalTextNode(tt);
+    nativeShowMore.style.removeProperty("display");
+    if (state.transEl) state.transEl.style.display = "none";
+
+    const before = (tt.textContent || "").length;
+    nativeShowMore.click();
+
+    const grewNode = await new Promise((resolve) => {
+      const start = performance.now();
+      const tick = () => {
+        const cur = currentTextNode();
+        if (cur && (cur.textContent || "").length > before + 3) return resolve(cur);
+        if (performance.now() - start > 1500) return resolve(null);
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+
+    const cur = grewNode || currentTextNode();
+    if (!cur?.isConnected) return; // navigated away — destination handles it
+    tt = cur;
+    state.postElement = cur;
+    showOriginalTextNode(cur);
+
+    if (!grewNode) {
+      hideOriginalTextNode(cur);
+      if (state.transEl) state.transEl.style.display = "";
+      return;
+    }
+
+    state.fullyExpanded = true;
+    const full = stripShowMoreLabel((cur.innerText || cur.textContent || "").trim());
+    if (full && full.length > (state.originalText?.length || 0)) {
+      state.originalText = full;
+      invalidatePostStatusCache(state);
+    }
+
+    // Keep the now-expanded original visible as a loading state while we fetch.
+    const dialect = state.activeDialect || resolvePostDialect(state);
+    try {
+      await runQueuedTranslation(
+        () => fetchTranslation(state, dialect),
+        state.priority ?? PRIORITY_REPLY
+      );
+    } catch (_) {
+      return; // leave the expanded original visible on failure
+    }
+    if (!state.postElement?.isConnected || state.showingOriginal) return;
+    const translated = getCachedTranslation(state, dialect);
+    if (translated) {
+      state.expanding = false;
+      applyTranslatedOverlay(state, dialect, translated);
+    }
+  } finally {
+    state.expanding = false;
+  }
 }
 
 /** Skip promoted / sponsored posts on X. */
@@ -1287,20 +1483,68 @@ function findShowMoreElement(article, tweetTextEl) {
   return null;
 }
 
-function insertControlBar(tweetTextEl, bar, article) {
-  const showMore = findShowMoreElement(article, tweetTextEl);
-  if (showMore) {
-    showMore.after(bar);
-    return;
+/** A "Show more" / "See more" affordance rendered INSIDE the tweet text node. */
+function findInlineShowMore(textEl) {
+  if (!textEl) return null;
+  const byId = textEl.querySelector('[data-testid="tweet-text-show-more-link"]');
+  if (byId) return byId;
+  for (const el of textEl.querySelectorAll('a, button, [role="button"]')) {
+    if (/^(show|see|read)\s+more$/i.test(el.innerText.trim())) return el;
   }
-  tweetTextEl.after(bar);
+  return null;
+}
+
+/**
+ * The post's "Show more" affordance, whether it sits INSIDE the tweet-text node
+ * or as a SIBLING next to it (X renders it both ways). Used to decide overlay
+ * mode and to drive native inline expansion.
+ */
+function findPostShowMore(state) {
+  const tt = state.postElement;
+  if (!tt) return null;
+  const inside = findInlineShowMore(tt);
+  if (inside) return inside;
+  const article = state.article || tt.closest("article");
+  return article ? findShowMoreElement(article, tt) : null;
+}
+
+/** Drop a trailing "Show more"/"See more" label so it isn't sent for translation. */
+function stripShowMoreLabel(text) {
+  return (text || "").replace(/\s*(show|see|read)\s+more\s*$/i, "").trim();
+}
+
+/** Forget cached translations of the truncated text so the full text is re-fetched. */
+function invalidatePostStatusCache(state) {
+  state.translationCache.clear();
+  const cacheId = state.cacheStatusId || state.statusId;
+  if (!cacheId) return;
+  for (const dialect of dialectOrder) {
+    globalTranslationCache.delete(globalCacheKey(null, dialect, cacheId));
+  }
+}
+
+/**
+ * Anchor the control bar after the tweet text. A "Show more" that lives INSIDE
+ * the text node is not a valid anchor (the bar would be hidden when we overlay
+ * the translation), so in that case we anchor after the text node itself. If a
+ * translation overlay has been injected, the bar belongs after the overlay.
+ */
+function getControlBarAnchor(tweetTextEl, article) {
+  const overlay = tweetTextEl.nextElementSibling;
+  if (overlay && overlay.classList?.contains("dialx-translation")) return overlay;
+  const showMore = findShowMoreElement(article, tweetTextEl);
+  if (showMore && !tweetTextEl.contains(showMore)) return showMore;
+  return tweetTextEl;
+}
+
+function insertControlBar(tweetTextEl, bar, article) {
+  getControlBarAnchor(tweetTextEl, article).after(bar);
 }
 
 function repositionControlBar(tweetTextEl, bar, article) {
-  const showMore = findShowMoreElement(article, tweetTextEl);
-  if (!showMore) return;
-  if (bar.previousElementSibling === showMore) return;
-  showMore.after(bar);
+  const anchor = getControlBarAnchor(tweetTextEl, article);
+  if (bar.previousElementSibling === anchor) return;
+  anchor.after(bar);
 }
 
 const EXCLUDED_ANCESTOR_TESTIDS = new Set([
@@ -2043,7 +2287,7 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
   bar.classList.add("dialx-control-bar");
   bar.dataset.dialxPostId = postId;
 
-  const originalText = postElement.innerText.trim();
+  const originalText = stripShowMoreLabel(postElement.innerText.trim());
   let state = existingState || postStates.get(postId);
 
   if (!state) {
@@ -2094,11 +2338,18 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
     const target = state.postElement || postElement;
 
     if (state.showingOriginal) {
-      suppressDomScan = true;
-      target.textContent = state.originalText;
-      requestAnimationFrame(() => {
-        suppressDomScan = false;
-      });
+      if (state.useOverlay) {
+        // Reveal X's real text node (native "Show more" intact); hide overlay.
+        if (state.transEl) state.transEl.style.display = "none";
+        if (state.postElement) showOriginalTextNode(state.postElement);
+        if (state.nativeShowMore) state.nativeShowMore.style.removeProperty("display");
+      } else {
+        suppressDomScan = true;
+        target.textContent = state.originalText;
+        requestAnimationFrame(() => {
+          suppressDomScan = false;
+        });
+      }
     } else {
       const dialect = resolvePostDialect(state);
       if (!applyTranslated(state, dialect)) {
@@ -2456,7 +2707,7 @@ function registerPostTarget(target, options = {}) {
 
   // Keep original text current only while untranslated (avoids corruption).
   if (!state.autoTranslated) {
-    mergeOriginalText(state, el.innerText.trim());
+    mergeOriginalText(state, stripShowMoreLabel(el.innerText.trim()));
   }
 
   ensureControlBar(state, el, article);
