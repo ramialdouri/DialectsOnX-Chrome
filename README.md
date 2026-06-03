@@ -47,7 +47,7 @@ dialx/
 │   └── icon128.png
 ├── backend/            # FastAPI backend
 │   ├── main.py
-
+```
 ## How It Works
 
 1. Uses a `MutationObserver` to detect new posts
