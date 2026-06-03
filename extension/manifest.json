@@ -1,40 +1,37 @@
 {
-    "manifest_version": 3,
-    "name": "DialX",
-    "version": "0.1",
-    "description": "Translate X posts to your preferred Arabic dialect",
-    "permissions": ["activeTab", "storage"],
-    "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
-    "icons": {
+  "manifest_version": 3,
+  "name": "DialX",
+  "version": "0.1.0",
+  "description": "Translate X posts to your preferred Arabic dialect",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "DialX",
+    "default_icon": {
       "16": "icon16.png",
       "32": "icon32.png",
       "48": "icon48.png",
       "128": "icon128.png"
-    },
-    "background": {
-      "service_worker": "background.js"
-    },
-    "content_scripts": [
-      {
-        "matches": ["https://x.com/*", "https://twitter.com/*"],
-        "js": ["content.js"],
-        "run_at": "document_idle"
-      }
-    ],
-    "action": {
-      "default_popup": "popup.html",
-      "default_title": "DialX",
-      "default_icon": {
-        "16": "icon16.png",
-        "32": "icon32.png",
-        "48": "icon48.png",
-        "128": "icon128.png"
-      }
-    },
-    "web_accessible_resources": [
-      {
-        "resources": ["dialx_logo.png"],
-        "matches": ["https://x.com/*", "https://twitter.com/*"]
-      }
-    ]
-  }
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["dialx_logo.png"],
+      "matches": ["https://x.com/*", "https://twitter.com/*"]
+    }
+  ]
+}
