@@ -95,6 +95,13 @@ function injectDialxStyles() {
     document.head.appendChild(style);
   }
 
+  let logoUrl = "";
+  try {
+    logoUrl = chrome.runtime.getURL("dialx_logo.png");
+  } catch {
+    logoUrl = "";
+  }
+
   style.textContent = `
     .dialx-control-bar {
       display: flex;
@@ -182,18 +189,20 @@ function injectDialxStyles() {
     }
     .dialx-panel-auto-main {
       display: flex;
-      align-items: center;
-      gap: 8px;
+      align-items: flex-end;
+      gap: 4px;
     }
     .dialx-panel-auto-text {
       font-size: 11px;
     }
     .dialx-panel-default-label {
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 600;
       color: rgb(113, 118, 123);
       text-align: center;
       white-space: nowrap;
+      align-self: end;
+      margin-bottom: -6px;
     }
     .dialx-panel-grid-header,
     .dialx-panel-grid-row {
@@ -239,6 +248,63 @@ function injectDialxStyles() {
       margin: 0;
       cursor: pointer;
       flex-shrink: 0;
+    }
+    .dialx-switch {
+      position: relative;
+      display: inline-flex;
+      width: 24px;
+      height: 14px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .dialx-switch input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      margin: 0;
+    }
+    .dialx-switch-slider {
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      background: rgb(62, 65, 68);
+      transition: background 0.15s ease;
+    }
+    .dialx-switch-slider::before {
+      content: "";
+      position: absolute;
+      height: 10px;
+      width: 10px;
+      left: 2px;
+      top: 2px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.15s ease;
+    }
+    .dialx-switch input:checked + .dialx-switch-slider {
+      background: #1d9bf0;
+    }
+    .dialx-switch input:checked + .dialx-switch-slider::before {
+      transform: translateX(10px);
+    }
+    .dialx-logo {
+      display: inline-block;
+      height: 20px;
+      width: 54px;
+      margin-left: 4px;
+      flex-shrink: 0;
+      pointer-events: none;
+      background-color: rgb(152, 157, 162);
+      -webkit-mask-image: url("${logoUrl}");
+      mask-image: url("${logoUrl}");
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      mask-mode: luminance;
     }
   `;
 }
@@ -2051,8 +2117,17 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
     showDialectSelector(bar, postId);
   };
 
+  // DialX wordmark rendered as a luminance mask over a neutral gray fill: the
+  // black background drops out (transparent) and the mark blends on both X
+  // light and dark themes. Height matches the selector button.
+  const logo = document.createElement("span");
+  logo.className = "dialx-logo";
+  logo.setAttribute("aria-label", "DialX");
+  logo.setAttribute("role", "img");
+
   bar.appendChild(mainBtn);
   bar.appendChild(selectorBtn);
+  bar.appendChild(logo);
   return bar;
 }
 
@@ -2122,16 +2197,24 @@ function showDialectSelector(controlBar, postId) {
   const autoMain = document.createElement("span");
   autoMain.className = "dialx-panel-auto-main";
 
+  const autoSwitch = document.createElement("span");
+  autoSwitch.className = "dialx-switch";
+
   const autoCheckbox = document.createElement("input");
   autoCheckbox.type = "checkbox";
-  autoCheckbox.className = "dialx-accent-input";
   autoCheckbox.checked = autoTranslateEnabled;
   autoCheckbox.addEventListener("change", () => {
     if (!canOperate()) return;
     autoTranslateEnabled = autoCheckbox.checked;
     chrome.storage.sync.set({ autoTranslate: autoTranslateEnabled });
   });
-  autoMain.appendChild(autoCheckbox);
+
+  const autoSlider = document.createElement("span");
+  autoSlider.className = "dialx-switch-slider";
+
+  autoSwitch.appendChild(autoCheckbox);
+  autoSwitch.appendChild(autoSlider);
+  autoMain.appendChild(autoSwitch);
 
   const autoText = document.createElement("span");
   autoText.className = "dialx-panel-auto-text";
