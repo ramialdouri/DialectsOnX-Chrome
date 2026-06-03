@@ -33,6 +33,7 @@ The backend is hosted 24/7 on Render.com.
 
 ## Project Structure
 
+```bash
 dialx/
 ├── extension/          # Chrome Extension files
 │   ├── manifest.json
