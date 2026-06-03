@@ -489,7 +489,7 @@ function getTargetPriority(target) {
 }
 
 function buildPostId(target) {
-  const { article, isQuoted, statusId } = target;
+  const { article, isQuoted, statusId, el } = target;
   if (isQuoted) {
     const quoteId = getQuotedTweetStatusId(article) || statusId;
     if (quoteId) return `tweet-${quoteId}-quoted`;
@@ -499,6 +499,9 @@ function buildPostId(target) {
     const mainId = statusId || getTweetStatusId(article);
     if (mainId) return `tweet-${mainId}-main`;
   }
+  // No stable status id: reuse the id already assigned to this text element so
+  // re-scans don't mint a fresh random id (and thus a duplicate bar) each time.
+  if (el?.dataset?.postId) return el.dataset.postId;
   return `post-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
@@ -2518,7 +2521,12 @@ function collectArticlesForScan() {
 
   getTweetArticles().forEach((article) => {
     if (!shouldRegisterArticle(article)) return;
-    if (focalHandled && isPrimaryDetailPagePost(article)) return;
+    // The focal /status/ post is owned by registerStatusPageFocalPost (stable
+    // id + dedup). Skip it here so the article path can't mint a second bar with
+    // a random id for it. Cell containment is robust even when the focal post's
+    // status id can't be read; ancestors live in other cells and still register.
+    if (focalHandled && focalCell.contains(article)) return;
+    if (!focalHandled && isPrimaryDetailPagePost(article)) return;
     articlePriority.set(article, getArticleScanPriority(article));
   });
 
