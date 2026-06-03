@@ -928,6 +928,51 @@ function isVerifiedAccount(article) {
   );
 }
 
+/** True when the text is predominantly Arabic script. */
+function isArabicText(text) {
+  if (!text) return false;
+  const arabic = (
+    text.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []
+  ).length;
+  const latin = (text.match(/[A-Za-z]/g) || []).length;
+  if (arabic === 0) return false;
+  return arabic >= latin;
+}
+
+/**
+ * Classify the verification badge by its rendered color:
+ *   "gold"  → business / organization (yellow badge)
+ *   "gray"  → government / official    (gray/silver badge)
+ *   "blue"  → individual / Premium
+ * Returns null when the account isn't verified.
+ */
+function getVerifiedBadgeType(article) {
+  const userName = article.querySelector('[data-testid="User-Name"]');
+  const icon = userName?.querySelector('svg[data-testid="icon-verified"]');
+  if (!icon) return null;
+
+  // Gold/business badges are the only ones painted with a gradient fill
+  // (fill="url(#...)"). Blue and gray badges have no gradient.
+  if (icon.querySelector('linearGradient, radialGradient, [fill^="url("]')) {
+    return "gold";
+  }
+
+  // Blue (individual/Premium) renders in a distinct blue; gray/official uses the
+  // default light icon color (rgb(231,233,234)) with no gradient.
+  let color = "";
+  try {
+    color = getComputedStyle(icon).color;
+  } catch {
+    return "blue";
+  }
+  const m = color.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (m) {
+    const r = +m[1], g = +m[2], b = +m[3];
+    if (b > r + 40 && b > 150) return "blue";
+  }
+  return "gray";
+}
+
 /** Verified outlet-style account (not a random user yelling BREAKING). */
 function isMediaOutletAccount(article, handle) {
   if (!handle || !isVerifiedAccount(article)) return false;
@@ -969,9 +1014,13 @@ function isBreakingNewsPost(article, text, handle) {
   return true;
 }
 
-/** News/official: UI labels, known outlets, wire prefixes, and BREAKING: (minus parody). */
+/** News/official: badges, UI labels, known outlets, wire prefixes, BREAKING: (minus parody). */
 function isNewsOrOfficialPost(article, text) {
   if (hasNewsSocialContext(article)) return true;
+
+  // Gray/silver (government/official) verified accounts always default to MSA.
+  // Gold/business accounts are intentionally NOT treated as official.
+  if (getVerifiedBadgeType(article) === "gray") return true;
 
   const handle = getAuthorHandle(article);
   if (isKnownNewsAccount(handle)) return true;
@@ -1308,28 +1357,17 @@ function collectCandidateTextElements(article, tweetRoot, quoteContainer) {
   const candidates = [];
   const scope = getTweetCell(article) || article;
 
+  // Only genuine tweet text qualifies. Image/video/card-only posts have no
+  // [data-testid="tweetText"], so they get no candidates and therefore no UI
+  // buttons — translating card titles or image overlays is never wanted.
   for (const el of scope.querySelectorAll('[data-testid="tweetText"]')) {
     if (quoteContainer?.contains(el)) continue;
     if (!scope.contains(el) && !article.contains(el) && !tweetRoot.contains(el)) {
       continue;
     }
+    const text = el.innerText.trim();
+    if (!text || isUiChromeText(text)) continue;
     candidates.push(el);
-  }
-
-  if (candidates.length === 0) {
-    for (const el of scope.querySelectorAll('[dir="auto"], [lang]')) {
-      if (quoteContainer?.contains(el)) continue;
-      if (!scope.contains(el) && !article.contains(el) && !tweetRoot.contains(el)) {
-        continue;
-      }
-      if (el.closest('[data-testid="User-Name"], [data-testid="socialContext"]')) {
-        continue;
-      }
-      if (el.querySelector('[data-testid="tweetText"]')) continue;
-      const text = el.innerText.trim();
-      if (text.length < 8 || isUiChromeText(text)) continue;
-      candidates.push(el);
-    }
   }
 
   return candidates;
@@ -1851,6 +1889,10 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
     e.stopPropagation();
     if (!canOperate()) return;
 
+    // Arabic news/official posts are shown as-is (MSA) with no translation —
+    // there is nothing to toggle and we must never issue a request for them.
+    if (state.isNews && isArabicText(state.originalText)) return;
+
     state.showingOriginal = !state.showingOriginal;
     const target = state.postElement || postElement;
 
@@ -2096,12 +2138,19 @@ async function maybeAutoTranslate(postId) {
 
   if (!ensurePostControlBar(state, state.article)) return;
 
-  const dialect = getAutoTranslateDialect(state);
-
-  if (state.isNews) {
-    if (applyTranslated(state, "msa")) maybeUnobserveArticle(state.article);
+  // News/official/gray-badge posts always target MSA. If such a post is
+  // already in Arabic script, show it as-is and never request a translation.
+  if (state.isNews && isArabicText(state.originalText)) {
+    state.autoTranslated = true;
+    state.activeDialect = "msa";
+    state.appliedHtml = state.postElement.innerHTML;
+    state.updateMainButton?.();
+    maybeUnobserveArticle(state.article);
     return;
   }
+
+  // News/official → MSA; everyone else → the preferred dialect.
+  const dialect = getAutoTranslateDialect(state);
 
   if (applyTranslated(state, dialect)) {
     maybeUnobserveArticle(state.article);
