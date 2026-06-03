@@ -33,8 +33,12 @@ let visibilityFlushTimer = null;
 let scrollScanTimer = null;
 let scrollScanListenerReady = false;
 let suppressDomScan = false;
+let lastScrollAt = 0;
 
 const SCROLL_SCAN_DEBOUNCE_MS = 250;
+// Hold off starting auto-translations until scrolling has settled, so posts
+// that merely fly past the viewport during a fast scroll never get requested.
+const SCROLL_SETTLE_MS = 350;
 
 const MAX_CONCURRENT_TRANSLATIONS = 2;
 
@@ -2294,6 +2298,13 @@ function scheduleVisibilityTranslateFlush() {
 function flushVisibleTranslations() {
   if (!canAutoTranslate()) return;
 
+  // While the user is actively scrolling, defer the whole batch. Posts that just
+  // fly past the viewport never get a request, which is the main source of spam.
+  if (performance.now() - lastScrollAt < SCROLL_SETTLE_MS) {
+    scheduleVisibilityTranslateFlush();
+    return;
+  }
+
   autoTranslateBudget = MAX_AUTO_TRANSLATE_PER_VISIBLE_BATCH;
   const candidates = [];
 
@@ -2600,6 +2611,7 @@ function setupScrollScan() {
 
   const onScroll = () => {
     if (!canOperate()) return;
+    lastScrollAt = performance.now();
     if (scrollScanTimer) clearTimeout(scrollScanTimer);
     scrollScanTimer = setTimeout(() => {
       scrollScanTimer = null;
@@ -2614,6 +2626,14 @@ function setupScrollScan() {
 function watchSpaNavigation() {
   const schedule = () => {
     bindDomObserver();
+    // Quick staged scans so the main post regains its UI + translation soon
+    // after opening a comment, plus the debounced scan for late re-renders.
+    for (const delay of [150, 450]) {
+      setTimeout(() => {
+        if (!canOperate()) return;
+        runPostScan({ reconnect: true });
+      }, delay);
+    }
     schedulePostScan({ reconnect: true });
   };
 
@@ -2688,12 +2708,18 @@ async function bootstrapDialx() {
   setupScrollScan();
   watchExtensionContext();
   watchSpaNavigation();
+
+  // The feed hydrates progressively after document_idle, so a single scan often
+  // runs before the posts exist. Staged early scans make the UI buttons appear
+  // as soon as the first posts render, without waiting for a mutation/debounce.
   runPostScan();
-  setTimeout(() => {
-    if (!canOperate()) return;
-    bindDomObserver();
-    runPostScan();
-  }, 500);
+  for (const delay of [150, 400, 800, 1500]) {
+    setTimeout(() => {
+      if (!canOperate()) return;
+      bindDomObserver();
+      runPostScan();
+    }, delay);
+  }
 }
 
 bootstrapDialx();
