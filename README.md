@@ -39,10 +39,13 @@ dialx/
 │   ├── content.js
 │   ├── popup.html
 │   └── popup.js
+│   ├── dialx_logo.png
+│   ├── icon16.png
+│   ├── icon32.png
+│   ├── icon48.png
+│   └── icon128.png
 ├── backend/            # FastAPI backend
 │   ├── main.py
-│   └── requirements.txt
-└── CURSOR_INSTRUCTIONS.md
 
 ## How It Works
 
