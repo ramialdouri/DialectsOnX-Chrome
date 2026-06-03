@@ -1,7 +1,9 @@
 const DEFAULT_DIALECT = "msa";
+const DEFAULT_BACKEND_URL = "https://dialx-backend.onrender.com";
 
 let preferredDialect = DEFAULT_DIALECT;
 let autoTranslateEnabled = true;
+let backendUrl = DEFAULT_BACKEND_URL;
 let settingsReady = false;
 let dialxActive = false;
 let activePanelCleanup = null;
@@ -610,7 +612,7 @@ function loadSettings() {
     }
 
     chrome.storage.sync.get(
-      { preferredDialect: DEFAULT_DIALECT, autoTranslate: true },
+      { preferredDialect: DEFAULT_DIALECT, autoTranslate: true, backendUrl: DEFAULT_BACKEND_URL },
       (data) => {
         if (chrome.runtime.lastError || !isExtensionContextValid()) {
           dialxActive = false;
@@ -624,6 +626,7 @@ function loadSettings() {
           ? data.preferredDialect
           : DEFAULT_DIALECT;
         autoTranslateEnabled = data.autoTranslate !== false;
+        backendUrl = normalizeBackendUrl(data.backendUrl);
         settingsReady = true;
         resolve();
       }
@@ -637,6 +640,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (changes.preferredDialect?.newValue) {
     const next = changes.preferredDialect.newValue;
     if (isValidDialect(next)) preferredDialect = next;
+  }
+  if (changes.backendUrl) {
+    backendUrl = normalizeBackendUrl(changes.backendUrl.newValue);
   }
   if (changes.autoTranslate) {
     autoTranslateEnabled = changes.autoTranslate.newValue !== false;
@@ -772,13 +778,23 @@ function drainTranslationQueue() {
   }
 }
 
+/** Normalize a user-entered backend URL (trim, drop trailing slashes). */
+function normalizeBackendUrl(url) {
+  const trimmed = (url || "").trim().replace(/\/+$/, "");
+  return trimmed || DEFAULT_BACKEND_URL;
+}
+
+function getTranslateEndpoint() {
+  return `${normalizeBackendUrl(backendUrl)}/translate`;
+}
+
 async function translateText(text, targetDialect, signal) {
   if (!canOperate()) {
     throw new DOMException("DialX inactive", "AbortError");
   }
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/translate", {
+    const response = await fetch(getTranslateEndpoint(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, source: "auto", target: targetDialect }),
