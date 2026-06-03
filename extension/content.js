@@ -807,8 +807,23 @@ function applyTranslated(state, dialect) {
 }
 
 /** Skip promoted / sponsored posts on X. */
+/** "Boosted" posts are organic posts the author paid to amplify (not ads). */
+function isBoostedPost(article) {
+  if (!article) return false;
+  const social = article.querySelector('[data-testid="socialContext"]');
+  if (social && /\bboosted\b/i.test(social.innerText || "")) return true;
+  const aria = article.getAttribute("aria-label") || "";
+  return /\bboosted\b/i.test(aria);
+}
+
 function isAdvertisement(article) {
   if (!article) return false;
+
+  // Boosted posts must be treated as normal posts (UI buttons + dialect
+  // translation), so never classify them as ads — this overrides every ad
+  // signal below.
+  if (isBoostedPost(article)) return false;
+
   // NOTE: do NOT treat a descendant [data-testid="placementTracking"] as an ad —
   // X wraps the video/media player of ordinary posts in it for impression
   // tracking. Real promoted posts have it as an ANCESTOR, which isInPrimaryFeed
