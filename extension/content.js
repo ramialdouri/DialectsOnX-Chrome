@@ -852,7 +852,37 @@ const NEWS_ACCOUNT_PATTERNS = [
   /haaretz/i,
   /timesofisrael/i,
   /france24/i,
-  /dwnews/i
+  /dwnews/i,
+  // Additional popular / regional outlets and agencies (distinctive handles only)
+  /aljazeera/i,
+  /ajplus/i,
+  /alhadath/i,
+  /alekhbariya/i,
+  /skynewsarabia/i,
+  /bloomberg/i,
+  /wsj/i,
+  /cnbc/i,
+  /msnbc/i,
+  /economist/i,
+  /politico/i,
+  /axios/i,
+  /thehill/i,
+  /newsweek/i,
+  /usatoday/i,
+  /latimes/i,
+  /telegraph/i,
+  /dailymail/i,
+  /huffpost/i,
+  /buzzfeednews/i,
+  /propublica/i,
+  /sputnik/i,
+  /trtworld/i,
+  /trtarabi/i,
+  /middleeasteye/i,
+  /scmp/i,
+  /elpais/i,
+  /lemonde/i,
+  /spiegel/i
 ];
 
 const ARABIC_OFFICIAL_TEXT_PATTERNS = [
@@ -870,11 +900,34 @@ const NEWS_WIRE_TEXT_PATTERNS = [
   /^بيان\s+رسمي[:\s]/
 ];
 
+/** Known news domains shown on a post's link/source card (visible text only). */
+const NEWS_DOMAIN_PATTERN =
+  /\b(?:reuters\.com|bbc\.(?:co\.uk|com)|cnn\.com|aljazeera\.(?:net|com)|apnews\.com|nytimes\.com|washingtonpost\.com|theguardian\.com|foxnews\.com|skynews(?:arabia)?\.[a-z.]+|alarabiya\.net|alhadath\.[a-z.]+|alekhbariya\.[a-z.]+|bloomberg\.com|wsj\.com|ft\.com|cnbc\.com|nbcnews\.com|abcnews\.go\.com|cbsnews\.com|npr\.org|politico\.com|axios\.com|thehill\.com|newsweek\.com|usatoday\.com|latimes\.com|telegraph\.co\.uk|dailymail\.co\.uk|france24\.com|dw\.com|rt\.com|sputnik[a-z]*\.[a-z.]+|trtworld\.com|middleeasteye\.net|scmp\.com|spa\.gov\.sa|wam\.ae|qna\.org\.qa)/i;
+
+/** Arabic newswire lead-ins / attributions commonly used in reporting. */
+const NEWS_ARABIC_LEAD_PATTERNS = [
+  /(?:^|[\s،.])أفادت\b/,
+  /ذكرت\s+وكالة/,
+  /نقل(?:اً|ًا|ا)\s+عن/,
+  /في\s+بيان\b/,
+  /(?:^|[\s،.])أعلنت\b/,
+  /(?:^|[\s،.])صرّ?ح\b/
+];
+
 const NEWS_HANDLE_HINTS =
   /(?:^|_)(?:news|alerts?|breaking|media|press|times|herald|tribune|journal|broadcast|wire|gazette|post)(?:$|_)/i;
 
 const NEWS_DISPLAY_NAME_HINTS =
   /\b(news|alert|media|press|reuters|cnn|bbc|associated press|fox news|sky news|ny times|guardian)\b/i;
+
+/**
+ * News keywords matched in the account display name or @username. The "news"
+ * and "journal" tokens match anywhere (substring); the more ambiguous outlet
+ * words (post, times, daily, …) are word-anchored so they don't trip on names
+ * like "postman" or "sometimes". Arabic terms are distinctive enough as-is.
+ */
+const NEWS_NAME_KEYWORDS =
+  /news|journal|\b(?:tv|radio|times|post|tribune|gazette|herald|daily|press|media)\b|أخبار|جريدة|وكالة|الآن|عاجل|قناة|صحيفة|تلفزيون|إذاعة/i;
 
 const PARODY_HANDLE_HINTS =
   /(parody|satire|comedy|comedian|meme|memes|joke|jokes|funny|humou?r|shitpost|not.?real|fake.?news|clickbait)/i;
@@ -919,6 +972,24 @@ function getAuthorHandle(article) {
 
 function isKnownNewsAccount(handle) {
   return Boolean(handle && NEWS_ACCOUNT_PATTERNS.some((pattern) => pattern.test(handle)));
+}
+
+/**
+ * News keyword in the visible display name or @username (e.g. "news", "journal",
+ * "أخبار", "جريدة", "وكالة", "الآن", "عاجل"). The User-Name block's text holds
+ * both the display name and the handle, so one read covers both.
+ */
+function hasNewsNameKeyword(article) {
+  const block = article.querySelector('[data-testid="User-Name"]');
+  const text = block?.innerText || "";
+  return NEWS_NAME_KEYWORDS.test(text);
+}
+
+/** The post links to a known news domain via its link/source card. */
+function hasNewsLinkCard(article) {
+  const card = article.querySelector('[data-testid="card.wrapper"]');
+  if (!card) return false;
+  return NEWS_DOMAIN_PATTERN.test(card.innerText || "");
 }
 
 function isVerifiedAccount(article) {
@@ -1025,7 +1096,15 @@ function isNewsOrOfficialPost(article, text) {
   const handle = getAuthorHandle(article);
   if (isKnownNewsAccount(handle)) return true;
 
+  if (hasNewsNameKeyword(article)) return true;
+
+  if (hasNewsLinkCard(article)) return true;
+
   if (ARABIC_OFFICIAL_TEXT_PATTERNS.some((pattern) => pattern.test(text))) {
+    return true;
+  }
+
+  if (NEWS_ARABIC_LEAD_PATTERNS.some((pattern) => pattern.test(text))) {
     return true;
   }
 
