@@ -944,6 +944,29 @@ const NEWS_DISPLAY_NAME_HINTS =
 const NEWS_NAME_KEYWORDS =
   /news|journal|\b(?:tv|radio|times|post|tribune|gazette|herald|daily|press|media)\b|أخبار|جريدة|وكالة|الآن|عاجل|قناة|صحيفة|تلفزيون|إذاعة/i;
 
+/**
+ * Fan / personal / podcast / band accounts that merely append "News" to a
+ * non-official name (e.g. "Joe Rogan Podcast News", "Elon Musk News"). These
+ * should stay normal posts, so the weak name-keyword signal is suppressed.
+ */
+const NON_OFFICIAL_NAME_HINTS =
+  /\b(podcast|fan|fans|fanpage|stan|band|tour|updates?|tracker|comedian|comedy|musician|rapper|singer|songwriter|dj|gamer|streamer|youtuber|influencer|highlights?|clips?)\b/i;
+
+/**
+ * Title-Case "Firstname Lastname … News" — a human/personal name in front of
+ * the news word. Real outlets use a brand or acronym (BBC, Fox, Sky), not a
+ * two-part human name, so requiring two Title-Case words (case-sensitive, no
+ * /i flag) avoids matching them. "Fox News" / "Sky News" have only one word
+ * before "News" and are not affected.
+ */
+const PERSON_PREFIXED_NEWS_NAME =
+  /^[A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Za-z'’]+)*\s+[Nn]ews\b/;
+
+function isNonOfficialNewsName(name) {
+  if (!name) return false;
+  return NON_OFFICIAL_NAME_HINTS.test(name) || PERSON_PREFIXED_NEWS_NAME.test(name);
+}
+
 const PARODY_HANDLE_HINTS =
   /(parody|satire|comedy|comedian|meme|memes|joke|jokes|funny|humou?r|shitpost|not.?real|fake.?news|clickbait)/i;
 
@@ -997,7 +1020,14 @@ function isKnownNewsAccount(handle) {
 function hasNewsNameKeyword(article) {
   const block = article.querySelector('[data-testid="User-Name"]');
   const text = block?.innerText || "";
-  return NEWS_NAME_KEYWORDS.test(text);
+  if (!NEWS_NAME_KEYWORDS.test(text)) return false;
+
+  // The display name (first line) is where fan/personal accounts append "News".
+  // If it's a celebrity/podcast/band-style name, don't treat it as official.
+  const displayName = text.split("\n")[0].trim();
+  if (isNonOfficialNewsName(displayName)) return false;
+
+  return true;
 }
 
 /** The post links to a known news domain via its link/source card. */
