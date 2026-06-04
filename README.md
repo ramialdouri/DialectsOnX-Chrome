@@ -29,7 +29,10 @@
 
 The backend is hosted 24/7 on Render.com.
 
-**Backend URL:** `https://dialx-backend.onrender.com`
+**Base URL:** `https://dialx-backend.onrender.com`
+
+**Main Endpoint:** `POST /translate`  
+(This receives the text and target dialect, then returns the translation)
 
 ## Project Structure
 
@@ -58,7 +61,7 @@ dialx/
 ## Future Plans
 
 - Mobile support
-- In-sync video subtitles
+- In-sync video subtitles (Grok-generated per user request)
 - Translation quality optimization
 - Performance/speed optimization
 - News detection optimization
