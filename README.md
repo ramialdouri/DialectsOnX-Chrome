@@ -64,6 +64,7 @@ dialx/
 - News detection optimization
 - "Rate This Translation" button/feature
 - Minimazable "Dialect Selector" button
+- Expansion to support all languages and dialects worldwide
 
 ## Tech Stack
 
