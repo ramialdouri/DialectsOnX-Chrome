@@ -53,7 +53,7 @@ dialx/
 ```
 ## How It Works
 
-1. Uses a `MutationObserver` to detect new on-screen posts
+1. Uses a `MutationObserver` to detect on-screen posts
 2. Sends the post text to the local FastAPI backend
 3. The backend uses Grok 4.3 to translate it into the chosen dialect
 4. Results are injected directly into the post
