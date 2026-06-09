@@ -8,7 +8,7 @@
   MSA, Emirati, Saudi-Najdi, Saudi-Hijazi, Kuwaiti, Qatari, Syrian, Lebanese, Jordanian, Palestinian, Iraqi, Egyptian, Sudanese, Moroccan, Algerian, Tunisian
 - **Smart translation rules:**
   - Normal posts → translated to your chosen dialect
-  - Detected news & official accounts (gray badges) → always MSA
+  - Detected news & official accounts (gray badges) → MSA by default
 - **Per-post control:**
   - Click the dialect button to toggle between original and translated text
   - "Dialect Selector" panel with radio buttons for default dialect selection
@@ -53,7 +53,7 @@ dialx/
 ```
 ## How It Works
 
-1. Uses a `MutationObserver` to detect new posts
+1. Uses a `MutationObserver` to detect new on-screen posts
 2. Sends the post text to the local FastAPI backend
 3. The backend uses Grok 4.3 to translate it into the chosen dialect
 4. Results are injected directly into the post
