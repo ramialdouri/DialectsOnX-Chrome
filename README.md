@@ -1,6 +1,6 @@
-# DialectsOnX — Arabic Dialect Translator for X
+# DialectsOnX — Dialect Translator for X
 
-**DialectsOnX** is a Chrome Extension that automatically translates X posts into your preferred Arabic dialect. Makes Arabic X much more natural and enjoyable to read. Helps Arabic-speaking users discover and engage with English and international content on X
+**DialectsOnX** is a Chrome Extension that automatically translates X posts into your preferred dialect. Makes X more natural and enjoyable to read. Helps users discover and engage with English and international content on X.
 
 ## Features
 
@@ -62,14 +62,14 @@ dialectsonx/
 
 ## Future Plans
 
+- Expansion to include support for additional international languages
 - Mobile support
 - In-sync video subtitles (Grok-generated per user request)
 - Translation quality optimization
 - Performance/speed optimization
 - News detection optimization
-- "Rate This Translation" button/feature
+- "Rate This Translation" feature
 - Minimazable "Dialect Selector" button
-- Expansion to support all languages and dialects worldwide
 
 ## Tech Stack
 
