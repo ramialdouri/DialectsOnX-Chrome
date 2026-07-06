@@ -1,5 +1,5 @@
 const DEFAULT_DIALECT = "msa";
-const DEFAULT_BACKEND_URL = "https://dialx-backend.onrender.com";
+const DEFAULT_BACKEND_URL = "https://dialectsonx.onrender.com";
 
 let preferredDialect = DEFAULT_DIALECT;
 let autoTranslateEnabled = true;

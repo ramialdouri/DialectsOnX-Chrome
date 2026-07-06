@@ -1,4 +1,4 @@
-const DEFAULT_BACKEND_URL = "https://dialx-backend.onrender.com";
+const DEFAULT_BACKEND_URL = "https://dialectsonx.onrender.com";
 
 const input = document.getElementById("backendUrl");
 const saveBtn = document.getElementById("save");

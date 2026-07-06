@@ -29,7 +29,7 @@
 
 The backend is hosted 24/7 on Render.com.
 
-**Base URL:** `https://dialx-backend.onrender.com`
+**Base URL:** `https://dialectsonx.onrender.com`
 
 **Main Endpoint:** `POST /translate`  
 (This receives the text and target dialect, then returns the translation)
@@ -50,11 +50,13 @@ dialx/
 │   └── icon128.png
 ├── backend/            # FastAPI backend
 │   ├── main.py
+│   └── requirements.txt
 ```
+
 ## How It Works
 
 1. Uses a `MutationObserver` to detect on-screen posts
-2. Sends the post text to the local FastAPI backend
+2. Sends the post text to the hosted FastAPI backend
 3. The backend uses Grok 4.3 to translate it into the chosen dialect
 4. Results are injected directly into the post
 
