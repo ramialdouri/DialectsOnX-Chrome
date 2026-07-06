@@ -1,6 +1,6 @@
-# DialX — Arabic Dialect Translator for X
+# DialectsOnX — Arabic Dialect Translator for X
 
-**DialX** is a Chrome Extension that automatically translates X posts into your preferred Arabic dialect. Makes Arabic X much more natural and enjoyable to read. Helps Arabic-speaking users discover and engage with English and international content on X
+**DialectsOnX** is a Chrome Extension that automatically translates X posts into your preferred Arabic dialect. Makes Arabic X much more natural and enjoyable to read. Helps Arabic-speaking users discover and engage with English and international content on X
 
 ## Features
 
@@ -17,7 +17,7 @@
 
 ## Installation (Easiest Method)
 
-1. Download `DialX-v0.1.0.zip` from the [Releases page] 
+1. Download `DialectsOnX-v0.1.0.zip` from the [Releases page] 
 2. Extract the zip file
 3. Go to `chrome://extensions/`
 4. Enable **Developer mode** (top right)
@@ -37,13 +37,13 @@ The backend is hosted 24/7 on Render.com.
 ## Project Structure
 
 ```bash
-dialx/
+dialectsonx/
 ├── extension/          # Chrome Extension files
 │   ├── manifest.json
 │   ├── content.js
 │   ├── popup.html
 │   └── popup.js
-│   ├── dialx_logo.png
+│   ├── DialectsOnX-logo.png
 │   ├── icon16.png
 │   ├── icon32.png
 │   ├── icon48.png

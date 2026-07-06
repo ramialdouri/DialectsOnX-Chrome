@@ -8,7 +8,7 @@ from xai_sdk.chat import system, user
 
 load_dotenv(override=True)
 
-app = FastAPI(title="DialX Backend")
+app = FastAPI(title="DialectsOnX Backend")
 
 app.add_middleware(
     CORSMiddleware,
@@ -66,4 +66,4 @@ async def translate(request: TranslateRequest):
         return {"translation": request.text}
 
 if __name__ == "__main__":
-    print("DialX Backend is running with xAI SDK + Grok 4.3...")
+    print("DialectsOnX Backend is running with xAI SDK + Grok 4.3...")

@@ -103,7 +103,7 @@ function injectDialxStyles() {
 
   let logoUrl = "";
   try {
-    logoUrl = chrome.runtime.getURL("dialx_logo.png");
+    logoUrl = chrome.runtime.getURL("DialectsOnX-logo.png");
   } catch {
     logoUrl = "";
   }
@@ -668,7 +668,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 function clearTranslationQueue() {
   while (translationQueue.length > 0) {
     const { reject } = translationQueue.shift();
-    reject(new DOMException("DialX inactive", "AbortError"));
+    reject(new DOMException("DialectsOnX inactive", "AbortError"));
   }
   activeTranslations = 0;
 }
@@ -751,7 +751,7 @@ function watchExtensionContext() {
 
 function runQueuedTranslation(task, priority = PRIORITY_REPLY) {
   if (!canOperate()) {
-    return Promise.reject(new DOMException("DialX inactive", "AbortError"));
+    return Promise.reject(new DOMException("DialectsOnX inactive", "AbortError"));
   }
 
   return new Promise((resolve, reject) => {
@@ -790,7 +790,7 @@ function getTranslateEndpoint() {
 
 async function translateText(text, targetDialect, signal) {
   if (!canOperate()) {
-    throw new DOMException("DialX inactive", "AbortError");
+    throw new DOMException("DialectsOnX inactive", "AbortError");
   }
 
   try {
@@ -844,7 +844,7 @@ function storeTranslation(state, dialect, translated) {
 
 async function fetchTranslation(state, dialect, signal) {
   if (!canOperate()) {
-    throw new DOMException("DialX inactive", "AbortError");
+    throw new DOMException("DialectsOnX inactive", "AbortError");
   }
 
   const cached = getCachedTranslation(state, dialect);
@@ -1886,7 +1886,7 @@ function findQuotedTweetText(article, quoteContainer) {
   return best;
 }
 
-/** Main body + embedded quote — each gets its own DialX UI and translation. */
+/** Main body + embedded quote — each gets its own DialectsOnX UI and translation. */
 function getArticleTextTargets(article) {
   if (!isValidTweetArticle(article)) return [];
 
@@ -2051,7 +2051,7 @@ function controlBarSelector(postId) {
   return `.dialx-control-bar[data-dialx-post-id="${value}"]`;
 }
 
-/** The single connected DialX bar for a post, if one exists in the DOM. */
+/** The single connected DialectsOnX bar for a post, if one exists in the DOM. */
 function findExistingBar(postId) {
   const bar = document.querySelector(controlBarSelector(postId));
   return bar?.isConnected ? bar : null;
@@ -2391,12 +2391,12 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
     showDialectSelector(bar, postId);
   };
 
-  // DialX wordmark rendered as a luminance mask over a neutral gray fill: the
+  // DialectsOnX wordmark rendered as a luminance mask over a neutral gray fill: the
   // black background drops out (transparent) and the mark blends on both X
   // light and dark themes. Height matches the selector button.
   const logo = document.createElement("span");
   logo.className = "dialx-logo";
-  logo.setAttribute("aria-label", "DialX");
+  logo.setAttribute("aria-label", "DialectsOnX");
   logo.setAttribute("role", "img");
 
   bar.appendChild(mainBtn);

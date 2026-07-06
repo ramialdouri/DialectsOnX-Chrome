@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "DialX",
+  "name": "DialectsOnX",
   "version": "0.1.0",
   "description": "Translate X posts to your preferred Arabic dialect",
   "permissions": ["activeTab", "storage"],
@@ -20,7 +20,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "DialX",
+    "default_title": "DialectsOnX",
     "default_icon": {
       "16": "icon16.png",
       "32": "icon32.png",
@@ -30,7 +30,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["dialx_logo.png"],
+      "resources": ["DialectsOnX-logo.png"],
       "matches": ["https://x.com/*", "https://twitter.com/*"]
     }
   ]
