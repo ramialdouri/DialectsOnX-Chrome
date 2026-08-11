@@ -22,6 +22,9 @@ build step, and no automated tests or linters configured in this repo.
   `XAI_API_KEY` and raises `ValueError` on import. Set `GROK_API_KEY` (add it as
   a Cursor secret) before launching uvicorn. `load_dotenv(override=True)` also
   reads a `backend/.env` file if present (`.env` is gitignored).
+- If you start uvicorn in an existing tmux session that was created before the
+  secret was available, export/`tmux set-environment` the key into that session
+  (or recreate the session) — otherwise the process still sees an empty/old key.
 - Graceful degradation: if the key is missing/invalid, the `/translate` handler
   catches the xAI error and returns the **original untranslated text** with HTTP
   200 (`main.py` try/except). So a 200 response that echoes the input means the
