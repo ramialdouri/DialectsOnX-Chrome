@@ -65,6 +65,7 @@
     function setOutput(text, isPlaceholder) {
       outputEl.textContent = text;
       outputEl.classList.toggle("has-result", !isPlaceholder);
+      refreshOutputActions();
     }
 
     function refreshBump() {
@@ -75,6 +76,13 @@
 
     function isEmptyOutput() {
       return !(outputEl.textContent || "").trim();
+    }
+
+    function refreshOutputActions() {
+      const hasOutput = !isEmptyOutput();
+      const canClear = Boolean(inputEl.value.trim()) || hasOutput;
+      shareBtn.disabled = !hasOutput;
+      clearBtn.disabled = !canClear;
     }
 
     async function runTranslate() {
@@ -222,10 +230,7 @@
     });
     shareBtn.addEventListener("click", async () => {
       const text = outputEl.textContent?.trim();
-      if (!text) {
-        setStatus("Nothing to share yet.", "error");
-        return;
-      }
+      if (!text) return;
       try {
         if (navigator.share) {
           await navigator.share({ text });
@@ -237,8 +242,10 @@
         setStatus("Share canceled.");
       }
     });
+    inputEl.addEventListener("input", refreshOutputActions);
 
     refreshBump();
+    refreshOutputActions();
   }
 
   window.DialexPad = { initPad, translateText };

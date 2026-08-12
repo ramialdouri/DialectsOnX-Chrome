@@ -232,8 +232,12 @@ a:hover {
 .ghost-group {
   display: flex;
   align-items: center;
-  gap: 0.15rem;
-  margin-left: auto;
+  margin-top: 0.15rem;
+}
+
+.ghost-group .ghost-btn {
+  flex: 1;
+  text-align: center;
 }
 
 .btn {
@@ -290,8 +294,13 @@ a:hover {
   cursor: pointer;
 }
 
-.ghost-btn:hover {
+.ghost-btn:hover:not(:disabled) {
   color: #fff;
+}
+
+.ghost-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .status-line {
