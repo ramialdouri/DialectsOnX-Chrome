@@ -3,13 +3,8 @@
     "https://dialex-backend-f6b7-1086119311146.europe-west3.run.app";
   const EMPTY_OUTPUT = "Translation appears here.";
 
-  function normalizeBackendUrl(url) {
-    const trimmed = (url || "").trim().replace(/\/+$/, "");
-    return trimmed || DEFAULT_BACKEND;
-  }
-
-  async function translateText({ text, targetDialect, backendUrl, signal }) {
-    const res = await fetch(`${normalizeBackendUrl(backendUrl)}/translate`, {
+  async function translateText({ text, targetDialect, signal }) {
+    const res = await fetch(`${DEFAULT_BACKEND}/translate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -32,10 +27,10 @@
     return res.json();
   }
 
-  async function speechToText({ blob, backendUrl }) {
+  async function speechToText({ blob }) {
     const form = new FormData();
     form.append("file", blob, "pad.webm");
-    const res = await fetch(`${normalizeBackendUrl(backendUrl)}/stt`, {
+    const res = await fetch(`${DEFAULT_BACKEND}/stt`, {
       method: "POST",
       body: form,
     });
@@ -56,7 +51,6 @@
     const sheet = window.DialexSheet;
     if (!catalog || !sheet) return;
 
-    const backendUrl = DEFAULT_BACKEND;
     const inputEl = document.getElementById("pad-input");
     const outputEl = document.getElementById("pad-output");
     const translitEl = document.getElementById("pad-translit");
@@ -120,7 +114,6 @@
         const data = await translateText({
           text,
           targetDialect: dialectId,
-          backendUrl,
         });
         setOutput(data.translation || "", false);
         if (data.transliteration) {
@@ -182,7 +175,7 @@
           }
           setStatus("Transcribing...");
           try {
-            const stt = await speechToText({ blob, backendUrl });
+            const stt = await speechToText({ blob });
             inputEl.value = stt.text || "";
             await runTranslate();
           } catch (err) {
@@ -239,5 +232,5 @@
     refreshBump();
   }
 
-  window.DialexPad = { initPad, DEFAULT_BACKEND, normalizeBackendUrl, translateText };
+  window.DialexPad = { initPad, translateText };
 })();
