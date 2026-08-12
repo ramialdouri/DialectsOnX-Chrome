@@ -130,16 +130,12 @@ a:hover {
 .pane-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.75rem;
 }
 
-.pane-label {
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--mist-muted);
-  font-weight: 700;
+.pane-top:empty {
+  display: none;
 }
 
 .pane textarea {
