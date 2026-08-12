@@ -162,7 +162,7 @@
       <button type="button" id="dialx-ime-dialect"></button>
       <button type="button" class="primary" id="dialx-ime-translate">Translate</button>
       <button type="button" id="dialx-ime-toggle" hidden>Original</button>
-      <a id="dialx-ime-pad" href="${DIALEX_PAD_URL}" target="_blank" rel="noopener noreferrer">Open Pad</a>
+      <a id="dialx-ime-pad" href="${DIALEX_PAD_URL}" target="_blank" rel="noopener noreferrer">Open Dialex Pad</a>
       <span class="status" id="dialx-ime-status"></span>
     `;
     document.documentElement.appendChild(barEl);
@@ -239,7 +239,7 @@
     if (!target || !isEditable(target) || busy) return;
     const text = readValue(target).trim();
     if (!text) {
-      setStatus("No text to translate", true);
+      setStatus("No text to translate.", true);
       return;
     }
     busy = true;

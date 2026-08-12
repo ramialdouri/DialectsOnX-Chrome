@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DialectsOnX",
   "version": "0.2.0",
-  "description": "Translate X posts and website text boxes into Dialex dialects",
+  "description": "Translate X posts and website text fields into Dialex dialects",
   "permissions": ["storage"],
   "host_permissions": [
     "https://x.com/*",

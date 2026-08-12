@@ -2,7 +2,7 @@
 
 Chrome extension that translates X posts into Dialex dialects and can rewrite text in website text boxes (IME-style). Uses the shared Dialex Cloud Run backend.
 
-Catalog / picker aligned with Dialex Android `early-debug-and-design` @ `a385a0c`: 15 groups, 56 spoken languages, 283 dialects.
+Catalog / picker aligned with Dialex Android `main` @ `112b2ec`: 15 groups, 56 spoken languages, 283 dialects.
 
 ## Features (v0.2)
 
@@ -34,7 +34,7 @@ The in-repo [`backend/`](backend/) folder is legacy v0.1 (Arabic-only Render pro
 
 ```bash
 extension/
-  dialects.js   # generated from early-debug-and-design @ a385a0c
+  dialects.js   # generated from Dialex-Android main @ 112b2ec
   sheet.js      # Dialex dialect sheet
   content.js    # X feed
   ime.js        # website field rewrite
@@ -44,4 +44,4 @@ backend/        # DEPRECATED: local legacy only
 
 ## Note
 
-v0.2.0 early release. Source of truth for catalog/UX: Dialex-Android `early-debug-and-design`.
+v0.2.0 early release. Source of truth for catalog/UX: Dialex-Android `main`.

@@ -2280,7 +2280,7 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
   const selectorBtn = document.createElement("button");
   selectorBtn.type = "button";
   selectorBtn.className = "dialx-btn dialx-btn-selector";
-  selectorBtn.textContent = "Dialect Selector";
+  selectorBtn.textContent = "Select dialect";
   selectorBtn.onclick = (e) => {
     e.stopPropagation();
     showDialectSelector(bar, postId);

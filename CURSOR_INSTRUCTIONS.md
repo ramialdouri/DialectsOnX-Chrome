@@ -1,8 +1,8 @@
 # DialectsOnX Cursor Instructions
 
 ## Source of truth
-- Dialex Android branch `early-debug-and-design` (not July `main`)
-- Catalog: 283 dialects / 56 spoken / 15 groups (stamp `a385a0c`)
+- Dialex Android branch `main` (commit `112b2ec`)
+- Catalog: 283 dialects / 56 spoken / 15 groups (stamp `112b2ec`)
 - Live API: Dialex Cloud Run (`pad|lens|clip|share|ime`)
 
 ## Stack
