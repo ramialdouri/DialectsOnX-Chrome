@@ -28,22 +28,9 @@
   }
 
   async function speechToText({ blob }) {
-    const form = new FormData();
-    form.append("file", blob, "pad.webm");
-    const res = await fetch(`${DEFAULT_BACKEND}/stt`, {
-      method: "POST",
-      body: form,
-    });
-    if (!res.ok) {
-      let detail = `HTTP ${res.status}`;
-      try {
-        const err = await res.json();
-        detail = err.detail || err.error || detail;
-        if (typeof detail !== "string") detail = JSON.stringify(detail);
-      } catch (_) {}
-      throw new Error(detail);
-    }
-    return res.json();
+    const stt = window.DialexStt;
+    if (!stt) throw new Error("Transcription failed.");
+    return stt.transcribe({ backendUrl: DEFAULT_BACKEND, blob });
   }
 
   function initPad() {
@@ -68,6 +55,9 @@
     let mediaRecorder = null;
     let chunks = [];
     let busy = false;
+    let stopping = false;
+    let recordTimer = null;
+    const RECORD_MAX_MS = 60000;
 
     function placeMic() {
       if (!micBtn || !actions) return;
@@ -109,6 +99,7 @@
       if (busy) return;
       busy = true;
       translateBtn.disabled = true;
+      if (micBtn) micBtn.disabled = true;
       setStatus("Translating...");
       try {
         const data = await translateText({
@@ -130,6 +121,7 @@
       } finally {
         busy = false;
         translateBtn.disabled = false;
+        if (micBtn) micBtn.disabled = false;
       }
     }
 
@@ -148,44 +140,66 @@
 
     async function toggleMic() {
       if (mediaRecorder && mediaRecorder.state === "recording") {
+        stopping = true;
         mediaRecorder.stop();
         return;
       }
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setStatus("Microphone is not available in this browser.", "error");
+      if (busy || stopping) return;
+      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+        setStatus("Microphone needs a secure (https) page.", "error");
+        return;
+      }
+      const stt = window.DialexStt;
+      if (!stt) {
+        setStatus("Transcription failed.", "error");
         return;
       }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         chunks = [];
-        const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-          ? "audio/webm;codecs=opus"
-          : "audio/webm";
-        mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+        const mime = stt.recorderMime();
+        mediaRecorder = mime
+          ? new MediaRecorder(stream, { mimeType: mime })
+          : new MediaRecorder(stream);
+        const usedMime = mediaRecorder.mimeType || mime || "audio/webm";
         mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size) chunks.push(e.data);
+          if (e.data && e.data.size) chunks.push(e.data);
         };
         mediaRecorder.onstop = async () => {
+          if (recordTimer) {
+            clearTimeout(recordTimer);
+            recordTimer = null;
+          }
+          stopping = false;
           stream.getTracks().forEach((t) => t.stop());
           micBtn.classList.remove("recording");
-          const blob = new Blob(chunks, { type: mime });
+          mediaRecorder = null;
+          const blob = new Blob(chunks, { type: usedMime });
           if (!blob.size) {
             setStatus("No audio captured.", "error");
             return;
           }
           setStatus("Transcribing...");
           try {
-            const stt = await speechToText({ blob });
-            inputEl.value = stt.text || "";
+            const result = await speechToText({ blob });
+            inputEl.value = result.text || "";
             await runTranslate();
           } catch (err) {
             setStatus(err.message || "Transcription failed.", "error");
           }
         };
-        mediaRecorder.start();
+        mediaRecorder.start(250);
         micBtn.classList.add("recording");
         setStatus("Recording. Tap the microphone to stop.");
+        recordTimer = setTimeout(() => {
+          if (mediaRecorder && mediaRecorder.state === "recording") {
+            stopping = true;
+            mediaRecorder.stop();
+          }
+        }, RECORD_MAX_MS);
       } catch {
+        stopping = false;
+        micBtn.classList.remove("recording");
         setStatus("Microphone permission was denied.", "error");
       }
     }

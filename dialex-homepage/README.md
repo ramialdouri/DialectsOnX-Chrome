@@ -10,7 +10,7 @@ the language and dialect names. English has no group header.
 Pad talks to Dialex Cloud Run:
 
 - `POST /translate` (`client_source: "pad"`)
-- `POST /stt`
+- `POST /stt` (recordings converted in the browser to 16 kHz mono WAV)
 
 No API keys in the frontend. No onboarding flow.
 
