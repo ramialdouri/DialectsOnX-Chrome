@@ -1,5 +1,5 @@
 /**
- * DialectsOnX IME — translate swaps text in focused website textboxes.
+ * DialectsOnX IME: translate swaps text in focused website textboxes.
  * Uses Dialex dialect sheet (not a soft keyboard). Full Pad: dialex-app.com/#pad
  */
 (function () {
@@ -141,10 +141,13 @@
       #dialx-ime-bar .status { color: #9ba3ae; }
       #dialx-ime-bar .status.error { color: #cf6b6b; }
       #dialx-ime-dialect {
-        max-width: 180px;
+        max-width: 200px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        border-top: 1px solid #d1d7de;
+        border-bottom: 1px dashed #d1d7de;
+        background: #141417;
       }
     `;
     document.documentElement.appendChild(style);
@@ -242,7 +245,7 @@
     busy = true;
     const btn = barEl.querySelector("#dialx-ime-translate");
     btn.disabled = true;
-    setStatus("Translating…");
+    setStatus("Translating...");
     try {
       if (!originals.has(target)) originals.set(target, readValue(target));
       const res = await fetch(`${normalizeBackendUrl(backendUrl)}/translate`, {

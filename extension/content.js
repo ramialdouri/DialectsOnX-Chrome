@@ -91,6 +91,14 @@ function allDialectIds() {
 }
 
 function injectDialxStyles() {
+  if (!document.getElementById("dialex-manrope")) {
+    const link = document.createElement("link");
+    link.id = "dialex-manrope";
+    link.rel = "stylesheet";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap";
+    document.head.appendChild(link);
+  }
   let style = document.getElementById("dialx-styles");
   if (!style) {
     style = document.createElement("style");
@@ -113,7 +121,7 @@ function injectDialxStyles() {
       margin-top: 6px;
       font-size: 13px;
       position: relative;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     .dialx-translation {
       white-space: pre-wrap;
@@ -169,157 +177,6 @@ function injectDialxStyles() {
       opacity: 0.55;
       cursor: default;
     }
-    .dialx-panel {
-      position: fixed;
-      z-index: 10000;
-      min-width: 300px;
-      width: min(340px, calc(100vw - 16px));
-      max-height: min(420px, calc(100vh - 16px));
-      overflow-y: auto;
-      padding: 14px;
-      border-radius: 16px;
-      background: #0a0b0c;
-      border: 1px solid #2a2e33;
-      box-shadow: rgba(61, 155, 143, 0.12) 0 0 18px inset,
-        rgba(0, 0, 0, 0.55) 0 8px 28px;
-      font-size: 13px;
-      color: #e6e8ea;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    .dialx-panel-title {
-      font-weight: 700;
-      margin-bottom: 12px;
-      color: #e6e8ea;
-    }
-    .dialx-panel-auto-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 0 0 12px;
-      margin-bottom: 10px;
-      border-bottom: 1px solid #2a2e33;
-      color: #e6e8ea;
-      font-size: 13px;
-    }
-    .dialx-panel-auto-main {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .dialx-panel-auto-text {
-      font-size: 12px;
-    }
-    .dialx-panel-field {
-      margin-bottom: 10px;
-    }
-    .dialx-panel-field-label {
-      display: block;
-      font-size: 11px;
-      font-weight: 600;
-      color: #9aa3ad;
-      margin-bottom: 6px;
-    }
-    .dialx-panel-select {
-      width: 100%;
-      appearance: none;
-      background: #1c1f22
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239AA3AD' d='M1 1l5 5 5-5'/%3E%3C/svg%3E")
-        no-repeat right 0.75rem center;
-      color: #e6e8ea;
-      border: 1px solid #2a2e33;
-      border-radius: 10px;
-      padding: 8px 2rem 8px 10px;
-      font: inherit;
-      font-size: 13px;
-    }
-    .dialx-chip-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
-    .dialx-chip {
-      border: 1px solid #2a2e33;
-      background: #141618;
-      color: #e6e8ea;
-      border-radius: 999px;
-      padding: 5px 10px;
-      font: inherit;
-      font-size: 12px;
-      cursor: pointer;
-    }
-    .dialx-chip:hover {
-      border-color: #2a6f67;
-    }
-    .dialx-chip.selected {
-      background: rgba(61, 155, 143, 0.22);
-      border-color: rgba(61, 155, 143, 0.55);
-      color: #7fd0c4;
-    }
-    .dialx-panel-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-    .dialx-panel-actions .dialx-btn-sm {
-      background: #f2f4f7;
-      color: #000000;
-      border-color: #f2f4f7;
-      font-weight: 700;
-    }
-    .dialx-panel-actions .dialx-btn-sm:hover:not(:disabled) {
-      background: #ffffff;
-      border-color: #ffffff;
-    }
-    .dialx-panel-link {
-      font-size: 12px;
-      color: #d1d7de;
-      text-decoration: none;
-    }
-    .dialx-panel-link:hover {
-      text-decoration: underline;
-    }
-    .dialx-switch {
-      position: relative;
-      display: inline-flex;
-      width: 24px;
-      height: 14px;
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-    .dialx-switch input {
-      position: absolute;
-      opacity: 0;
-      width: 0;
-      height: 0;
-      margin: 0;
-    }
-    .dialx-switch-slider {
-      position: absolute;
-      inset: 0;
-      border-radius: 9999px;
-      background: rgb(62, 65, 68);
-      transition: background 0.15s ease;
-    }
-    .dialx-switch-slider::before {
-      content: "";
-      position: absolute;
-      height: 10px;
-      width: 10px;
-      left: 2px;
-      top: 2px;
-      border-radius: 50%;
-      background: #fff;
-      transition: transform 0.15s ease;
-    }
-    .dialx-switch input:checked + .dialx-switch-slider {
-      background: #d1d7de;
-    }
-    .dialx-switch input:checked + .dialx-switch-slider::before {
-      transform: translateX(10px);
-    }
     .dialx-logo {
       display: inline-block;
       height: 20px;
@@ -339,41 +196,6 @@ function injectDialxStyles() {
       mask-mode: luminance;
     }
   `;
-}
-
-function positionDialectPanel(panel, anchorEl) {
-  const gap = 8;
-  const margin = 8;
-  const rect = anchorEl.getBoundingClientRect();
-
-  let top = rect.bottom + gap;
-  let left = rect.left;
-
-  panel.style.top = `${top}px`;
-  panel.style.left = `${left}px`;
-
-  const panelRect = panel.getBoundingClientRect();
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-
-  if (panelRect.right > vw - margin) {
-    left = Math.max(margin, vw - panelRect.width - margin);
-    panel.style.left = `${left}px`;
-  }
-  if (panelRect.left < margin) {
-    panel.style.left = `${margin}px`;
-  }
-
-  const updatedRect = panel.getBoundingClientRect();
-  if (updatedRect.bottom > vh - margin) {
-    const aboveTop = rect.top - updatedRect.height - gap;
-    if (aboveTop >= margin) {
-      panel.style.top = `${aboveTop}px`;
-    } else {
-      panel.style.top = `${margin}px`;
-      panel.style.maxHeight = `${vh - margin * 2}px`;
-    }
-  }
 }
 
 function globalCacheKey(text, dialect, statusId) {
@@ -471,7 +293,7 @@ function isReplyBelowFocused(article) {
   return Boolean(focused.compareDocumentPosition(article) & Node.DOCUMENT_POSITION_FOLLOWING);
 }
 
-/** Nested tweet card inside another post's quote — never register inline. */
+/** Nested tweet card inside another post's quote - never register inline. */
 function isNestedQuoteArticle(article) {
   const outer = article.parentElement?.closest?.('article[data-testid="tweet"]');
   if (!outer || outer === article) return false;
@@ -588,7 +410,7 @@ function mergeOriginalText(state, newText) {
   state.autoTranslated = false;
 }
 
-/** Disabled — per-post subtree observers caused severe jank on scroll. */
+/** Disabled - per-post subtree observers caused severe jank on scroll. */
 function protectTranslatedPost(_state) {}
 
 function isExtensionContextValid() {
@@ -1015,7 +837,7 @@ function applyTranslatedOverlay(state, dialect, translated) {
   if (ttColor) trans.style.color = ttColor;
 
   // Keep the overlay directly after the (current) text node, and the control
-  // bar after the overlay — even if X swapped the text node on a re-render.
+  // bar after the overlay - even if X swapped the text node on a re-render.
   if (trans.previousSibling !== tt) tt.after(trans);
   if (state.bar && tt.contains(state.bar)) trans.after(state.bar);
 
@@ -1115,7 +937,7 @@ async function expandAndRetranslate(state) {
     });
 
     const cur = grewNode || currentTextNode();
-    if (!cur?.isConnected) return; // navigated away — destination handles it
+    if (!cur?.isConnected) return; // navigated away - destination handles it
     tt = cur;
     state.postElement = cur;
     showOriginalTextNode(cur);
@@ -1168,11 +990,11 @@ function isAdvertisement(article) {
   if (!article) return false;
 
   // Boosted posts must be treated as normal posts (UI buttons + dialect
-  // translation), so never classify them as ads — this overrides every ad
+  // translation), so never classify them as ads - this overrides every ad
   // signal below.
   if (isBoostedPost(article)) return false;
 
-  // NOTE: do NOT treat a descendant [data-testid="placementTracking"] as an ad —
+  // NOTE: do NOT treat a descendant [data-testid="placementTracking"] as an ad -
   // X wraps the video/media player of ordinary posts in it for impression
   // tracking. Real promoted posts have it as an ANCESTOR, which isInPrimaryFeed
   // already filters out via NON_FEED_REGION_SELECTOR.
@@ -1301,7 +1123,7 @@ const NON_OFFICIAL_NAME_HINTS =
   /\b(podcast|fan|fans|fanpage|stan|band|tour|updates?|tracker|comedian|comedy|musician|rapper|singer|songwriter|dj|gamer|streamer|youtuber|influencer|highlights?|clips?)\b/i;
 
 /**
- * Title-Case "Firstname Lastname … News" — a human/personal name in front of
+ * Title-Case "Firstname Lastname … News" - a human/personal name in front of
  * the news word. Real outlets use a brand or acronym (BBC, Fox, Sky), not a
  * two-part human name, so requiring two Title-Case words (case-sensitive, no
  * /i flag) avoids matching them. "Fox News" / "Sky News" have only one word
@@ -1321,7 +1143,7 @@ const PARODY_HANDLE_HINTS =
 const PARODY_PROFILE_HINTS =
   /\b(parody|satire|comedy account|comedian|not real|fake\b|joke\b|meme page|shitpost)\b/i;
 
-/** Obvious joke / sarcasm — exempt from BREAKING: → MSA. */
+/** Obvious joke / sarcasm - exempt from BREAKING: → MSA. */
 const PARODY_BREAKING_TEXT_PATTERNS = [
   /\b(lol|lmao|rofl|lmfao|haha|hehe|jk|just kidding)\b/i,
   /\b(parody|satire|sarcas|joke|meme|shitpost|the onion)\b/i,
@@ -1520,7 +1342,7 @@ function getAutoTranslateDialect(state) {
 function findShowMoreElement(article, tweetTextEl) {
   const quoteScope = tweetTextEl.closest('[data-testid="quoteTweet"]');
   // When placing the MAIN post's bar, ignore a "show more" that belongs to the
-  // embedded quote — otherwise the main bar lands inside the quote card.
+  // embedded quote - otherwise the main bar lands inside the quote card.
   const quoteContainer = quoteScope ? null : getEmbeddedQuoteContainer(article);
   for (const link of (quoteScope || article).querySelectorAll(
     '[data-testid="tweet-text-show-more-link"]'
@@ -1677,7 +1499,7 @@ function getPrimaryColumn() {
   return document.querySelector('[data-testid="primaryColumn"]');
 }
 
-/** Middle timeline column only — not sidebars, trends, ads, or modals. */
+/** Middle timeline column only - not sidebars, trends, ads, or modals. */
 function isInPrimaryFeed(el) {
   if (!el?.isConnected) return false;
   const primary = getPrimaryColumn();
@@ -1695,7 +1517,7 @@ function getTweetCell(root) {
   );
 }
 
-/** Real X post/comment shell — excludes sidebars and non-tweet shells. */
+/** Real X post/comment shell - excludes sidebars and non-tweet shells. */
 function isValidTweetArticle(article) {
   if (!article || article.getAttribute("data-testid") !== "tweet") return false;
   const cell = getTweetCell(article);
@@ -1820,7 +1642,7 @@ function getTweetRoot(article) {
   return article.querySelector('[data-testid="tweet"]') || article;
 }
 
-/** Tweet shells — article or div[data-testid="tweet"] (X uses both). */
+/** Tweet shells - article or div[data-testid="tweet"] (X uses both). */
 function getTweetArticleRoots() {
   const roots = [];
   const seen = new Set();
@@ -1879,7 +1701,7 @@ function collectCandidateTextElements(article, tweetRoot, quoteContainer) {
 
   // Only genuine tweet text qualifies. Image/video/card-only posts have no
   // [data-testid="tweetText"], so they get no candidates and therefore no UI
-  // buttons — translating card titles or image overlays is never wanted.
+  // buttons - translating card titles or image overlays is never wanted.
   for (const el of scope.querySelectorAll('[data-testid="tweetText"]')) {
     if (quoteContainer?.contains(el)) continue;
     if (!scope.contains(el) && !article.contains(el) && !tweetRoot.contains(el)) {
@@ -1909,7 +1731,7 @@ function scoreMainTextCandidate(el, article) {
 }
 
 /**
- * Author's main body — prefer tweetText outside the quote card (DOM order).
+ * Author's main body - prefer tweetText outside the quote card (DOM order).
  */
 function findMainTweetText(article, tweetRoot, quoteContainer) {
   const candidates = collectCandidateTextElements(article, tweetRoot, quoteContainer);
@@ -1949,7 +1771,7 @@ function findQuotedTweetText(article, quoteContainer) {
   return best;
 }
 
-/** Main body + embedded quote — each gets its own DialectsOnX UI and translation. */
+/** Main body + embedded quote - each gets its own DialectsOnX UI and translation. */
 function getArticleTextTargets(article) {
   if (!isValidTweetArticle(article)) return [];
 
@@ -1986,7 +1808,7 @@ function getArticleTextTargets(article) {
 
 /**
  * Status-page focal post: text is often in cellInnerDiv but outside the inner tweet shell.
- * Comments use normal articles — this path targets the top post explicitly.
+ * Comments use normal articles - this path targets the top post explicitly.
  */
 function registerStatusPageFocalPost(options = { uiOnly: true }) {
   if (!canOperate() || !isOnStatusDetailPage()) return;
@@ -2137,7 +1959,7 @@ function ensureControlBar(state, el, article) {
   let bar = state.bar || findExistingBar(state.postId);
 
   if (!bar) {
-    // No bar anywhere — create one.
+    // No bar anywhere - create one.
     bar = createControlBar(el, state.postId, state.isNews, state);
     insertControlBar(el, bar, article);
     requestAnimationFrame(() => repositionControlBar(el, bar, article));
@@ -2146,7 +1968,7 @@ function ensureControlBar(state, el, article) {
     insertControlBar(el, bar, article);
     requestAnimationFrame(() => repositionControlBar(el, bar, article));
   } else if (!el.parentNode?.contains(bar)) {
-    // Bar got detached from this text node by a re-render — move it back.
+    // Bar got detached from this text node by a re-render - move it back.
     insertControlBar(el, bar, article);
   }
 
@@ -2190,7 +2012,7 @@ function getTranslatableTextTargets() {
   return results;
 }
 
-/** @deprecated Use getTranslatableTextTargets — kept for single-element lookups */
+/** @deprecated Use getTranslatableTextTargets - kept for single-element lookups */
 function getMainTweetTextElement(article) {
   const targets = getArticleTextTargets(article);
   return targets.find((t) => !t.isQuoted)?.el || targets[0]?.el || null;
@@ -2419,8 +2241,8 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
     e.stopPropagation();
     if (!canOperate()) return;
 
-    // Arabic news/official posts are shown as-is (MSA) with no translation —
-    // there is nothing to toggle and we must never issue a request for them.
+    // Arabic news/official posts are shown as-is (MSA) with no translation.
+    // There is nothing to toggle and we must never issue a request for them.
     if (state.isNews && isArabicText(state.originalText)) return;
 
     state.showingOriginal = !state.showingOriginal;
@@ -2591,7 +2413,7 @@ function flushVisibleTranslations() {
     started++;
   }
 
-  // More visible posts than this batch could handle — continue after they settle.
+  // More visible posts than this batch could handle - continue after they settle.
   if (candidates.length > started) {
     scheduleVisibilityTranslateFlush();
   }
@@ -2764,7 +2586,7 @@ function collectArticlesForScan() {
   const articlePriority = new Map();
 
   // registerStatusPageFocalPost owns the single focal /status/ post (its text can
-  // live outside the inner article shell). Skip ONLY that exact post here — every
+  // live outside the inner article shell). Skip ONLY that exact post here - every
   // ancestor and comment must still be registered so the main post keeps its UI
   // and translation when a comment is opened.
   const focalCell = getStatusPageFocalCell();

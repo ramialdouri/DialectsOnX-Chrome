@@ -46,7 +46,7 @@ function save() {
 
 async function checkHealth() {
   const url = normalizeBackendUrl(input.value) || DEFAULT_BACKEND_URL;
-  healthStatus.textContent = "Checking…";
+    healthStatus.textContent = "Checking...";
   try {
     const res = await fetch(`${url}/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
