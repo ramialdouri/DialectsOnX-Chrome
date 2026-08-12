@@ -1,8 +1,6 @@
 (function () {
   const DEFAULT_BACKEND =
     "https://dialex-backend-f6b7-1086119311146.europe-west3.run.app";
-  const EMPTY_OUTPUT = "Translation appears here.";
-
   async function translateText({ text, targetDialect, signal }) {
     const res = await fetch(`${DEFAULT_BACKEND}/translate`, {
       method: "POST",
@@ -86,8 +84,7 @@
     }
 
     function isEmptyOutput() {
-      const t = outputEl.textContent?.trim() || "";
-      return !t || t === EMPTY_OUTPUT;
+      return !(outputEl.textContent || "").trim();
     }
 
     async function runTranslate() {
@@ -228,14 +225,14 @@
     micBtn.addEventListener("click", toggleMic);
     clearBtn.addEventListener("click", () => {
       inputEl.value = "";
-      setOutput(EMPTY_OUTPUT, true);
+      setOutput("", true);
       translitEl.hidden = true;
       translitEl.textContent = "";
       setStatus("");
     });
     shareBtn.addEventListener("click", async () => {
       const text = outputEl.textContent?.trim();
-      if (!text || text === EMPTY_OUTPUT) {
+      if (!text) {
         setStatus("Nothing to share yet.", "error");
         return;
       }
