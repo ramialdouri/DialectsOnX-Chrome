@@ -1,8 +1,8 @@
 /**
  * Dialex dialect sheet: Favorites / Recents, Language | Dialect columns.
- * Mirrors Android DialectCatalogSheet (early-debug-and-design @ a385a0c).
- * English has no group header; it shows a Germanic badge.
- * Storage: chrome.storage.sync when present, otherwise localStorage.
+ * Mirrors Android DialectCatalogSheet on main @ 112b2ec.
+ * English has no group header; the English row shows a Germanic badge.
+ * Sheet fills the viewport. Storage: chrome.storage.sync, else localStorage.
  */
 (function (global) {
   const LS_KEY = "dialex_sheet_prefs";
@@ -14,6 +14,7 @@
   const isExt = Boolean(global.chrome?.storage?.sync);
   let mem = { favorites: [], recents: [] };
   let loaded = !isExt;
+  let unlockBody = null;
 
   function loadLocal() {
     try {
@@ -76,6 +77,20 @@
     persist();
   }
 
+  function lockBody() {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = html && html.style.overflow;
+    const prevBody = body && body.style.overflow;
+    if (html) html.style.overflow = "hidden";
+    if (body) body.style.overflow = "hidden";
+    unlockBody = () => {
+      if (html) html.style.overflow = prevHtml || "";
+      if (body) body.style.overflow = prevBody || "";
+      unlockBody = null;
+    };
+  }
+
   function ensureFont() {
     if (document.getElementById("dialex-manrope")) return;
     const link = document.createElement("link");
@@ -97,6 +112,7 @@
         display: flex; flex-direction: column;
         font-family: Manrope, system-ui, sans-serif;
         color: #f2f4f7;
+        overscroll-behavior: none;
       }
       .dx-sheet {
         flex: 1; min-height: 0;
@@ -110,15 +126,18 @@
         display: grid;
         grid-template-columns: 1fr auto 1fr;
         align-items: center;
-        padding: 14px 18px 10px;
+        padding: 14px 18px 12px;
         border-bottom: 1px solid #1e1e22;
         flex: 0 0 auto;
       }
       .dx-sheet-brand {
-        font-weight: 700; letter-spacing: 0.18em; font-size: 12px;
+        font-weight: 700; letter-spacing: 0.28em; font-size: 11px;
         text-transform: uppercase; color: #d1d7de;
       }
-      .dx-sheet-title { font-weight: 700; font-size: 16px; margin: 0; text-align: center; }
+      .dx-sheet-title {
+        font-weight: 600; font-size: 16px; margin: 0; text-align: center;
+        letter-spacing: -0.02em;
+      }
       .dx-sheet-close {
         justify-self: end;
         width: 32px; height: 32px; border-radius: 999px;
@@ -138,11 +157,11 @@
         text-transform: uppercase; color: #9ba3ae;
       }
       .dx-sheet-pill {
-        flex: 0 0 auto; border: 1px solid #1e1e22; background: #141417;
+        flex: 0 0 auto; border: 1px solid #1e1e22; background: transparent;
         color: #f2f4f7; border-radius: 999px; padding: 6px 12px;
         font: inherit; font-size: 12px; cursor: pointer;
       }
-      .dx-sheet-pill.active { border-color: #d1d7de; }
+      .dx-sheet-pill.active { border-color: #d1d7de; background: #141417; }
       .dx-sheet-auto {
         display: flex; align-items: center; justify-content: space-between;
         gap: 10px; padding: 10px 18px; border-bottom: 1px solid #1e1e22;
@@ -150,24 +169,39 @@
       }
       .dx-sheet-body {
         flex: 1; min-height: 0; display: grid;
-        grid-template-columns: 42% 58%;
+        grid-template-columns: 45% 55%;
       }
       .dx-sheet-col {
         min-height: 0; overflow-y: auto; padding: 8px 10px 16px;
+        overscroll-behavior: contain;
       }
       .dx-sheet-col + .dx-sheet-col { border-left: 1px solid #1e1e22; }
-      .dx-sheet-search-wrap { padding: 4px 6px 10px; position: sticky; top: 0; background: #0a0a0b; z-index: 1; }
+      .dx-sheet-search-wrap {
+        padding: 4px 6px 10px; position: sticky; top: 0; background: #0a0a0b; z-index: 1;
+        display: flex; align-items: center; gap: 8px;
+      }
+      .dx-sheet-search-icon { color: #9ba3ae; flex: 0 0 auto; }
       .dx-sheet-search {
-        width: 100%; box-sizing: border-box;
+        flex: 1; min-width: 0; box-sizing: border-box;
         background: #141417; border: 1px solid #1e1e22; border-radius: 999px;
         color: #f2f4f7; padding: 10px 14px; font: inherit; font-size: 14px;
       }
       .dx-sheet-search:focus { outline: none; border-color: #d1d7de; }
+      .dx-sheet-search-clear {
+        flex: 0 0 auto; width: 28px; height: 28px; border-radius: 999px;
+        border: 0; background: transparent; color: #9ba3ae; cursor: pointer;
+        font-size: 16px; line-height: 1;
+      }
+      .dx-sheet-search-clear[hidden] { display: none; }
+      .dx-sheet-empty {
+        padding: 12px 10px; color: #9ba3ae; font-size: 13px;
+      }
       .dx-sheet-group {
         margin: 10px 6px 4px; font-size: 11px; font-weight: 700;
-        letter-spacing: 0.08em; text-transform: uppercase; color: #9ba3ae;
-        cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px;
+        letter-spacing: 0.1em; text-transform: uppercase; color: #9ba3ae;
+        cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;
       }
+      .dx-sheet-group .chev { font-size: 10px; opacity: 0.8; }
       .dx-sheet-row {
         display: flex; align-items: center; justify-content: space-between;
         gap: 8px; width: 100%; text-align: left;
@@ -176,23 +210,33 @@
         cursor: pointer;
       }
       .dx-sheet-row:hover { background: #141417; }
-      .dx-sheet-row.selected { background: rgba(209,215,222,0.12); }
+      .dx-sheet-row.selected {
+        background: rgba(209,215,222,0.1);
+        box-shadow: inset 0 0 0 1px #1e1e22;
+      }
+      .dx-sheet-row.hit { color: #f2f4f7; }
       .dx-sheet-row .meta { color: #9ba3ae; font-size: 12px; }
       .dx-sheet-row .hits { display: block; font-size: 11px; color: #9ba3ae; margin-top: 2px; }
       .dx-sheet-badge {
-        font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+        font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
         color: #d1d7de; border: 1px solid #1e1e22; background: rgba(242,244,247,0.08);
-        border-radius: 6px; padding: 2px 6px;
+        border-radius: 999px; padding: 3px 7px;
       }
       .dx-sheet-dialect-head {
         position: sticky; top: 0; background: #0a0a0b; z-index: 1;
-        padding: 10px 12px 12px; border-bottom: 1px solid #1e1e22; margin-bottom: 6px;
+        padding: 10px 12px 12px; border-bottom: 1px solid #1e1e22; margin-bottom: 8px;
       }
-      .dx-sheet-dialect-head .lang { font-size: 18px; font-weight: 700; }
-      .dx-sheet-dialect-head .dia { font-size: 13px; color: #9ba3ae; margin-top: 2px; }
+      .dx-sheet-dialect-head .lang { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; }
+      .dx-sheet-dialect-head .dia { font-size: 13px; color: #9ba3ae; margin-top: 4px; }
+      .dx-dialect-card {
+        display: flex; align-items: center; gap: 6px;
+        margin: 0 4px 6px; padding: 2px;
+        border: 1px solid #1e1e22; border-radius: 12px; background: #141417;
+      }
+      .dx-dialect-card.selected { border-color: #d1d7de; }
       .dx-sheet-star, .dx-sheet-info {
         background: transparent; border: none; color: #9ba3ae;
-        cursor: pointer; font-size: 15px; padding: 0 4px; line-height: 1;
+        cursor: pointer; font-size: 15px; padding: 0 6px; line-height: 1;
       }
       .dx-sheet-star.on { color: #d1d7de; }
       .dx-sheet-info {
@@ -205,6 +249,7 @@
         border-radius: 8px; padding: 6px 10px; font-size: 12px;
         font-family: Manrope, system-ui, sans-serif;
         box-shadow: 0 8px 24px rgba(0,0,0,0.45); pointer-events: none;
+        max-width: 280px;
       }
       .dx-sheet-actions {
         display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 16px 14px;
@@ -219,8 +264,9 @@
         background: #f2f4f7; color: #000; border-color: #f2f4f7;
       }
       @media (max-width: 640px) {
-        .dx-sheet-body { grid-template-columns: 46% 54%; }
-        .dx-sheet-brand { letter-spacing: 0.12em; font-size: 11px; }
+        .dx-sheet-body { grid-template-columns: 45% 55%; }
+        .dx-sheet-brand { letter-spacing: 0.18em; font-size: 10px; }
+        .dx-sheet-dialect-head .lang { font-size: 18px; }
       }
     `;
     (document.head || document.documentElement).appendChild(style);
@@ -235,6 +281,8 @@
       ensureStyles();
       document.getElementById("dx-sheet-root")?.remove();
       document.querySelector(".dx-city-hint")?.remove();
+      unlockBody?.();
+      lockBody();
 
       let languageId =
         catalog.resolveLanguageId(opts.languageId) || catalog.DEFAULT_LANGUAGE;
@@ -248,10 +296,10 @@
       root.id = "dx-sheet-root";
       root.className = "dx-sheet-backdrop";
       root.innerHTML = `
-        <div class="dx-sheet" role="dialog" aria-modal="true" aria-label="Choose dialect">
+        <div class="dx-sheet" role="dialog" aria-modal="true" aria-label="Select a dialect">
           <div class="dx-sheet-header">
             <div class="dx-sheet-brand">Dialex</div>
-            <h2 class="dx-sheet-title">Choose dialect</h2>
+            <h2 class="dx-sheet-title">Select a dialect</h2>
             <button type="button" class="dx-sheet-close" aria-label="Close">×</button>
           </div>
           <div class="dx-sheet-auto" id="dx-sheet-auto" hidden></div>
@@ -259,7 +307,8 @@
           <div class="dx-sheet-body">
             <div class="dx-sheet-col" id="dx-sheet-langs">
               <div class="dx-sheet-search-wrap">
-                <input class="dx-sheet-search" id="dx-sheet-search" placeholder="Search languages or dialects" />
+                <input class="dx-sheet-search" id="dx-sheet-search" placeholder="Search languages or dialects" aria-label="Search languages or dialects" />
+                <button type="button" class="dx-sheet-search-clear" id="dx-sheet-search-clear" hidden aria-label="Clear search">×</button>
               </div>
               <div id="dx-sheet-lang-list"></div>
             </div>
@@ -270,11 +319,11 @@
       `;
       (document.body || document.documentElement).appendChild(root);
 
-      const sheetEl = root.querySelector(".dx-sheet");
       const quickEl = root.querySelector("#dx-sheet-quick");
       const langsList = root.querySelector("#dx-sheet-lang-list");
       const dialectsEl = root.querySelector("#dx-sheet-dialects");
       const searchEl = root.querySelector("#dx-sheet-search");
+      const searchClear = root.querySelector("#dx-sheet-search-clear");
       const autoEl = root.querySelector("#dx-sheet-auto");
       const actionsEl = root.querySelector("#dx-sheet-actions");
       const closeBtn = root.querySelector(".dx-sheet-close");
@@ -282,7 +331,7 @@
       if (opts.showAutoTranslate) {
         autoEl.hidden = false;
         const label = document.createElement("span");
-        label.innerHTML = "<strong>Auto-Translate</strong>";
+        label.innerHTML = "<strong>Auto-translate</strong>";
         const sw = document.createElement("input");
         sw.type = "checkbox";
         sw.checked = opts.autoTranslate !== false;
@@ -299,7 +348,7 @@
           btn.textContent = opts.translateLabel || "Translate";
           btn.addEventListener("click", (e) => {
             e.stopPropagation();
-            opts.onSelect({ languageId, dialectId });
+            opts.onSelect({ languageId, dialectId, complete: true });
             pushRecent(dialectId);
             opts.onTranslate();
             close();
@@ -311,7 +360,7 @@
           a.href = opts.padUrl;
           a.target = "_blank";
           a.rel = "noopener noreferrer";
-          a.textContent = "Open Pad";
+          a.textContent = "Open Dialex Pad";
           a.addEventListener("click", (e) => e.stopPropagation());
           actionsEl.appendChild(a);
         }
@@ -325,6 +374,7 @@
 
       function close() {
         hideHint();
+        unlockBody?.();
         root.remove();
         document.removeEventListener("keydown", onKey);
         opts.onClose?.();
@@ -336,7 +386,7 @@
         dialectId = d.id;
         languageId = d.languageId;
         pushRecent(dialectId);
-        opts.onSelect({ languageId, dialectId });
+        opts.onSelect({ languageId, dialectId, complete: Boolean(closeAfter) });
         if (closeAfter) close();
         else {
           renderQuick();
@@ -358,6 +408,7 @@
         const ok = nameHit || groupHit || badgeHit || dialectHits.length > 0;
         return {
           ok,
+          nameHit: nameHit || groupHit || badgeHit,
           dialectHits: nameHit || groupHit || badgeHit ? [] : dialectHits.slice(0, 2),
         };
       }
@@ -406,10 +457,12 @@
       function renderLangs() {
         langsList.innerHTML = "";
         const q = query.trim().toLowerCase();
+        searchClear.hidden = !query.trim();
+        let shown = 0;
         catalog.groups.forEach((group) => {
           const hits = catalog.languagesForGroup(group.id).map((lang) => {
             const m = langMatches(lang, q);
-            return m.ok ? { lang, dialectHits: m.dialectHits } : null;
+            return m.ok ? { lang, dialectHits: m.dialectHits, nameHit: m.nameHit } : null;
           }).filter(Boolean);
           if (!hits.length) return;
           const isHeaderless = group.id === "en";
@@ -417,7 +470,11 @@
           if (!isHeaderless) {
             const gh = document.createElement("div");
             gh.className = "dx-sheet-group";
-            gh.textContent = (open ? "▾ " : "▸ ") + group.name;
+            const chev = document.createElement("span");
+            chev.className = "chev";
+            chev.textContent = open ? "▾" : "▸";
+            gh.appendChild(chev);
+            gh.appendChild(document.createTextNode(group.name));
             gh.addEventListener("click", (e) => {
               e.stopPropagation();
               if (q) return;
@@ -429,6 +486,7 @@
           }
           if (!open) return;
           hits.forEach(({ lang, dialectHits }) => {
+            shown += 1;
             const row = document.createElement("button");
             row.type = "button";
             row.className = "dx-sheet-row" + (lang.id === languageId ? " selected" : "");
@@ -439,7 +497,7 @@
             if (dialectHits.length) {
               const sub = document.createElement("span");
               sub.className = "hits";
-              sub.textContent = dialectHits.map((d) => d.name).join(", ");
+              sub.textContent = dialectHits.map((d) => d.name).join(" · ");
               left.appendChild(sub);
             }
             row.appendChild(left);
@@ -448,19 +506,35 @@
               badge.className = "dx-sheet-badge";
               badge.textContent = germanic;
               row.appendChild(badge);
+            } else if (lang.id === languageId) {
+              const mark = document.createElement("span");
+              mark.className = "meta";
+              mark.textContent = "●";
+              row.appendChild(mark);
             }
             row.addEventListener("click", (e) => {
               e.stopPropagation();
               languageId = lang.id;
               const def = catalog.defaultDialectFor(languageId);
               if (def) dialectId = def.id;
-              opts.onSelect({ languageId, dialectId });
+              opts.onSelect({ languageId, dialectId, complete: false });
+              if (!dialectHits.length) {
+                query = "";
+                searchEl.value = "";
+              }
+              renderQuick();
               renderLangs();
               renderDialects();
             });
             langsList.appendChild(row);
           });
         });
+        if (!shown) {
+          const empty = document.createElement("div");
+          empty.className = "dx-sheet-empty";
+          empty.textContent = "No matches";
+          langsList.appendChild(empty);
+        }
       }
 
       function renderDialects() {
@@ -475,26 +549,36 @@
         langEl.textContent = (lang?.name || "").replace(/ Cluster$/, "");
         const diaEl = document.createElement("div");
         diaEl.className = "dia";
-        diaEl.textContent = current && current.languageId === languageId ? current.name : "";
+        diaEl.textContent =
+          current && current.languageId === languageId ? current.name : "";
         head.appendChild(langEl);
         head.appendChild(diaEl);
         dialectsEl.appendChild(head);
 
         const q = query.trim().toLowerCase();
-        let list = catalog.dialectsFor(languageId);
-        if (q) list = list.filter((d) => d.name.toLowerCase().includes(q));
+        const list = catalog.dialectsFor(languageId);
         const favs = new Set(mem.favorites);
         list.forEach((d) => {
           const wrap = document.createElement("div");
-          wrap.style.display = "flex";
-          wrap.style.alignItems = "center";
+          wrap.className = "dx-dialect-card" + (d.id === dialectId ? " selected" : "");
           const row = document.createElement("button");
           row.type = "button";
-          row.className = "dx-sheet-row" + (d.id === dialectId ? " selected" : "");
+          row.className =
+            "dx-sheet-row" +
+            (d.id === dialectId ? " selected" : "") +
+            (q && d.name.toLowerCase().includes(q) ? " hit" : "");
           row.style.flex = "1";
+          const nameWrap = document.createElement("span");
           const name = document.createElement("span");
           name.textContent = d.name;
-          row.appendChild(name);
+          nameWrap.appendChild(name);
+          if (d.description) {
+            const sub = document.createElement("span");
+            sub.className = "hits";
+            sub.textContent = d.description;
+            nameWrap.appendChild(sub);
+          }
+          row.appendChild(nameWrap);
           if (d.id === dialectId) {
             const mark = document.createElement("span");
             mark.className = "meta";
@@ -511,7 +595,7 @@
             info.type = "button";
             info.className = "dx-sheet-info";
             info.textContent = "i";
-            info.setAttribute("aria-label", d.description);
+            info.setAttribute("aria-label", "About " + d.name);
             info.addEventListener("click", (e) => {
               e.stopPropagation();
               hideHint();
@@ -530,7 +614,11 @@
           star.type = "button";
           star.className = "dx-sheet-star" + (favs.has(d.id) ? " on" : "");
           star.textContent = favs.has(d.id) ? "★" : "☆";
-          star.title = "Favorite";
+          star.title = favs.has(d.id) ? "Remove from favorites" : "Add to favorites";
+          star.setAttribute(
+            "aria-label",
+            favs.has(d.id) ? "Remove " + d.name + " from favorites" : "Add " + d.name + " to favorites"
+          );
           star.addEventListener("click", (e) => {
             e.stopPropagation();
             toggleFavorite(d.id);
@@ -557,6 +645,14 @@
         query = searchEl.value;
         renderLangs();
         renderDialects();
+      });
+      searchClear.addEventListener("click", (e) => {
+        e.stopPropagation();
+        query = "";
+        searchEl.value = "";
+        renderLangs();
+        renderDialects();
+        searchEl.focus();
       });
       document.addEventListener("keydown", onKey);
       searchEl.focus();

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Dialex Pad. Translate into the dialect people actually speak."
+      content="Dialex Pad. Translate into the dialect people speak."
     />
     <title>Dialex</title>
     <link rel="stylesheet" href="styles.css" />
@@ -15,6 +15,8 @@
     />
   </head>
   <body>
+    <div class="grain" aria-hidden="true"></div>
+
     <header class="site-header">
       <a class="brand" href="#pad">Dialex</a>
     </header>
@@ -26,54 +28,58 @@
         <span class="c c3">AAVE</span>
         <span class="c c4">Sicilian</span>
         <span class="c c5">Najdi</span>
-        <span class="c c6">Emirati</span>
-        <span class="c c7">Quebecois</span>
-        <span class="c c8">Jeolla</span>
+        <span class="c c6">Levantine</span>
+        <span class="c c7">Gulf</span>
+        <span class="c c8">Maghrebi</span>
       </div>
 
-      <div class="pad-shell">
-        <div class="pad-stack">
-          <div class="pane">
+      <section class="pad-shell">
+        <div class="pane source-pane">
+          <div class="pane-top">
             <div class="pane-label">Source</div>
-            <textarea
-              id="pad-input"
-              placeholder="AI-detected language/dialect"
-              aria-label="Source text"
-            ></textarea>
-            <div class="pad-actions">
-              <button type="button" class="icon-btn" id="pad-mic" aria-label="Voice input" title="Voice input">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M12 14a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v4a3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="1.8"/>
-                  <path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                </svg>
-              </button>
-              <button type="button" class="btn btn-primary" id="pad-translate">Translate</button>
+            <button type="button" class="icon-btn mic-inline" id="pad-mic" aria-label="Voice input" title="Voice input">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 14a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v4a3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <textarea
+            id="pad-input"
+            placeholder="AI-detected language/dialect"
+            aria-label="Source text"
+          ></textarea>
+          <div class="pad-actions">
+            <button type="button" class="btn btn-primary" id="pad-translate">Translate</button>
+            <div class="ghost-group">
               <button type="button" class="ghost-btn" id="pad-share">Share</button>
               <button type="button" class="ghost-btn" id="pad-clear">Clear</button>
             </div>
-            <div class="status-line" id="pad-status" role="status" aria-live="polite"></div>
           </div>
-
-          <div class="pane output-pane" id="pad-output-pane">
-            <button type="button" class="dialect-bump" id="pad-dialect-bump" aria-label="Choose dialect">
-              <span id="pad-dialect-label">Arabic · Modern Standard Arabic</span>
-              <svg class="bump-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              </svg>
-            </button>
-            <div class="pane-label">Dialect translation</div>
-            <div class="output-text" id="pad-output" aria-live="polite">
-              The dialect version appears here.
-            </div>
-            <div class="transliteration" id="pad-translit" hidden></div>
-          </div>
+          <div class="status-line" id="pad-status" role="status" aria-live="polite"></div>
         </div>
-      </div>
+
+        <div class="pad-divider">
+          <button type="button" class="dialect-bump" id="pad-dialect-bump" aria-label="Select a dialect">
+            <span id="pad-dialect-label">Arabic · Modern Standard Arabic</span>
+            <svg class="bump-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="pane output-pane" id="pad-output-pane">
+          <div class="pane-label">Translation</div>
+          <div class="output-text" id="pad-output" aria-live="polite">
+            Translation appears here.
+          </div>
+          <div class="transliteration" id="pad-translit" hidden></div>
+        </div>
+      </section>
     </main>
 
     <footer class="site-footer">
-      <span>Dialex</span>
-      <a href="https://github.com/ramialdouri/DialectsOnX-Chrome">DialectsOnX for X</a>
+      Dialex · <a href="https://github.com/ramialdouri/DialectsOnX-Chrome">DialectsOnX for X</a>
     </footer>
 
     <script src="js/catalog.js"></script>

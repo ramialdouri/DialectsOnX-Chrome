@@ -1,7 +1,7 @@
 (function () {
   const DEFAULT_BACKEND =
     "https://dialex-backend-f6b7-1086119311146.europe-west3.run.app";
-  const EMPTY_OUTPUT = "The dialect version appears here.";
+  const EMPTY_OUTPUT = "Translation appears here.";
 
   function normalizeBackendUrl(url) {
     const trimmed = (url || "").trim().replace(/\/+$/, "");
@@ -67,12 +67,23 @@
     const micBtn = document.getElementById("pad-mic");
     const clearBtn = document.getElementById("pad-clear");
     const shareBtn = document.getElementById("pad-share");
+    const actions = document.querySelector(".pad-actions");
 
     let languageId = catalog.DEFAULT_LANGUAGE;
     let dialectId = catalog.DEFAULT_DIALECT;
     let mediaRecorder = null;
     let chunks = [];
     let busy = false;
+
+    function placeMic() {
+      if (!micBtn || !actions) return;
+      const desktop = window.matchMedia("(min-width: 721px)").matches;
+      if (desktop) {
+        actions.insertBefore(micBtn, translateBtn);
+      } else {
+        document.querySelector(".pane-top")?.appendChild(micBtn);
+      }
+    }
 
     function setStatus(msg, kind) {
       statusEl.textContent = msg || "";
@@ -98,7 +109,7 @@
     async function runTranslate() {
       const text = inputEl.value.trim();
       if (!text) {
-        setStatus("Enter text or use the mic first.", "error");
+        setStatus("Enter text, or record with the microphone.", "error");
         return;
       }
       if (busy) return;
@@ -122,7 +133,7 @@
         sheet.pushRecent(dialectId);
         setStatus(data.cached ? "Done (cached)" : "Done");
       } catch (err) {
-        setStatus(err.message || "Translation failed", "error");
+        setStatus(err.message || "Translation failed.", "error");
       } finally {
         busy = false;
         translateBtn.disabled = false;
@@ -133,11 +144,11 @@
       sheet.openDialectSheet({
         languageId,
         dialectId,
-        onSelect: ({ languageId: lid, dialectId: did }) => {
+        onSelect: ({ languageId: lid, dialectId: did, complete }) => {
           languageId = lid;
           dialectId = did;
           refreshBump();
-          if (inputEl.value.trim()) runTranslate();
+          if (complete && inputEl.value.trim()) runTranslate();
         },
       });
     }
@@ -148,7 +159,7 @@
         return;
       }
       if (!navigator.mediaDevices?.getUserMedia) {
-        setStatus("Microphone not supported in this browser.", "error");
+        setStatus("Microphone is not available in this browser.", "error");
         return;
       }
       try {
@@ -175,19 +186,23 @@
             inputEl.value = stt.text || "";
             await runTranslate();
           } catch (err) {
-            setStatus(err.message || "STT failed", "error");
+            setStatus(err.message || "Transcription failed.", "error");
           }
         };
         mediaRecorder.start();
         micBtn.classList.add("recording");
-        setStatus("Recording... tap mic to stop");
+        setStatus("Recording. Tap the microphone to stop.");
       } catch {
-        setStatus("Microphone permission denied.", "error");
+        setStatus("Microphone permission was denied.", "error");
       }
     }
 
-    bumpBtn.addEventListener("click", openSheet);
+    bumpBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openSheet();
+    });
     document.getElementById("pad-output-pane")?.addEventListener("click", (e) => {
+      if (e.target.closest(".dialect-bump")) return;
       if (e.target === outputEl || e.target.id === "pad-output-pane") {
         if (isEmptyOutput()) openSheet();
       }
@@ -212,13 +227,15 @@
           await navigator.share({ text });
         } else {
           await navigator.clipboard.writeText(text);
-          setStatus("Copied translation");
+          setStatus("Copied to clipboard.");
         }
       } catch {
-        setStatus("Share canceled");
+        setStatus("Share canceled.");
       }
     });
 
+    window.addEventListener("resize", placeMic);
+    placeMic();
     refreshBump();
   }
 

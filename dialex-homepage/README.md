@@ -2,7 +2,7 @@
 
 Public Pad for Dialex (`dialex-app.com`).
 
-Catalog and UI align with Dialex Android branch `early-debug-and-design` (commit `a385a0c`):
+Catalog and UI align with Dialex Android `main` (commit `112b2ec`):
 283 dialects, black / Manrope theme, full-viewport dialect sheet
 (Favorites / Recents + Language | Dialect). English has no group header.
 
@@ -30,4 +30,4 @@ python3 -m http.server 8080
 
 ## Theme
 
-Pure black canvas, Manrope, mist / silver accents matching Android `colors.xml` on `early-debug-and-design`.
+Charcoal canvas (`#0A0A0B`), Manrope, mist / silver accents matching Android `colors.xml` on `main`.
