@@ -5,6 +5,7 @@
 (function () {
   const catalog = globalThis.DialexCatalog;
   const sheetApi = globalThis.DialexSheet;
+  const sttApi = globalThis.DialexStt;
   if (!catalog) return;
 
   const DEFAULT_BACKEND_URL =
@@ -19,6 +20,15 @@
   let activeTarget = null;
   let originals = new WeakMap();
   let busy = false;
+  let holdBar = false;
+  let stopping = false;
+  let mediaRecorder = null;
+  let recordChunks = [];
+  let recordTarget = null;
+  let recordTimer = null;
+  const RECORD_MAX_MS = 60000;
+  const MIC_SVG =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v4a3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="1.8"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 
   function loadSettings() {
     chrome.storage.sync.get(
@@ -63,6 +73,14 @@
     return Boolean(el.isContentEditable);
   }
 
+  function canDictate(el) {
+    if (!isEditable(el)) return false;
+    if (el instanceof HTMLInputElement && (el.type || "").toLowerCase() === "password") {
+      return false;
+    }
+    return true;
+  }
+
   function readValue(el) {
     if (el.isContentEditable) return el.innerText || "";
     return el.value || "";
@@ -87,6 +105,30 @@
     else el.value = value;
     el.dispatchEvent(new Event("input", { bubbles: true }));
     el.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function insertValue(el, text) {
+    if (!el || !text) return;
+    if (el.isContentEditable) {
+      el.focus();
+      const ok = document.execCommand("insertText", false, text);
+      if (!ok) {
+        const cur = readValue(el);
+        writeValue(el, cur ? `${cur.replace(/\s+$/, "")} ${text}` : text);
+      } else {
+        el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+      }
+      return;
+    }
+    el.focus();
+    const start = el.selectionStart ?? (el.value || "").length;
+    const end = el.selectionEnd ?? (el.value || "").length;
+    const next = `${(el.value || "").slice(0, start)}${text}${(el.value || "").slice(end)}`;
+    writeValue(el, next);
+    const pos = start + text.length;
+    try {
+      el.setSelectionRange(pos, pos);
+    } catch (_) {}
   }
 
   function injectStyles() {
@@ -138,6 +180,18 @@
         border-bottom: 1px dashed #d1d7de;
         background: #141417;
       }
+      #dialx-ime-bar button.ime-mic {
+        padding: 5px 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 0;
+      }
+      #dialx-ime-bar button.ime-mic svg { display: block; }
+      #dialx-ime-bar button.ime-mic.recording {
+        border-color: #cf6b6b;
+        color: #cf6b6b;
+      }
     `;
     document.documentElement.appendChild(style);
   }
@@ -149,6 +203,7 @@
     barEl.id = "dialx-ime-bar";
     barEl.innerHTML = `
       <button type="button" id="dialx-ime-dialect"></button>
+      <button type="button" class="ime-mic" id="dialx-ime-mic" aria-label="Voice input" title="Voice input">${MIC_SVG}</button>
       <button type="button" class="primary" id="dialx-ime-translate">Translate</button>
       <button type="button" id="dialx-ime-toggle" hidden>Original</button>
       <a id="dialx-ime-pad" href="${DIALEX_PAD_URL}" target="_blank" rel="noopener noreferrer">Open Dialex Pad</a>
@@ -162,6 +217,13 @@
     barEl.querySelector("#dialx-ime-dialect").addEventListener("click", (e) => {
       e.preventDefault();
       openSheet();
+    });
+    barEl.querySelector("#dialx-ime-mic").addEventListener("mousedown", (e) => {
+      e.preventDefault();
+    });
+    barEl.querySelector("#dialx-ime-mic").addEventListener("click", (e) => {
+      e.preventDefault();
+      toggleMic();
     });
     barEl.querySelector("#dialx-ime-translate").addEventListener("mousedown", (e) => {
       e.preventDefault();
@@ -206,14 +268,30 @@
     refreshBarLabels();
     const rect = target.getBoundingClientRect();
     const top = Math.min(window.innerHeight - 56, Math.max(8, rect.bottom + 8));
-    const left = Math.max(8, Math.min(rect.left, window.innerWidth - (bar.offsetWidth || 320) - 8));
+    const left = Math.max(8, Math.min(rect.left, window.innerWidth - (bar.offsetWidth || 380) - 8));
     bar.style.top = `${top}px`;
     bar.style.left = `${left}px`;
     bar.hidden = false;
   }
 
   function hideBar() {
+    if (holdBar) return;
     if (barEl) barEl.hidden = true;
+  }
+
+  function setBarBusy(on) {
+    if (!barEl) return;
+    barEl.querySelector("#dialx-ime-mic").disabled = on;
+    barEl.querySelector("#dialx-ime-translate").disabled = on;
+  }
+
+  function setRecordingUi(on) {
+    if (!barEl) return;
+    const mic = barEl.querySelector("#dialx-ime-mic");
+    mic.classList.toggle("recording", on);
+    mic.setAttribute("aria-label", on ? "Stop recording" : "Voice input");
+    mic.setAttribute("title", on ? "Stop recording" : "Voice input");
+    barEl.querySelector("#dialx-ime-translate").disabled = on;
   }
 
   function setStatus(msg, isError) {
@@ -232,8 +310,7 @@
       return;
     }
     busy = true;
-    const btn = barEl.querySelector("#dialx-ime-translate");
-    btn.disabled = true;
+    setBarBusy(true);
     setStatus("Translating...");
     try {
       if (!originals.has(target)) originals.set(target, readValue(target));
@@ -264,7 +341,7 @@
       setStatus(err.message || "Failed", true);
     } finally {
       busy = false;
-      btn.disabled = false;
+      setBarBusy(false);
     }
   }
 
@@ -275,17 +352,117 @@
     setStatus("Restored original");
   }
 
+  function clearRecordTimer() {
+    if (recordTimer) {
+      clearTimeout(recordTimer);
+      recordTimer = null;
+    }
+  }
+
+  async function toggleMic() {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      stopping = true;
+      mediaRecorder.stop();
+      return;
+    }
+    if (busy || stopping) return;
+    const target = activeTarget;
+    if (!target || !canDictate(target)) {
+      setStatus("Focus a text field first.", true);
+      return;
+    }
+    if (!sttApi) {
+      setStatus("Transcription failed.", true);
+      return;
+    }
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      setStatus("Microphone needs a secure (https) page.", true);
+      return;
+    }
+    holdBar = true;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = sttApi.recorderMime();
+      recordChunks = [];
+      recordTarget = target;
+      mediaRecorder = mime
+        ? new MediaRecorder(stream, { mimeType: mime })
+        : new MediaRecorder(stream);
+      const usedMime = mediaRecorder.mimeType || mime || "audio/webm";
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size) recordChunks.push(e.data);
+      };
+      mediaRecorder.onstop = async () => {
+        clearRecordTimer();
+        stopping = false;
+        stream.getTracks().forEach((t) => t.stop());
+        setRecordingUi(false);
+        mediaRecorder = null;
+        const blob = new Blob(recordChunks, { type: usedMime });
+        recordChunks = [];
+        const field = recordTarget;
+        recordTarget = null;
+        if (!blob.size) {
+          holdBar = false;
+          setStatus("No audio captured.", true);
+          return;
+        }
+        busy = true;
+        setBarBusy(true);
+        setStatus("Transcribing...");
+        try {
+          const result = await sttApi.transcribe({
+            backendUrl: DEFAULT_BACKEND_URL,
+            blob,
+          });
+          if (field && isEditable(field)) {
+            if (!originals.has(field)) originals.set(field, readValue(field));
+            insertValue(field, result.text);
+            barEl.querySelector("#dialx-ime-toggle").hidden = false;
+            activeTarget = field;
+            try {
+              field.focus();
+            } catch (_) {}
+            positionBar(field);
+          }
+          setStatus("Done");
+        } catch (err) {
+          setStatus(err.message || "Transcription failed.", true);
+        } finally {
+          busy = false;
+          holdBar = false;
+          setBarBusy(false);
+        }
+      };
+      mediaRecorder.start(250);
+      setRecordingUi(true);
+      setStatus("Recording. Tap the microphone to stop.");
+      recordTimer = setTimeout(() => {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+          stopping = true;
+          mediaRecorder.stop();
+        }
+      }, RECORD_MAX_MS);
+    } catch {
+      holdBar = false;
+      stopping = false;
+      setRecordingUi(false);
+      setStatus("Microphone permission was denied.", true);
+    }
+  }
+
   function onFocusIn(e) {
     const t = e.target;
     if (!isEditable(t)) return;
     activeTarget = t;
     ensureBar();
     positionBar(t);
-    setStatus("");
+    if (!holdBar) setStatus("");
   }
 
   function onFocusOut() {
     setTimeout(() => {
+      if (holdBar) return;
       const active = document.activeElement;
       if (barEl && (barEl === active || barEl.contains(active))) return;
       if (document.getElementById("dx-sheet-root")) return;

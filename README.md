@@ -10,7 +10,7 @@ Catalog / picker aligned with Dialex Android `main` @ `112b2ec`: 15 groups, 56 s
 - English has no group header (Germanic badge), matching Android
 - Sheet is full viewport height and only as wide as the language/dialect names
 - X feed translate (`client_source: clip`); news/official to MSA
-- IME: focus any site text box, Translate replaces text in place (`ime`). No soft keyboard
+- IME: focus any site text box, Translate replaces text in place (`ime`). Mic dictation uses the same 16 kHz WAV STT path as Pad. No soft keyboard
 - Full Pad + STT on [Dialex Homepage](https://dialex-app.com/#pad)
 - Black / mist / silver Dialex sheet chrome (Manrope)
 
@@ -25,7 +25,7 @@ Production API: `https://dialex-backend-f6b7-1086119311146.europe-west3.run.app`
 | Endpoint | Used by |
 |--|--|
 | `POST /translate` | Feed (`clip`), IME (`ime`) |
-| `POST /stt` | Dialex Homepage Pad only |
+| `POST /stt` | Homepage Pad and DialectsOnX IME (16 kHz mono WAV) |
 
 The in-repo [`backend/`](backend/) folder is legacy v0.1 (Arabic-only Render prototype) and is not used by v0.2.
 
@@ -36,7 +36,8 @@ extension/
   dialects.js   # generated from Dialex-Android main @ 112b2ec
   sheet.js      # Dialex dialect sheet
   content.js    # X feed
-  ime.js        # website field rewrite
+  ime.js        # website field rewrite + mic STT
+  stt.js        # 16 kHz mono WAV for /stt
   popup.html
 backend/        # DEPRECATED: local legacy only
 ```

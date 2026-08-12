@@ -9,7 +9,8 @@
 - `extension/dialects.js`: catalog
 - `extension/sheet.js`: full-height dialect sheet, width fits names
 - `extension/content.js`: X feed (`client_source: clip`)
-- `extension/ime.js`: field rewrite (`ime`), no soft keyboard
+- `extension/ime.js`: field rewrite (`ime`) + mic STT, no soft keyboard
+- `extension/stt.js`: convert recordings to 16 kHz mono WAV before `POST /stt`
 - Production backend: Cloud Run (repo `backend/` is legacy)
 
 ## Rules
