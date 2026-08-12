@@ -1,6 +1,6 @@
 const catalog = globalThis.DialexCatalog;
 const DEFAULT_DIALECT = catalog?.DEFAULT_DIALECT || "arabic_msa";
-const DEFAULT_LANGUAGE = catalog?.DEFAULT_LANGUAGE || "ar";
+const DEFAULT_LANGUAGE = catalog?.DEFAULT_LANGUAGE || "arabic";
 const MSA_DIALECT = "arabic_msa";
 const DEFAULT_BACKEND_URL =
   "https://dialex-backend-f6b7-1086119311146.europe-west3.run.app";
@@ -73,20 +73,21 @@ function dialectLabel(dialectId) {
   const id = catalog?.normalizeDialectId(dialectId) || dialectId;
   const dialect = catalog?.dialectById(id);
   if (!dialect) return dialectId || "";
-  if (id === MSA_DIALECT) return `🌐 ${dialect.abbrev}`;
+  if (id === MSA_DIALECT) return `🌐 ${dialect.name}`;
   return dialect.name;
 }
 
 function dialectAbbrev(dialectId) {
   const id = catalog?.normalizeDialectId(dialectId) || dialectId;
+  if (id === MSA_DIALECT) return "🌐 MSA";
   const dialect = catalog?.dialectById(id);
   if (!dialect) return dialectId || "";
-  if (id === MSA_DIALECT) return `🌐 ${dialect.abbrev}`;
-  return dialect.abbrev;
+  // Compact control-bar label
+  return dialect.name.length > 18 ? dialect.name.slice(0, 16) + "…" : dialect.name;
 }
 
 function allDialectIds() {
-  return (catalog?.dialects || []).map((d) => d.id);
+  return (catalog?.dialects || []).filter((d) => !d.hidden).map((d) => d.id);
 }
 
 function injectDialxStyles() {
@@ -606,6 +607,10 @@ function normalizeStoredDialect(dialect) {
   return catalog?.normalizeDialectId(dialect) || null;
 }
 
+function normalizeStoredLanguage(language) {
+  return catalog?.resolveLanguageId(language) || null;
+}
+
 function canOperate() {
   return (
     dialxActive &&
@@ -646,7 +651,7 @@ function loadSettings() {
         const migrated = normalizeStoredDialect(data.preferredDialect) || DEFAULT_DIALECT;
         preferredDialect = migrated;
         preferredLanguage =
-          data.preferredLanguage ||
+          normalizeStoredLanguage(data.preferredLanguage) ||
           catalog?.dialectById(migrated)?.languageId ||
           DEFAULT_LANGUAGE;
         autoTranslateEnabled = data.autoTranslate !== false;
@@ -2313,11 +2318,14 @@ function observeArticleForTranslation(article) {
   observeElementForTranslation(article);
 }
 
-function setAsDefault(dialect) {
+function setAsDefault(dialect, language) {
   const normalized = normalizeStoredDialect(dialect);
   if (!canOperate() || !normalized) return;
   preferredDialect = normalized;
-  preferredLanguage = catalog?.dialectById(normalized)?.languageId || preferredLanguage;
+  preferredLanguage =
+    normalizeStoredLanguage(language) ||
+    catalog?.dialectById(normalized)?.languageId ||
+    preferredLanguage;
   chrome.storage.sync.set({
     preferredDialect: normalized,
     preferredLanguage
@@ -2471,185 +2479,54 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
 }
 
 function showDialectSelector(controlBar, postId) {
-  if (!canOperate() || !catalog) return;
+  if (!canOperate() || !catalog || !globalThis.DialexSheet) return;
   injectDialxStyles();
 
   if (activePanelCleanup) {
     activePanelCleanup();
     activePanelCleanup = null;
   }
-  const existing = document.getElementById("dialect-panel");
-  if (existing) existing.remove();
+  document.getElementById("dialect-panel")?.remove();
+  document.getElementById("dx-sheet-root")?.remove();
 
   const state = postStates.get(postId);
   let sheetLanguage =
-    preferredLanguage ||
+    normalizeStoredLanguage(preferredLanguage) ||
     catalog.dialectById(preferredDialect)?.languageId ||
     DEFAULT_LANGUAGE;
   let sheetDialect = isValidDialect(preferredDialect)
     ? preferredDialect
     : catalog.defaultDialectFor(sheetLanguage)?.id || DEFAULT_DIALECT;
 
-  const panel = document.createElement("div");
-  panel.id = "dialect-panel";
-  panel.className = "dialx-panel";
-
-  const title = document.createElement("div");
-  title.className = "dialx-panel-title";
-  title.textContent = "Choose Dialect";
-  panel.appendChild(title);
-
-  const autoRow = document.createElement("label");
-  autoRow.className = "dialx-panel-auto-row";
-
-  const autoMain = document.createElement("span");
-  autoMain.className = "dialx-panel-auto-main";
-
-  const autoSwitch = document.createElement("span");
-  autoSwitch.className = "dialx-switch";
-
-  const autoCheckbox = document.createElement("input");
-  autoCheckbox.type = "checkbox";
-  autoCheckbox.checked = autoTranslateEnabled;
-  autoCheckbox.addEventListener("change", () => {
-    if (!canOperate()) return;
-    autoTranslateEnabled = autoCheckbox.checked;
-    chrome.storage.sync.set({ autoTranslate: autoTranslateEnabled });
-  });
-
-  const autoSlider = document.createElement("span");
-  autoSlider.className = "dialx-switch-slider";
-
-  autoSwitch.appendChild(autoCheckbox);
-  autoSwitch.appendChild(autoSlider);
-  autoMain.appendChild(autoSwitch);
-
-  const autoText = document.createElement("span");
-  autoText.className = "dialx-panel-auto-text";
-  autoText.innerHTML = "<strong>Auto-Translate</strong>";
-  autoMain.appendChild(autoText);
-  autoRow.appendChild(autoMain);
-  panel.appendChild(autoRow);
-
-  const langField = document.createElement("div");
-  langField.className = "dialx-panel-field";
-  const langLabel = document.createElement("label");
-  langLabel.className = "dialx-panel-field-label";
-  langLabel.textContent = "Language";
-  langLabel.htmlFor = "dialx-sheet-language";
-  const langSelect = document.createElement("select");
-  langSelect.id = "dialx-sheet-language";
-  langSelect.className = "dialx-panel-select";
-  catalog.languages.forEach((lang) => {
-    const opt = document.createElement("option");
-    opt.value = lang.id;
-    opt.textContent = lang.name;
-    langSelect.appendChild(opt);
-  });
-  langSelect.value = sheetLanguage;
-  langField.appendChild(langLabel);
-  langField.appendChild(langSelect);
-  panel.appendChild(langField);
-
-  const dialectField = document.createElement("div");
-  dialectField.className = "dialx-panel-field";
-  const dialectLabelEl = document.createElement("div");
-  dialectLabelEl.className = "dialx-panel-field-label";
-  dialectLabelEl.textContent = "Dialect";
-  const chipRow = document.createElement("div");
-  chipRow.className = "dialx-chip-row";
-  dialectField.appendChild(dialectLabelEl);
-  dialectField.appendChild(chipRow);
-  panel.appendChild(dialectField);
-
-  function renderChips() {
-    chipRow.innerHTML = "";
-    catalog.dialectsFor(sheetLanguage).forEach((dialect) => {
-      const chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "dialx-chip" + (dialect.id === sheetDialect ? " selected" : "");
-      chip.textContent = dialect.name;
-      chip.addEventListener("click", (e) => {
-        e.stopPropagation();
-        sheetDialect = dialect.id;
-        setAsDefault(dialect.id);
-        if (state) state.activeDialect = dialect.id;
-        renderChips();
-        state?.updateMainButton?.();
-      });
-      chipRow.appendChild(chip);
-    });
-  }
-
-  langSelect.addEventListener("change", () => {
-    sheetLanguage = langSelect.value;
-    preferredLanguage = sheetLanguage;
-    const next = catalog.defaultDialectFor(sheetLanguage);
-    sheetDialect = next?.id || DEFAULT_DIALECT;
-    setAsDefault(sheetDialect);
-    if (state) state.activeDialect = sheetDialect;
-    renderChips();
-    state?.updateMainButton?.();
-  });
-
-  renderChips();
-
-  const actions = document.createElement("div");
-  actions.className = "dialx-panel-actions";
-
-  const translateBtn = document.createElement("button");
-  translateBtn.type = "button";
-  translateBtn.className = "dialx-btn-sm";
-  translateBtn.textContent = "Translate post";
-  translateBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (state) state.activeDialect = sheetDialect;
-    translatePostToDialect(postId, sheetDialect, translateBtn);
-  });
-
-  const padLink = document.createElement("a");
-  padLink.className = "dialx-panel-link";
-  padLink.href = DIALEX_PAD_URL;
-  padLink.target = "_blank";
-  padLink.rel = "noopener noreferrer";
-  padLink.textContent = "Open Dialex Pad";
-  padLink.addEventListener("click", (e) => e.stopPropagation());
-
-  actions.appendChild(translateBtn);
-  actions.appendChild(padLink);
-  panel.appendChild(actions);
-
-  document.body.appendChild(panel);
-  positionDialectPanel(panel, controlBar);
-
-  const reposition = () => {
-    if (document.getElementById("dialect-panel") === panel) {
-      positionDialectPanel(panel, controlBar);
+  DialexSheet.openDialectSheet({
+    languageId: sheetLanguage,
+    dialectId: sheetDialect,
+    showAutoTranslate: true,
+    autoTranslate: autoTranslateEnabled,
+    onAutoTranslateChange: (checked) => {
+      if (!canOperate()) return;
+      autoTranslateEnabled = checked;
+      chrome.storage.sync.set({ autoTranslate: autoTranslateEnabled });
+    },
+    translateLabel: "Translate post",
+    padUrl: DIALEX_PAD_URL,
+    onSelect: ({ languageId, dialectId }) => {
+      sheetLanguage = languageId;
+      sheetDialect = dialectId;
+      setAsDefault(dialectId, languageId);
+      if (state) state.activeDialect = dialectId;
+      state?.updateMainButton?.();
+    },
+    onTranslate: () => {
+      if (state) state.activeDialect = sheetDialect;
+      translatePostToDialect(postId, sheetDialect, null);
+    },
+    onClose: () => {
+      activePanelCleanup = null;
     }
-  };
-  window.addEventListener("scroll", reposition, true);
-  window.addEventListener("resize", reposition);
-
-  const cleanup = () => {
-    window.removeEventListener("scroll", reposition, true);
-    window.removeEventListener("resize", reposition);
-    document.removeEventListener("click", closeOnOutside, true);
-    if (activePanelCleanup === cleanup) activePanelCleanup = null;
-  };
-  activePanelCleanup = cleanup;
-
-  const closeOnOutside = (e) => {
-    if (!panel.contains(e.target) && !controlBar.contains(e.target)) {
-      panel.remove();
-      cleanup();
-    }
-  };
-  setTimeout(() => {
-    document.addEventListener("click", closeOnOutside, true);
-  }, 0);
-
-  panel.addEventListener("click", (e) => e.stopPropagation());
+  });
 }
+
 
 let autoTranslateBudget = 0;
 

@@ -1,44 +1,19 @@
-# DialectsOnX Project Instructions for Cursor
+# DialectsOnX — Cursor Instructions
 
-## Project Overview
-- Chrome Extension that translates X (Twitter) posts to the user's preferred dialect (Dialex catalog).
-- IME mode swaps text inside focused website text boxes.
-- Full Pad + STT is on Dialex Homepage (`https://dialex-app.com/#pad`), not in the extension.
-- Uses Dialex Cloud Run + Grok.
+## Source of truth
+- Dialex Android branch **`early-debug-and-design`** (not July `main`)
+- Catalog: 283 dialects / 56 spoken / 15 groups
+- Live API: Dialex Cloud Run (`pad|lens|clip|share|ime`)
 
-## Current Stack
-- Frontend: Chrome Extension (Manifest V3)
-- Shared catalog: `extension/dialects.js`
-- X UI: `extension/content.js`
-- IME: `extension/ime.js`
-- Backend (production): Dialex Cloud Run
+## Stack
+- `extension/dialects.js` — catalog
+- `extension/sheet.js` — modal dialect sheet
+- `extension/content.js` — X feed (`client_source: clip`)
+- `extension/ime.js` — field rewrite (`ime`), no soft keyboard
+- Production backend: Cloud Run (repo `backend/` is legacy)
 
-## Dialect catalog
-Use live Dialex IDs (`arabic_egyptian`, `spanish_mexican`, …). Migrate legacy short keys via `DialexCatalog.normalizeDialectId`.
-
-News / official posts (gray badges, news heuristics) → force `arabic_msa`.
-
-## Dialect sheet UX
-Replace the old radio grid with Dialex Android pattern:
-- Language dropdown
-- Dialect chips for selected language
-- Auto-translate toggle
-- Translate post action
-- Link to Dialex Pad
-
-## API
-```json
-{
-  "text": "...",
-  "target_dialect": "arabic_egyptian",
-  "source_language": "auto",
-  "client_source": "clip"
-}
-```
-IME uses `client_source: "ime"`. Homepage Pad uses `pad`.
-
-## Coding Rules
-- Prefer clean, stable code.
-- Only auto-translate posts currently visible (Intersection Observer).
-- Reduce unnecessary translation requests.
-- Keep one dialect panel instance; close on outside click.
+## Rules
+- News/official → `arabic_msa`
+- Dialect sheet: Favorites/Recents + Language|Dialect + search
+- Theme for Dialex chrome: black / mist / silver / Manrope
+- Prefer fewer translation requests; visibility-gated auto-translate on X

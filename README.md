@@ -1,66 +1,45 @@
 # DialectsOnX — Dialect Translator for X
 
-**DialectsOnX** is a Chrome Extension that translates X posts into your preferred dialect, and can swap text in website text boxes (IME-style). Powered by the shared **Dialex** backend.
+Chrome extension that translates X posts into Dialex dialects and can rewrite text in website text boxes (IME-style). Uses the shared **Dialex Cloud Run** backend.
+
+Catalog / picker aligned with Dialex Android **`early-debug-and-design`**: 15 groups · 56 spoken languages · **283 dialects**.
 
 ## Features (v0.2)
 
-- **Multi-language Dialex catalog:** Arabic, Spanish, English, Portuguese, French dialects
-- **Dialex-style dialect sheet:** language dropdown + dialect chips (replaces the v0.1 radio panel)
-- **Smart translation on X:**
-  - Normal posts → preferred dialect
-  - News & official (gray badge) → MSA by default
-- **IME Pad:** focus any site text box → Translate replaces the text in place (`client_source: ime`)
-- **Full Pad + STT:** hosted on [Dialex Homepage](https://dialex-app.com/#pad) (link in popup & sheet)
-- Backend: Dialex Cloud Run + Grok
+- Full Dialex dialect catalog with Favorites / Recents + Language | Dialect sheet
+- X feed translate (`client_source: clip`); news/official → MSA
+- IME: focus any site text box → Translate replaces text in place (`ime`) — no soft keyboard
+- Full Pad + STT on [Dialex Homepage](https://dialex-app.com/#pad)
+- Black / mist / silver Dialex sheet chrome (Manrope)
 
 ## Installation
 
-1. Download the latest release zip (or use the `extension/` folder)
-2. Go to `chrome://extensions/`
-3. Enable **Developer mode**
-4. **Load unpacked** → select the `extension` folder
+1. Load unpacked `extension/` from `chrome://extensions/` (Developer mode)
 
 ## Backend
 
-Default base URL:
-
-`https://dialex-backend-f6b7-1086119311146.europe-west3.run.app`
+Default: `https://dialex-backend-f6b7-1086119311146.europe-west3.run.app`
 
 | Endpoint | Used by |
 |--|--|
-| `POST /translate` | X feed (`clip`), IME (`ime`) |
-| `GET /health` | Popup health check |
-| `POST /stt` | Dialex Homepage Pad |
+| `POST /translate` | Feed (`clip`), IME (`ime`) |
+| `GET /health` | Popup |
+| `POST /stt` | Dialex Homepage Pad only |
 
-Override the URL in the extension popup if needed.
+The in-repo [`backend/`](backend/) folder is **legacy v0.1** (Arabic-only Render prototype) and is **not** used by v0.2. Do not point the extension at it.
 
-## Project structure
+## Structure
 
 ```bash
-dialectsonx/
-├── extension/          # Chrome Extension (MV3)
-│   ├── manifest.json
-│   ├── dialects.js     # Shared Dialex catalog
-│   ├── content.js      # X feed UI + translate
-│   ├── ime.js          # Website textbox IME
-│   ├── popup.html
-│   └── popup.js
-└── backend/            # Legacy local FastAPI (optional; production uses Dialex Cloud Run)
+extension/
+  dialects.js   # generated from early-debug-and-design
+  sheet.js      # Dialex dialect sheet
+  content.js    # X feed
+  ime.js        # website field rewrite
+  popup.html
+backend/        # DEPRECATED — local legacy only
 ```
-
-## Dialex Homepage Pad
-
-Full Pad (source/output panes + mic STT) lives on the Dialex site:
-
-`https://dialex-app.com/#pad`
-
-Until DNS is live, use the Cloudflare Pages preview URL after deploying [Dialex-Homepage](https://github.com/ramialdouri/Dialex-Homepage) (see also the `dialex-homepage/` branch/PR if present).
-
-## Tech stack
-
-- Chrome Manifest V3
-- Dialex Cloud Run API (Grok 4.3 + STT)
 
 ## Note
 
-Early release (**v0.2.0**). Feedback welcome.
+v0.2.0 early release. Source of truth for catalog/UX: Dialex-Android `early-debug-and-design`.

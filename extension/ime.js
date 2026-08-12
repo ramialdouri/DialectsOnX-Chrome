@@ -1,9 +1,10 @@
 /**
  * DialectsOnX IME — translate swaps text in focused website textboxes.
- * Full Pad with panes lives at https://dialex-app.com/#pad
+ * Uses Dialex dialect sheet (not a soft keyboard). Full Pad: dialex-app.com/#pad
  */
 (function () {
   const catalog = globalThis.DialexCatalog;
+  const sheetApi = globalThis.DialexSheet;
   if (!catalog) return;
 
   const DEFAULT_BACKEND_URL =
@@ -36,7 +37,7 @@
         preferredDialect =
           catalog.normalizeDialectId(data.preferredDialect) || DEFAULT_DIALECT;
         preferredLanguage =
-          data.preferredLanguage ||
+          catalog.resolveLanguageId(data.preferredLanguage) ||
           catalog.dialectById(preferredDialect)?.languageId ||
           DEFAULT_LANGUAGE;
         backendUrl = normalizeBackendUrl(data.backendUrl);
@@ -53,7 +54,9 @@
         preferredDialect;
     }
     if (changes.preferredLanguage?.newValue) {
-      preferredLanguage = changes.preferredLanguage.newValue || preferredLanguage;
+      preferredLanguage =
+        catalog.resolveLanguageId(changes.preferredLanguage.newValue) ||
+        preferredLanguage;
     }
     if (changes.backendUrl) {
       backendUrl = normalizeBackendUrl(changes.backendUrl.newValue);
@@ -66,18 +69,9 @@
     if (el instanceof HTMLTextAreaElement) return true;
     if (el instanceof HTMLInputElement) {
       const type = (el.type || "text").toLowerCase();
-      return (
-        type === "text" ||
-        type === "search" ||
-        type === "email" ||
-        type === "url" ||
-        type === "tel" ||
-        type === "" ||
-        type === "password"
-      );
+      return ["text", "search", "email", "url", "tel", "", "password"].includes(type);
     }
-    if (el.isContentEditable) return true;
-    return false;
+    return Boolean(el.isContentEditable);
   }
 
   function readValue(el) {
@@ -95,9 +89,10 @@
       return;
     }
     el.focus();
-    const proto = el instanceof HTMLTextAreaElement
-      ? HTMLTextAreaElement.prototype
-      : HTMLInputElement.prototype;
+    const proto =
+      el instanceof HTMLTextAreaElement
+        ? HTMLTextAreaElement.prototype
+        : HTMLInputElement.prototype;
     const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
     if (setter) setter.call(el, value);
     else el.value = value;
@@ -119,48 +114,38 @@
         align-items: center;
         padding: 8px 10px;
         border-radius: 12px;
-        background: #0a0b0c;
-        border: 1px solid #2a2e33;
+        background: #0a0a0b;
+        border: 1px solid #1e1e22;
         box-shadow: 0 10px 30px rgba(0,0,0,0.45);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         font-size: 12px;
-        color: #e6e8ea;
-      }
-      #dialx-ime-bar select {
-        appearance: none;
-        background: #1c1f22;
-        color: #e6e8ea;
-        border: 1px solid #2a2e33;
-        border-radius: 8px;
-        padding: 5px 8px;
-        font: inherit;
-        max-width: 140px;
+        color: #f2f4f7;
       }
       #dialx-ime-bar button, #dialx-ime-bar a {
         border-radius: 999px;
-        border: 1px solid #2a2e33;
-        background: #141618;
-        color: #e6e8ea;
+        border: 1px solid #1e1e22;
+        background: #141417;
+        color: #f2f4f7;
         padding: 5px 10px;
         font: inherit;
         cursor: pointer;
         text-decoration: none;
       }
       #dialx-ime-bar button.primary {
-        background: #3d9b8f;
-        border-color: #3d9b8f;
-        color: #0a0b0c;
+        background: #f2f4f7;
+        border-color: #f2f4f7;
+        color: #000;
         font-weight: 700;
       }
-      #dialx-ime-bar button:disabled {
-        opacity: 0.55;
-        cursor: default;
-      }
-      #dialx-ime-bar .status {
-        color: #9aa3ad;
-        min-width: 0;
-      }
+      #dialx-ime-bar button:disabled { opacity: 0.55; cursor: default; }
+      #dialx-ime-bar .status { color: #9ba3ae; }
       #dialx-ime-bar .status.error { color: #cf6b6b; }
+      #dialx-ime-dialect {
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     `;
     document.documentElement.appendChild(style);
   }
@@ -171,8 +156,7 @@
     barEl = document.createElement("div");
     barEl.id = "dialx-ime-bar";
     barEl.innerHTML = `
-      <select id="dialx-ime-language" aria-label="Language"></select>
-      <select id="dialx-ime-dialect" aria-label="Dialect"></select>
+      <button type="button" id="dialx-ime-dialect"></button>
       <button type="button" class="primary" id="dialx-ime-translate">Translate</button>
       <button type="button" id="dialx-ime-toggle" hidden>Original</button>
       <a id="dialx-ime-pad" href="${DIALEX_PAD_URL}" target="_blank" rel="noopener noreferrer">Open Pad</a>
@@ -180,36 +164,18 @@
     `;
     document.documentElement.appendChild(barEl);
 
-    const langSelect = barEl.querySelector("#dialx-ime-language");
-    catalog.languages.forEach((lang) => {
-      const opt = document.createElement("option");
-      opt.value = lang.id;
-      opt.textContent = lang.name;
-      langSelect.appendChild(opt);
+    barEl.querySelector("#dialx-ime-dialect").addEventListener("mousedown", (e) => {
+      e.preventDefault();
     });
-
-    langSelect.addEventListener("change", () => {
-      preferredLanguage = langSelect.value;
-      const next = catalog.defaultDialectFor(preferredLanguage);
-      preferredDialect = next?.id || DEFAULT_DIALECT;
-      chrome.storage.sync.set({ preferredLanguage, preferredDialect });
-      fillDialectSelect();
+    barEl.querySelector("#dialx-ime-dialect").addEventListener("click", (e) => {
+      e.preventDefault();
+      openSheet();
     });
-
-    barEl.querySelector("#dialx-ime-dialect").addEventListener("change", (e) => {
-      preferredDialect = e.target.value;
-      preferredLanguage =
-        catalog.dialectById(preferredDialect)?.languageId || preferredLanguage;
-      chrome.storage.sync.set({ preferredDialect, preferredLanguage });
-    });
-
     barEl.querySelector("#dialx-ime-translate").addEventListener("mousedown", (e) => {
       e.preventDefault();
-      e.stopPropagation();
     });
     barEl.querySelector("#dialx-ime-translate").addEventListener("click", (e) => {
       e.preventDefault();
-      e.stopPropagation();
       runTranslate();
     });
     barEl.querySelector("#dialx-ime-toggle").addEventListener("mousedown", (e) => {
@@ -223,36 +189,32 @@
     return barEl;
   }
 
-  function fillDialectSelect() {
-    if (!barEl) return;
-    const dialectSelect = barEl.querySelector("#dialx-ime-dialect");
-    const langSelect = barEl.querySelector("#dialx-ime-language");
-    langSelect.value = preferredLanguage;
-    dialectSelect.innerHTML = "";
-    catalog.dialectsFor(preferredLanguage).forEach((d) => {
-      const opt = document.createElement("option");
-      opt.value = d.id;
-      opt.textContent = d.name;
-      dialectSelect.appendChild(opt);
-    });
-    if (!catalog.dialectById(preferredDialect) ||
-        catalog.dialectById(preferredDialect).languageId !== preferredLanguage) {
-      preferredDialect =
-        catalog.defaultDialectFor(preferredLanguage)?.id || DEFAULT_DIALECT;
-    }
-    dialectSelect.value = preferredDialect;
-  }
-
   function refreshBarLabels() {
     if (!barEl) return;
-    fillDialectSelect();
+    barEl.querySelector("#dialx-ime-dialect").textContent =
+      catalog.summaryLabel(preferredDialect);
+  }
+
+  function openSheet() {
+    if (!sheetApi) return;
+    sheetApi.openDialectSheet({
+      languageId: preferredLanguage,
+      dialectId: preferredDialect,
+      onSelect: ({ languageId, dialectId }) => {
+        preferredLanguage = languageId;
+        preferredDialect = dialectId;
+        chrome.storage.sync.set({ preferredLanguage, preferredDialect });
+        refreshBarLabels();
+      }
+    });
   }
 
   function positionBar(target) {
     const bar = ensureBar();
+    refreshBarLabels();
     const rect = target.getBoundingClientRect();
     const top = Math.min(window.innerHeight - 56, Math.max(8, rect.bottom + 8));
-    let left = Math.max(8, Math.min(rect.left, window.innerWidth - bar.offsetWidth - 8));
+    const left = Math.max(8, Math.min(rect.left, window.innerWidth - (bar.offsetWidth || 320) - 8));
     bar.style.top = `${top}px`;
     bar.style.left = `${left}px`;
     bar.hidden = false;
@@ -299,9 +261,7 @@
           const err = await res.json();
           detail = err.detail?.detail || err.detail || err.error || detail;
           if (typeof detail !== "string") detail = JSON.stringify(detail);
-        } catch {
-          /* ignore */
-        }
+        } catch {}
         throw new Error(detail);
       }
       const data = await res.json();
@@ -319,32 +279,24 @@
   function toggleOriginal() {
     const target = activeTarget;
     if (!target || !originals.has(target)) return;
-    const original = originals.get(target);
-    const current = readValue(target);
-    if (current === original) {
-      setStatus("Already original");
-      return;
-    }
-    writeValue(target, original);
+    writeValue(target, originals.get(target));
     setStatus("Restored original");
   }
 
   function onFocusIn(e) {
     const t = e.target;
     if (!isEditable(t)) return;
-    // Skip X compose if feed content script handles posts — still allow IME on inputs
     activeTarget = t;
     ensureBar();
-    fillDialectSelect();
     positionBar(t);
     setStatus("");
   }
 
-  function onFocusOut(e) {
-    // Keep bar if focus moves into the bar itself
+  function onFocusOut() {
     setTimeout(() => {
       const active = document.activeElement;
       if (barEl && (barEl === active || barEl.contains(active))) return;
+      if (document.getElementById("dx-sheet-root")) return;
       if (active && isEditable(active)) {
         activeTarget = active;
         positionBar(active);
@@ -354,15 +306,13 @@
     }, 0);
   }
 
-  function onScrollOrResize() {
-    if (activeTarget && document.activeElement === activeTarget) {
-      positionBar(activeTarget);
-    }
-  }
-
   loadSettings();
   document.addEventListener("focusin", onFocusIn, true);
   document.addEventListener("focusout", onFocusOut, true);
-  window.addEventListener("scroll", onScrollOrResize, true);
-  window.addEventListener("resize", onScrollOrResize);
+  window.addEventListener("scroll", () => {
+    if (activeTarget && document.activeElement === activeTarget) positionBar(activeTarget);
+  }, true);
+  window.addEventListener("resize", () => {
+    if (activeTarget && document.activeElement === activeTarget) positionBar(activeTarget);
+  });
 })();
