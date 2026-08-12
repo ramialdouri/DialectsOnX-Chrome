@@ -1,6 +1,7 @@
 (function () {
   const DEFAULT_BACKEND =
     "https://dialex-backend-f6b7-1086119311146.europe-west3.run.app";
+
   async function translateText({ text, targetDialect, signal }) {
     const res = await fetch(`${DEFAULT_BACKEND}/translate`, {
       method: "POST",
@@ -46,7 +47,6 @@
     const micBtn = document.getElementById("pad-mic");
     const clearBtn = document.getElementById("pad-clear");
     const shareBtn = document.getElementById("pad-share");
-    const actions = document.querySelector(".pad-actions");
 
     let languageId = catalog.DEFAULT_LANGUAGE;
     let dialectId = catalog.DEFAULT_DIALECT;
@@ -56,16 +56,6 @@
     let stopping = false;
     let recordTimer = null;
     const RECORD_MAX_MS = 60000;
-
-    function placeMic() {
-      if (!micBtn || !actions) return;
-      const desktop = window.matchMedia("(min-width: 721px)").matches;
-      if (desktop) {
-        actions.insertBefore(micBtn, translateBtn);
-      } else {
-        document.querySelector(".pane-top")?.appendChild(micBtn);
-      }
-    }
 
     function setStatus(msg, kind) {
       statusEl.textContent = msg || "";
@@ -248,8 +238,6 @@
       }
     });
 
-    window.addEventListener("resize", placeMic);
-    placeMic();
     refreshBump();
   }
 

@@ -127,17 +127,6 @@ a:hover {
   min-height: 168px;
 }
 
-.pane-top {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.75rem;
-}
-
-.pane-top:empty {
-  display: none;
-}
-
 .pane textarea {
   flex: 1;
   width: 100%;
@@ -234,6 +223,12 @@ a:hover {
   align-items: center;
 }
 
+.translate-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
 .ghost-group {
   display: flex;
   align-items: center;
@@ -320,18 +315,6 @@ a:hover {
   letter-spacing: 0.01em;
 }
 
-@media (min-width: 721px) {
-  .pad-actions {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-  }
-
-  .pad-actions .btn-primary {
-    justify-self: start;
-  }
-}
-
 @media (max-width: 720px) {
   .site-header {
     justify-content: center;
@@ -353,13 +336,8 @@ a:hover {
     max-width: calc(100% - 1.5rem);
   }
 
-  .pad-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .btn-primary {
-    width: 100%;
+    width: auto;
     background: transparent;
     color: var(--silver);
     border: 1px solid var(--ink-border);
@@ -368,11 +346,6 @@ a:hover {
   .btn-primary:hover {
     background: #1a1a1e;
     color: var(--mist);
-  }
-
-  .ghost-group {
-    margin-left: 0;
-    justify-content: flex-end;
   }
 }
 
