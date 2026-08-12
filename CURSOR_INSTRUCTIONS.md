@@ -1,31 +1,44 @@
 # DialectsOnX Project Instructions for Cursor
 
 ## Project Overview
-- Chrome Extension that automatically translates X (Twitter) posts to the user's preferred Arabic dialect.
-- Uses Grok 4.3 via xAI SDK for translation.
-- Clean, subtle UI.
+- Chrome Extension that translates X (Twitter) posts to the user's preferred dialect (Dialex catalog).
+- IME mode swaps text inside focused website text boxes.
+- Full Pad + STT is on Dialex Homepage (`https://dialex-app.com/#pad`), not in the extension.
+- Uses Dialex Cloud Run + Grok.
 
 ## Current Stack
 - Frontend: Chrome Extension (Manifest V3)
-- Backend: FastAPI + xAI SDK
-- Main file for UI: `extension/content.js`
+- Shared catalog: `extension/dialects.js`
+- X UI: `extension/content.js`
+- IME: `extension/ime.js`
+- Backend (production): Dialex Cloud Run
 
-## Key Requirements
+## Dialect catalog
+Use live Dialex IDs (`arabic_egyptian`, `spanish_mexican`, …). Migrate legacy short keys via `DialexCatalog.normalizeDialectId`.
 
-### Dialect List (Exact Order)
-MSA, Emirati, Saudi-Najdi, Saudi-Hijazi, Kuwaiti, Qatari, Syrian, Lebanese, Jordanian, Palestinian, Iraqi, Egyptian, Sudanese, Moroccan, Algerian, Tunisian
+News / official posts (gray badges, news heuristics) → force `arabic_msa`.
 
-### Important Behavior Rules
-- **News / Official posts + Gray badge accounts + Yellow badge accounts**: Must show **MSA** (`🌐 MSA`) and **never auto-translate** to user's dialect.
-  - This includes posts containing news/official keywords and posts from accounts with gray verification badges.
-- Normal posts: Auto-translate to user's preferred dialect.
-- Main button (country/flag) must toggle properly between Translated and Original.
-- Only **one** "Dialect Selector" button per post.
-- Gray buttons with black text.
-- Dialect selector panel must close when clicking outside.
-- Use **sliding toggle buttons** (switches) for selecting the "Default" dialect (only one can be active at a time).
+## Dialect sheet UX
+Replace the old radio grid with Dialex Android pattern:
+- Language dropdown
+- Dialect chips for selected language
+- Auto-translate toggle
+- Translate post action
+- Link to Dialex Pad
 
-### Coding Rules
-- Prioritize clean, functional, and stable code.
-- Only translate posts that are currently visible on screen (use Intersection Observer).
-- Reduce unnecessary translation requests as much as possible.
+## API
+```json
+{
+  "text": "...",
+  "target_dialect": "arabic_egyptian",
+  "source_language": "auto",
+  "client_source": "clip"
+}
+```
+IME uses `client_source: "ime"`. Homepage Pad uses `pad`.
+
+## Coding Rules
+- Prefer clean, stable code.
+- Only auto-translate posts currently visible (Intersection Observer).
+- Reduce unnecessary translation requests.
+- Keep one dialect panel instance; close on outside click.

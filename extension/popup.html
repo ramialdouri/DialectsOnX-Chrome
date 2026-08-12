@@ -4,11 +4,11 @@
   <meta charset="utf-8" />
   <style>
     body {
-      width: 300px;
+      width: 320px;
       margin: 0;
-      padding: 20px 16px;
-      background: #000;
-      color: #e7e9ea;
+      padding: 18px 16px;
+      background: #0a0b0c;
+      color: #e6e8ea;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       text-align: center;
     }
@@ -20,32 +20,47 @@
     }
     .version {
       font-size: 12px;
-      color: #71767b;
-      margin-bottom: 14px;
+      color: #9aa3ad;
+      margin-bottom: 12px;
     }
     p.intro {
       font-size: 13px;
-      color: #aab2b8;
+      color: #9aa3ad;
       line-height: 1.5;
-      margin: 0 0 16px 0;
+      margin: 0 0 14px 0;
+      text-align: left;
     }
-    p.intro b { color: #e7e9ea; }
+    p.intro b { color: #e6e8ea; }
+
+    .pad-link {
+      display: block;
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(61, 155, 143, 0.18);
+      border: 1px solid rgba(61, 155, 143, 0.45);
+      color: #7fd0c4;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .pad-link:hover { background: rgba(61, 155, 143, 0.28); }
 
     .settings {
       text-align: left;
-      border-top: 1px solid #2f3336;
+      border-top: 1px solid #2a2e33;
       padding-top: 14px;
     }
     .settings h3 {
       margin: 0 0 10px 0;
       font-size: 13px;
       font-weight: 700;
-      color: #e7e9ea;
+      color: #e6e8ea;
     }
     label {
       display: block;
       font-size: 12px;
-      color: #aab2b8;
+      color: #9aa3ad;
       margin-bottom: 5px;
     }
     .row {
@@ -55,70 +70,94 @@
     input[type="text"] {
       flex: 1;
       min-width: 0;
-      background: #16181c;
-      border: 1px solid #2f3336;
+      background: #141618;
+      border: 1px solid #2a2e33;
       border-radius: 8px;
-      color: #e7e9ea;
+      color: #e6e8ea;
       padding: 8px 10px;
       font-size: 12px;
       box-sizing: border-box;
     }
     input[type="text"]:focus {
       outline: none;
-      border-color: #1d9bf0;
+      border-color: #3d9b8f;
     }
-    button#save {
-      background: #1d9bf0;
-      color: #fff;
+    button#save, button#health {
+      background: #3d9b8f;
+      color: #0a0b0c;
       border: none;
       border-radius: 8px;
-      padding: 8px 14px;
+      padding: 8px 12px;
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
     }
-    button#save:hover { background: #1a8cd8; }
+    button#health {
+      background: #1c1f22;
+      color: #e6e8ea;
+      border: 1px solid #2a2e33;
+    }
+    button#save:hover { background: #4aafa2; }
     .footer-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-top: 8px;
       min-height: 16px;
+      gap: 8px;
     }
     #status {
       font-size: 11px;
-      color: #00ba7c;
+      color: #5cb88a;
       opacity: 0;
       transition: opacity 0.15s ease;
+      text-align: left;
     }
     #status.show { opacity: 1; }
-    #status.error { color: #f4212e; }
+    #status.error { color: #cf6b6b; }
     a#reset {
       font-size: 11px;
-      color: #1d9bf0;
+      color: #3d9b8f;
       cursor: pointer;
       text-decoration: none;
+      white-space: nowrap;
     }
     a#reset:hover { text-decoration: underline; }
+    #healthStatus {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #9aa3ad;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
   <img class="logo" src="DialectsOnX-logo.png" alt="DialectsOnX" />
-  <div class="version">v0.1</div>
-  <p class="intro">Controls appear directly on X posts.<br>
-     Click <b>Dialect Selector</b> on any post to change the dialect.</p>
+  <div class="version">v0.2</div>
+  <p class="intro">
+    On X, use <b>Dialect Selector</b> on posts.
+    On any site, focus a text box and tap <b>Translate</b> (IME).
+  </p>
+
+  <a class="pad-link" href="https://dialex-app.com/#pad" target="_blank" rel="noopener noreferrer">
+    Open Dialex Pad →
+  </a>
 
   <div class="settings">
     <h3>Settings</h3>
     <label for="backendUrl">Backend URL</label>
     <div class="row">
-      <input type="text" id="backendUrl" placeholder="https://dialectsonx.onrender.com" spellcheck="false" />
+      <input type="text" id="backendUrl" placeholder="https://dialex-backend-….run.app" spellcheck="false" />
       <button id="save" type="button">Save</button>
     </div>
     <div class="footer-row">
       <span id="status"></span>
       <a id="reset">Use default</a>
     </div>
+    <div class="row" style="margin-top:10px;">
+      <button id="health" type="button">Check health</button>
+    </div>
+    <div id="healthStatus"></div>
   </div>
 
   <script src="popup.js"></script>

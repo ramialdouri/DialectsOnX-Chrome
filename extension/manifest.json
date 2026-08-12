@@ -1,10 +1,16 @@
 {
   "manifest_version": 3,
   "name": "DialectsOnX",
-  "version": "0.1.0",
-  "description": "Translate X posts to your preferred Arabic dialect",
-  "permissions": ["activeTab", "storage"],
-  "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
+  "version": "0.2.0",
+  "description": "Translate X posts and website text boxes into Dialex dialects",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://dialex-backend-f6b7-1086119311146.europe-west3.run.app/*",
+    "http://*/*",
+    "https://*/*"
+  ],
   "icons": {
     "16": "icon16.png",
     "32": "icon32.png",
@@ -14,8 +20,14 @@
   "content_scripts": [
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["content.js"],
+      "js": ["dialects.js", "content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["dialects.js", "ime.js"],
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ],
   "action": {

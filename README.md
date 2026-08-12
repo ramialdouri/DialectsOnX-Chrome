@@ -1,81 +1,66 @@
 # DialectsOnX — Dialect Translator for X
 
-**DialectsOnX** is a Chrome Extension that automatically translates X posts into your preferred dialect. Makes X more natural and enjoyable to read. Helps users discover and engage with English and international content on X.
+**DialectsOnX** is a Chrome Extension that translates X posts into your preferred dialect, and can swap text in website text boxes (IME-style). Powered by the shared **Dialex** backend.
 
-## Features
+## Features (v0.2)
 
-- **16 Arabic dialects supported:**
-  MSA, Emirati, Saudi-Najdi, Saudi-Hijazi, Kuwaiti, Qatari, Syrian, Lebanese, Jordanian, Palestinian, Iraqi, Egyptian, Sudanese, Moroccan, Algerian, Tunisian
-- **Smart translation rules:**
-  - Normal posts → translated to your chosen dialect
-  - Detected news & official accounts (gray badges) → MSA by default
-- **Per-post control:**
-  - Click the dialect button to toggle between original and translated text
-  - "Dialect Selector" panel with radio buttons for default dialect selection
-- Clean UI that blends with X's design
-- Backend powered by **Grok 4.3** via the xAI API
+- **Multi-language Dialex catalog:** Arabic, Spanish, English, Portuguese, French dialects
+- **Dialex-style dialect sheet:** language dropdown + dialect chips (replaces the v0.1 radio panel)
+- **Smart translation on X:**
+  - Normal posts → preferred dialect
+  - News & official (gray badge) → MSA by default
+- **IME Pad:** focus any site text box → Translate replaces the text in place (`client_source: ime`)
+- **Full Pad + STT:** hosted on [Dialex Homepage](https://dialex-app.com/#pad) (link in popup & sheet)
+- Backend: Dialex Cloud Run + Grok
 
-## Installation (Easiest Method)
+## Installation
 
-1. Download `DialectsOnX-v0.1.0.zip` from the [Releases page] 
-2. Extract the zip file
-3. Go to `chrome://extensions/`
-4. Enable **Developer mode** (top right)
-5. Click **"Load unpacked"** and select the extracted `extension` folder
-
-**No backend setup required** — it connects automatically to the hosted backend.
+1. Download the latest release zip (or use the `extension/` folder)
+2. Go to `chrome://extensions/`
+3. Enable **Developer mode**
+4. **Load unpacked** → select the `extension` folder
 
 ## Backend
 
-The backend is hosted 24/7 on Render.com.
+Default base URL:
 
-**Base URL:** `https://dialectsonx.onrender.com`
+`https://dialex-backend-f6b7-1086119311146.europe-west3.run.app`
 
-**Main Endpoint:** `POST /translate`  
-(This receives the text and target dialect, then returns the translation)
+| Endpoint | Used by |
+|--|--|
+| `POST /translate` | X feed (`clip`), IME (`ime`) |
+| `GET /health` | Popup health check |
+| `POST /stt` | Dialex Homepage Pad |
 
-## Project Structure
+Override the URL in the extension popup if needed.
+
+## Project structure
 
 ```bash
 dialectsonx/
-├── extension/          # Chrome Extension files
+├── extension/          # Chrome Extension (MV3)
 │   ├── manifest.json
-│   ├── content.js
+│   ├── dialects.js     # Shared Dialex catalog
+│   ├── content.js      # X feed UI + translate
+│   ├── ime.js          # Website textbox IME
 │   ├── popup.html
 │   └── popup.js
-│   ├── DialectsOnX-logo.png
-│   ├── icon16.png
-│   ├── icon32.png
-│   ├── icon48.png
-│   └── icon128.png
-├── backend/            # FastAPI backend
-│   ├── main.py
-│   └── requirements.txt
+└── backend/            # Legacy local FastAPI (optional; production uses Dialex Cloud Run)
 ```
 
-## How It Works
+## Dialex Homepage Pad
 
-1. Uses a `MutationObserver` to detect on-screen posts
-2. Sends the post text to the hosted FastAPI backend
-3. The backend uses Grok 4.3 to translate it into the chosen dialect
-4. Results are injected directly into the post
+Full Pad (source/output panes + mic STT) lives on the Dialex site:
 
-## Future Plans
+`https://dialex-app.com/#pad`
 
-- Expansion to include support for additional international languages
-- Mobile support
-- In-sync video subtitles (Grok-generated per user request)
-- Translation quality optimization
-- Performance/speed optimization
-- News detection optimization
-- "Rate This Translation" feature
-- Minimazable "Dialect Selector" button
+Until DNS is live, use the Cloudflare Pages preview URL after deploying [Dialex-Homepage](https://github.com/ramialdouri/Dialex-Homepage) (see also the `dialex-homepage/` branch/PR if present).
 
-## Tech Stack
+## Tech stack
 
-- **Frontend:** Chrome Manifest V3 + JavaScript
-- **Backend:** FastAPI + xAI Grok 4.3
-
+- Chrome Manifest V3
+- Dialex Cloud Run API (Grok 4.3 + STT)
 
 ## Note
-This is an **early prototype (v0.1.0)**. Some bugs may exist. Feedback is very welcome!
+
+Early release (**v0.2.0**). Feedback welcome.
