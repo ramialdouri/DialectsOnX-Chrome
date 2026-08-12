@@ -7,7 +7,7 @@
 
 ## Stack
 - `extension/dialects.js`: catalog
-- `extension/sheet.js`: full-viewport dialect sheet
+- `extension/sheet.js`: full-height dialect sheet, width fits names
 - `extension/content.js`: X feed (`client_source: clip`)
 - `extension/ime.js`: field rewrite (`ime`), no soft keyboard
 - Production backend: Cloud Run (repo `backend/` is legacy)

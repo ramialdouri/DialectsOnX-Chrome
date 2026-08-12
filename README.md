@@ -8,7 +8,7 @@ Catalog / picker aligned with Dialex Android `main` @ `112b2ec`: 15 groups, 56 s
 
 - Full Dialex dialect catalog with Favorites / Recents + Language | Dialect sheet
 - English has no group header (Germanic badge), matching Android
-- Sheet fills the viewport
+- Sheet is full viewport height and only as wide as the language/dialect names
 - X feed translate (`client_source: clip`); news/official to MSA
 - IME: focus any site text box, Translate replaces text in place (`ime`). No soft keyboard
 - Full Pad + STT on [Dialex Homepage](https://dialex-app.com/#pad)
