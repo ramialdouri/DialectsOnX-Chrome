@@ -155,9 +155,19 @@
     return "";
   }
 
+  function nestedDetail(payload) {
+    const detail = payload && payload.detail;
+    if (detail && typeof detail === "object" && typeof detail.detail === "string") {
+      return detail.detail;
+    }
+    if (typeof detail === "string") return detail;
+    return "";
+  }
+
   function friendlyHttpError(status, payload) {
     const code = errorCode(payload);
     if (code === "empty_file") return "No audio captured.";
+    if (/returned no text/i.test(nestedDetail(payload))) return "No speech detected.";
     if (status === 413) return "Recording is too long.";
     if (status === 0 || status === 408) return "Could not reach Dialex.";
     return "Transcription failed.";

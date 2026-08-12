@@ -179,14 +179,24 @@
             setStatus("No audio captured.", "error");
             return;
           }
+          busy = true;
+          translateBtn.disabled = true;
+          if (micBtn) micBtn.disabled = true;
           setStatus("Transcribing...");
           try {
             const result = await speechToText({ blob });
             inputEl.value = result.text || "";
-            await runTranslate();
           } catch (err) {
+            busy = false;
+            translateBtn.disabled = false;
+            if (micBtn) micBtn.disabled = false;
             setStatus(err.message || "Transcription failed.", "error");
+            return;
           }
+          busy = false;
+          translateBtn.disabled = false;
+          if (micBtn) micBtn.disabled = false;
+          await runTranslate();
         };
         mediaRecorder.start(250);
         micBtn.classList.add("recording");
