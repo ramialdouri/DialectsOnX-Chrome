@@ -3,8 +3,9 @@
 Public Pad for Dialex (`dialex-app.com`).
 
 Catalog and UI align with Dialex Android `main` (commit `112b2ec`):
-283 dialects, black / Manrope theme, full-viewport dialect sheet
-(Favorites / Recents + Language | Dialect). English has no group header.
+283 dialects, black / Manrope theme, full-height dialect sheet
+(Favorites / Recents + Language | Dialect). The sheet is only as wide as
+the language and dialect names. English has no group header.
 
 Pad talks to Dialex Cloud Run:
 
