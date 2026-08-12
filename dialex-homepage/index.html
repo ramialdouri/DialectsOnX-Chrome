@@ -9,11 +9,14 @@
     />
     <title>Dialex — Speak every dialect</title>
     <link rel="stylesheet" href="styles.css" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230A0B0C'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%233D9B8F'/%3E%3C/svg%3E" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23000000'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23D1D7DE'/%3E%3C/svg%3E"
+    />
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="#">Dial<span>ex</span></a>
+      <a class="brand" href="#">Dialex</a>
       <a class="nav-cta" href="#pad">Open Pad</a>
     </header>
 
@@ -23,22 +26,13 @@
           <img src="assets/hero.png" alt="" width="1920" height="1080" />
         </div>
         <div class="hero-copy">
-          <p class="brand-mark">Dial<span>ex</span></p>
+          <p class="brand-mark">Dialex</p>
           <h1>Translate into the dialect people actually speak.</h1>
           <p>
-            Pad turns text or voice into natural spoken Arabic, Spanish, English,
-            Portuguese, and French dialects — powered by the same Dialex backend as the app.
+            Pad turns text or voice into natural spoken dialects across 50+ languages —
+            powered by the same Dialex backend as the app.
           </p>
-          <div class="btn-row">
-            <a class="btn btn-primary" href="#pad">Try Pad</a>
-            <a
-              class="btn btn-ghost"
-              href="https://github.com/ramialdouri/DialectsOnX-Chrome"
-              target="_blank"
-              rel="noopener noreferrer"
-              >DialectsOnX for X</a
-            >
-          </div>
+          <a class="btn btn-primary" href="#pad">Try Pad</a>
         </div>
       </section>
 
@@ -52,63 +46,37 @@
         </header>
 
         <div class="pad-shell">
-          <div class="pad-panes">
+          <div class="pad-stack">
             <div class="pane">
               <div class="pane-label">Source</div>
               <textarea
                 id="pad-input"
-                placeholder="Detect language — type or dictate something to translate…"
+                placeholder="AI-detected language/dialect — type or dictate…"
                 aria-label="Source text"
               ></textarea>
-              <div class="pane-actions">
-                <button
-                  type="button"
-                  class="icon-btn"
-                  id="pad-mic"
-                  aria-label="Start voice input"
-                  title="Voice input"
-                >
+              <div class="pad-actions">
+                <button type="button" class="icon-btn" id="pad-mic" aria-label="Voice input" title="Voice input">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path
-                      d="M12 14a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v4a3 3 0 0 0 3 3Z"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                    />
-                    <path
-                      d="M5 11a7 7 0 0 0 14 0M12 18v3"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                    />
+                    <path d="M12 14a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v4a3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                   </svg>
                 </button>
                 <button type="button" class="btn btn-primary" id="pad-translate">Translate</button>
+                <button type="button" class="ghost-btn" id="pad-share">Share</button>
+                <button type="button" class="ghost-btn" id="pad-clear">Clear</button>
               </div>
               <div class="status-line" id="pad-status" role="status" aria-live="polite"></div>
             </div>
 
-            <div class="pane">
+            <div class="pane output-pane" id="pad-output-pane">
+              <button type="button" class="dialect-bump" id="pad-dialect-bump" aria-label="Choose dialect">
+                Arabic · Modern Standard Arabic
+              </button>
               <div class="pane-label">Dialect translation</div>
               <div class="output-text" id="pad-output" aria-live="polite">
                 Your translation will show up here.
               </div>
               <div class="transliteration" id="pad-translit" hidden></div>
-            </div>
-          </div>
-
-          <div class="pad-footer">
-            <div>
-              <label class="field-label" for="pad-language">Target language</label>
-              <select id="pad-language" class="select" aria-label="Target language"></select>
-            </div>
-            <div>
-              <div class="field-label" id="pad-dialect-label">Target dialect</div>
-              <div
-                class="chip-row"
-                id="pad-dialects"
-                role="listbox"
-                aria-labelledby="pad-dialect-label"
-              ></div>
             </div>
           </div>
         </div>
@@ -117,15 +85,12 @@
 
     <footer class="site-footer">
       <span>© Dialex</span>
-      <span>
-        Backend:
-        <a href="https://dialex-backend-f6b7-1086119311146.europe-west3.run.app/health"
-          >Cloud Run</a
-        >
-      </span>
+      <a href="https://github.com/ramialdouri/DialectsOnX-Chrome">DialectsOnX for X</a>
+      <a href="https://dialex-backend-f6b7-1086119311146.europe-west3.run.app/health">Backend health</a>
     </footer>
 
     <script src="js/catalog.js"></script>
+    <script src="js/sheet.js"></script>
     <script src="js/pad.js"></script>
     <script src="js/main.js"></script>
   </body>

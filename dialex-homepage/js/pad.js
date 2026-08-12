@@ -7,22 +7,15 @@
     return trimmed || DEFAULT_BACKEND;
   }
 
-  async function translateText({
-    text,
-    targetDialect,
-    backendUrl = DEFAULT_BACKEND,
-    clientSource = "pad",
-    signal,
-  }) {
-    const endpoint = `${normalizeBackendUrl(backendUrl)}/translate`;
-    const res = await fetch(endpoint, {
+  async function translateText({ text, targetDialect, backendUrl, signal }) {
+    const res = await fetch(`${normalizeBackendUrl(backendUrl)}/translate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         text,
         target_dialect: targetDialect,
         source_language: "auto",
-        client_source: clientSource,
+        client_source: "pad",
       }),
       signal,
     });
@@ -32,47 +25,46 @@
         const err = await res.json();
         detail = err.detail?.detail || err.detail || err.error || detail;
         if (typeof detail !== "string") detail = JSON.stringify(detail);
-      } catch (_) {
-        /* ignore */
-      }
+      } catch (_) {}
       throw new Error(detail);
     }
     return res.json();
   }
 
-  async function speechToText({ blob, filename = "pad.webm", backendUrl = DEFAULT_BACKEND, signal }) {
-    const endpoint = `${normalizeBackendUrl(backendUrl)}/stt`;
+  async function speechToText({ blob, backendUrl }) {
     const form = new FormData();
-    form.append("file", blob, filename);
-    const res = await fetch(endpoint, { method: "POST", body: form, signal });
+    form.append("file", blob, "pad.webm");
+    const res = await fetch(`${normalizeBackendUrl(backendUrl)}/stt`, {
+      method: "POST",
+      body: form,
+    });
     if (!res.ok) {
       let detail = `HTTP ${res.status}`;
       try {
         const err = await res.json();
         detail = err.detail || err.error || detail;
         if (typeof detail !== "string") detail = JSON.stringify(detail);
-      } catch (_) {
-        /* ignore */
-      }
+      } catch (_) {}
       throw new Error(detail);
     }
     return res.json();
   }
 
-  function initPad(options = {}) {
+  function initPad() {
     const catalog = window.DialexCatalog;
-    const backendUrl = normalizeBackendUrl(options.backendUrl || DEFAULT_BACKEND);
+    const sheet = window.DialexSheet;
+    if (!catalog || !sheet) return;
 
+    const backendUrl = DEFAULT_BACKEND;
     const inputEl = document.getElementById("pad-input");
     const outputEl = document.getElementById("pad-output");
     const translitEl = document.getElementById("pad-translit");
     const statusEl = document.getElementById("pad-status");
-    const languageEl = document.getElementById("pad-language");
-    const dialectsEl = document.getElementById("pad-dialects");
+    const bumpBtn = document.getElementById("pad-dialect-bump");
     const translateBtn = document.getElementById("pad-translate");
     const micBtn = document.getElementById("pad-mic");
-
-    if (!inputEl || !catalog) return;
+    const clearBtn = document.getElementById("pad-clear");
+    const shareBtn = document.getElementById("pad-share");
 
     let languageId = catalog.DEFAULT_LANGUAGE;
     let dialectId = catalog.DEFAULT_DIALECT;
@@ -80,39 +72,13 @@
     let chunks = [];
     let busy = false;
 
-    function setStatus(message, kind) {
-      statusEl.textContent = message || "";
-      statusEl.classList.remove("error", "ok");
-      if (kind) statusEl.classList.add(kind);
+    function setStatus(msg, kind) {
+      statusEl.textContent = msg || "";
+      statusEl.classList.toggle("error", kind === "error");
     }
 
-    function renderLanguages() {
-      languageEl.innerHTML = "";
-      catalog.languages.forEach((lang) => {
-        const opt = document.createElement("option");
-        opt.value = lang.id;
-        opt.textContent = lang.name;
-        languageEl.appendChild(opt);
-      });
-      languageEl.value = languageId;
-    }
-
-    function renderDialects() {
-      dialectsEl.innerHTML = "";
-      catalog.dialectsFor(languageId).forEach((dialect) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "chip" + (dialect.id === dialectId ? " selected" : "");
-        btn.textContent = dialect.name;
-        btn.setAttribute("role", "option");
-        btn.setAttribute("aria-selected", dialect.id === dialectId ? "true" : "false");
-        btn.addEventListener("click", () => {
-          dialectId = dialect.id;
-          renderDialects();
-          if (inputEl.value.trim()) runTranslate();
-        });
-        dialectsEl.appendChild(btn);
-      });
+    function refreshBump() {
+      bumpBtn.textContent = catalog.summaryLabel(dialectId);
     }
 
     async function runTranslate() {
@@ -130,7 +96,6 @@
           text,
           targetDialect: dialectId,
           backendUrl,
-          clientSource: "pad",
         });
         outputEl.textContent = data.translation || "";
         if (data.transliteration) {
@@ -140,13 +105,27 @@
           translitEl.hidden = true;
           translitEl.textContent = "";
         }
-        setStatus(data.cached ? "Done (cached)" : "Done", "ok");
+        sheet.pushRecent(dialectId);
+        setStatus(data.cached ? "Done (cached)" : "Done");
       } catch (err) {
         setStatus(err.message || "Translation failed", "error");
       } finally {
         busy = false;
         translateBtn.disabled = false;
       }
+    }
+
+    function openSheet() {
+      sheet.openDialectSheet({
+        languageId,
+        dialectId,
+        onSelect: ({ languageId: lid, dialectId: did }) => {
+          languageId = lid;
+          dialectId = did;
+          refreshBump();
+          if (inputEl.value.trim()) runTranslate();
+        },
+      });
     }
 
     async function toggleMic() {
@@ -171,56 +150,65 @@
         mediaRecorder.onstop = async () => {
           stream.getTracks().forEach((t) => t.stop());
           micBtn.classList.remove("recording");
-          micBtn.setAttribute("aria-label", "Start voice input");
           const blob = new Blob(chunks, { type: mime });
           if (!blob.size) {
             setStatus("No audio captured.", "error");
             return;
           }
           setStatus("Transcribing…");
-          busy = true;
           try {
-            const stt = await speechToText({
-              blob,
-              filename: "pad.webm",
-              backendUrl,
-            });
+            const stt = await speechToText({ blob, backendUrl });
             inputEl.value = stt.text || "";
-            setStatus("Transcribed — translating…");
             await runTranslate();
           } catch (err) {
             setStatus(err.message || "STT failed", "error");
-          } finally {
-            busy = false;
           }
         };
         mediaRecorder.start();
         micBtn.classList.add("recording");
-        micBtn.setAttribute("aria-label", "Stop recording");
         setStatus("Recording… tap mic to stop");
-      } catch (err) {
+      } catch {
         setStatus("Microphone permission denied.", "error");
       }
     }
 
-    languageEl.addEventListener("change", () => {
-      languageId = languageEl.value;
-      const next = catalog.defaultDialectFor(languageId);
-      dialectId = next ? next.id : catalog.DEFAULT_DIALECT;
-      renderDialects();
+    bumpBtn.addEventListener("click", openSheet);
+    document.getElementById("pad-output-pane")?.addEventListener("click", (e) => {
+      if (e.target === outputEl || e.target.id === "pad-output-pane") {
+        if (!outputEl.textContent || outputEl.textContent.startsWith("Your translation")) {
+          openSheet();
+        }
+      }
     });
     translateBtn.addEventListener("click", runTranslate);
     micBtn.addEventListener("click", toggleMic);
+    clearBtn.addEventListener("click", () => {
+      inputEl.value = "";
+      outputEl.textContent = "Your translation will show up here.";
+      translitEl.hidden = true;
+      translitEl.textContent = "";
+      setStatus("");
+    });
+    shareBtn.addEventListener("click", async () => {
+      const text = outputEl.textContent?.trim();
+      if (!text || text.startsWith("Your translation")) {
+        setStatus("Nothing to share yet.", "error");
+        return;
+      }
+      try {
+        if (navigator.share) {
+          await navigator.share({ text });
+        } else {
+          await navigator.clipboard.writeText(text);
+          setStatus("Copied translation");
+        }
+      } catch {
+        setStatus("Share canceled");
+      }
+    });
 
-    renderLanguages();
-    renderDialects();
+    refreshBump();
   }
 
-  window.DialexPad = {
-    DEFAULT_BACKEND,
-    normalizeBackendUrl,
-    translateText,
-    speechToText,
-    initPad,
-  };
+  window.DialexPad = { initPad, DEFAULT_BACKEND, normalizeBackendUrl, translateText };
 })();
