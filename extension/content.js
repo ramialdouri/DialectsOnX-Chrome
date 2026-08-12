@@ -264,18 +264,18 @@ function injectDialxStyles() {
       align-items: center;
     }
     .dialx-panel-actions .dialx-btn-sm {
-      background: #3d9b8f;
-      color: #0a0b0c;
-      border-color: #3d9b8f;
+      background: #f2f4f7;
+      color: #000000;
+      border-color: #f2f4f7;
       font-weight: 700;
     }
     .dialx-panel-actions .dialx-btn-sm:hover:not(:disabled) {
-      background: #4aafa2;
-      border-color: #4aafa2;
+      background: #ffffff;
+      border-color: #ffffff;
     }
     .dialx-panel-link {
       font-size: 12px;
-      color: #3d9b8f;
+      color: #d1d7de;
       text-decoration: none;
     }
     .dialx-panel-link:hover {
@@ -315,7 +315,7 @@ function injectDialxStyles() {
       transition: transform 0.15s ease;
     }
     .dialx-switch input:checked + .dialx-switch-slider {
-      background: #3d9b8f;
+      background: #d1d7de;
     }
     .dialx-switch input:checked + .dialx-switch-slider::before {
       transform: translateX(10px);
