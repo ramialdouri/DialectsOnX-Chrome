@@ -2,7 +2,7 @@
  * Dialex dialect sheet: Favorites / Recents, Language | Dialect columns.
  * Mirrors Android DialectCatalogSheet on main @ 112b2ec.
  * English has no group header; the English row shows a Germanic badge.
- * Sheet fills the viewport. Storage: chrome.storage.sync, else localStorage.
+ * Sheet is full viewport height and only as wide as the language/dialect names.
  */
 (function (global) {
   const LS_KEY = "dialex_sheet_prefs";
@@ -108,35 +108,40 @@
     style.textContent = `
       .dx-sheet-backdrop {
         position: fixed; inset: 0; z-index: 2147483000;
-        background: #000;
-        display: flex; flex-direction: column;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex; justify-content: flex-end; align-items: stretch;
         font-family: Manrope, system-ui, sans-serif;
         color: #f2f4f7;
         overscroll-behavior: none;
       }
       .dx-sheet {
-        flex: 1; min-height: 0;
-        width: 100%; height: 100dvh; height: 100vh;
+        box-sizing: border-box;
+        height: 100dvh; height: 100vh;
+        width: max-content;
+        max-width: 100vw;
+        min-width: 0;
         background: #0a0a0b;
-        border: 0;
+        border-left: 1px solid #1e1e22;
         display: flex; flex-direction: column;
         color: #f2f4f7;
+        box-shadow: -16px 0 48px rgba(0, 0, 0, 0.35);
       }
       .dx-sheet-header {
         display: grid;
-        grid-template-columns: 1fr auto 1fr;
+        grid-template-columns: auto 1fr auto;
         align-items: center;
-        padding: 14px 18px 12px;
+        gap: 10px;
+        padding: 12px 12px 10px;
         border-bottom: 1px solid #1e1e22;
         flex: 0 0 auto;
       }
       .dx-sheet-brand {
-        font-weight: 700; letter-spacing: 0.28em; font-size: 11px;
+        font-weight: 700; letter-spacing: 0.22em; font-size: 10px;
         text-transform: uppercase; color: #d1d7de;
       }
       .dx-sheet-title {
-        font-weight: 600; font-size: 16px; margin: 0; text-align: center;
-        letter-spacing: -0.02em;
+        font-weight: 600; font-size: 14px; margin: 0; text-align: center;
+        letter-spacing: -0.02em; white-space: nowrap;
       }
       .dx-sheet-close {
         justify-self: end;
@@ -147,7 +152,7 @@
       .dx-sheet-close:hover { border-color: #d1d7de; color: #f2f4f7; }
       .dx-sheet-quick {
         display: flex; flex-direction: column; gap: 8px;
-        padding: 10px 18px; border-bottom: 1px solid #1e1e22;
+        padding: 8px 12px; border-bottom: 1px solid #1e1e22;
         flex: 0 0 auto;
       }
       .dx-sheet-quick[hidden] { display: none; }
@@ -164,15 +169,15 @@
       .dx-sheet-pill.active { border-color: #d1d7de; background: #141417; }
       .dx-sheet-auto {
         display: flex; align-items: center; justify-content: space-between;
-        gap: 10px; padding: 10px 18px; border-bottom: 1px solid #1e1e22;
-        font-size: 13px; flex: 0 0 auto;
+        gap: 10px; padding: 8px 12px; border-bottom: 1px solid #1e1e22;
+        font-size: 13px; flex: 0 0 auto; white-space: nowrap;
       }
       .dx-sheet-body {
         flex: 1; min-height: 0; display: grid;
-        grid-template-columns: 45% 55%;
+        grid-template-columns: max-content max-content;
       }
       .dx-sheet-col {
-        min-height: 0; overflow-y: auto; padding: 8px 10px 16px;
+        min-height: 0; overflow-y: auto; padding: 8px 8px 16px;
         overscroll-behavior: contain;
       }
       .dx-sheet-col + .dx-sheet-col { border-left: 1px solid #1e1e22; }
@@ -206,8 +211,8 @@
         display: flex; align-items: center; justify-content: space-between;
         gap: 8px; width: 100%; text-align: left;
         background: transparent; border: none; color: #f2f4f7;
-        border-radius: 10px; padding: 10px 10px; font: inherit; font-size: 14px;
-        cursor: pointer;
+        border-radius: 10px; padding: 8px 8px; font: inherit; font-size: 13px;
+        cursor: pointer; white-space: nowrap;
       }
       .dx-sheet-row:hover { background: #141417; }
       .dx-sheet-row.selected {
@@ -224,9 +229,11 @@
       }
       .dx-sheet-dialect-head {
         position: sticky; top: 0; background: #0a0a0b; z-index: 1;
-        padding: 10px 12px 12px; border-bottom: 1px solid #1e1e22; margin-bottom: 8px;
+        padding: 8px 8px 10px; border-bottom: 1px solid #1e1e22; margin-bottom: 8px;
       }
-      .dx-sheet-dialect-head .lang { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; }
+      .dx-sheet-dialect-head .lang {
+        font-size: 16px; font-weight: 700; letter-spacing: -0.03em; white-space: nowrap;
+      }
       .dx-sheet-dialect-head .dia { font-size: 13px; color: #9ba3ae; margin-top: 4px; }
       .dx-dialect-card {
         display: flex; align-items: center; gap: 6px;
@@ -263,10 +270,11 @@
       .dx-sheet-actions button.primary {
         background: #f2f4f7; color: #000; border-color: #f2f4f7;
       }
-      @media (max-width: 640px) {
-        .dx-sheet-body { grid-template-columns: 45% 55%; }
-        .dx-sheet-brand { letter-spacing: 0.18em; font-size: 10px; }
-        .dx-sheet-dialect-head .lang { font-size: 18px; }
+      @media (max-width: 700px) {
+        .dx-sheet { width: 100vw; min-width: 0; max-width: 100vw; }
+        .dx-sheet-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+        .dx-sheet-row, .dx-sheet-dialect-head .lang { white-space: normal; }
+        .dx-sheet-brand { letter-spacing: 0.14em; font-size: 10px; }
       }
     `;
     (document.head || document.documentElement).appendChild(style);
@@ -640,6 +648,9 @@
       closeBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         close();
+      });
+      root.addEventListener("click", (e) => {
+        if (e.target === root) close();
       });
       searchEl.addEventListener("input", () => {
         query = searchEl.value;
