@@ -20,15 +20,14 @@ Catalog / picker aligned with Dialex Android `main` @ `112b2ec`: 15 groups, 56 s
 
 ## Backend
 
-Default: `https://dialex-backend-f6b7-1086119311146.europe-west3.run.app`
+Production API: `https://dialex-backend-f6b7-1086119311146.europe-west3.run.app`
 
 | Endpoint | Used by |
 |--|--|
 | `POST /translate` | Feed (`clip`), IME (`ime`) |
-| `GET /health` | Popup |
 | `POST /stt` | Dialex Homepage Pad only |
 
-The in-repo [`backend/`](backend/) folder is legacy v0.1 (Arabic-only Render prototype) and is not used by v0.2. Do not point the extension at it.
+The in-repo [`backend/`](backend/) folder is legacy v0.1 (Arabic-only Render prototype) and is not used by v0.2.
 
 ## Structure
 

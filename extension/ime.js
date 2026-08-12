@@ -15,23 +15,16 @@
 
   let preferredDialect = DEFAULT_DIALECT;
   let preferredLanguage = DEFAULT_LANGUAGE;
-  let backendUrl = DEFAULT_BACKEND_URL;
   let barEl = null;
   let activeTarget = null;
   let originals = new WeakMap();
   let busy = false;
 
-  function normalizeBackendUrl(url) {
-    const trimmed = (url || "").trim().replace(/\/+$/, "");
-    return trimmed || DEFAULT_BACKEND_URL;
-  }
-
   function loadSettings() {
     chrome.storage.sync.get(
       {
         preferredDialect: DEFAULT_DIALECT,
-        preferredLanguage: DEFAULT_LANGUAGE,
-        backendUrl: DEFAULT_BACKEND_URL
+        preferredLanguage: DEFAULT_LANGUAGE
       },
       (data) => {
         preferredDialect =
@@ -40,7 +33,6 @@
           catalog.resolveLanguageId(data.preferredLanguage) ||
           catalog.dialectById(preferredDialect)?.languageId ||
           DEFAULT_LANGUAGE;
-        backendUrl = normalizeBackendUrl(data.backendUrl);
         refreshBarLabels();
       }
     );
@@ -57,9 +49,6 @@
       preferredLanguage =
         catalog.resolveLanguageId(changes.preferredLanguage.newValue) ||
         preferredLanguage;
-    }
-    if (changes.backendUrl) {
-      backendUrl = normalizeBackendUrl(changes.backendUrl.newValue);
     }
     refreshBarLabels();
   });
@@ -248,7 +237,7 @@
     setStatus("Translating...");
     try {
       if (!originals.has(target)) originals.set(target, readValue(target));
-      const res = await fetch(`${normalizeBackendUrl(backendUrl)}/translate`, {
+      const res = await fetch(`${DEFAULT_BACKEND_URL}/translate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

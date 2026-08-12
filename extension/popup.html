@@ -35,7 +35,6 @@
 
     .pad-link {
       display: block;
-      margin-bottom: 14px;
       padding: 10px 12px;
       border-radius: 999px;
       background: #f2f4f7;
@@ -46,92 +45,6 @@
       font-weight: 700;
     }
     .pad-link:hover { background: #ffffff; }
-
-    .settings {
-      text-align: left;
-      border-top: 1px solid #1e1e22;
-      padding-top: 14px;
-    }
-    .settings h3 {
-      margin: 0 0 10px 0;
-      font-size: 13px;
-      font-weight: 700;
-      color: #f2f4f7;
-    }
-    label {
-      display: block;
-      font-size: 12px;
-      color: #9ba3ae;
-      margin-bottom: 5px;
-    }
-    .row {
-      display: flex;
-      gap: 6px;
-    }
-    input[type="text"] {
-      flex: 1;
-      min-width: 0;
-      background: #141417;
-      border: 1px solid #1e1e22;
-      border-radius: 8px;
-      color: #f2f4f7;
-      padding: 8px 10px;
-      font-size: 12px;
-      box-sizing: border-box;
-      font-family: inherit;
-    }
-    input[type="text"]:focus {
-      outline: none;
-      border-color: #d1d7de;
-    }
-    button#save, button#health {
-      background: #f2f4f7;
-      color: #000000;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-    }
-    button#health {
-      background: #141417;
-      color: #f2f4f7;
-      border: 1px solid #1e1e22;
-    }
-    button#save:hover { background: #ffffff; }
-    .footer-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 8px;
-      min-height: 16px;
-      gap: 8px;
-    }
-    #status {
-      font-size: 11px;
-      color: #d1d7de;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-      text-align: left;
-    }
-    #status.show { opacity: 1; }
-    #status.error { color: #cf6b6b; }
-    a#reset {
-      font-size: 11px;
-      color: #d1d7de;
-      cursor: pointer;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-    a#reset:hover { text-decoration: underline; }
-    #healthStatus {
-      margin-top: 8px;
-      font-size: 11px;
-      color: #9ba3ae;
-      text-align: left;
-    }
   </style>
 </head>
 <body>
@@ -145,24 +58,5 @@
   <a class="pad-link" href="https://dialex-app.com/#pad" target="_blank" rel="noopener noreferrer">
     Open Dialex Pad
   </a>
-
-  <div class="settings">
-    <h3>Settings</h3>
-    <label for="backendUrl">Backend URL</label>
-    <div class="row">
-      <input type="text" id="backendUrl" placeholder="https://dialex-backend.run.app" spellcheck="false" />
-      <button id="save" type="button">Save</button>
-    </div>
-    <div class="footer-row">
-      <span id="status"></span>
-      <a id="reset">Use default</a>
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <button id="health" type="button">Check health</button>
-    </div>
-    <div id="healthStatus"></div>
-  </div>
-
-  <script src="popup.js"></script>
 </body>
 </html>

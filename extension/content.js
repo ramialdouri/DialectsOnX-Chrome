@@ -9,7 +9,6 @@ const DIALEX_PAD_URL = "https://dialex-app.com/#pad";
 let preferredDialect = DEFAULT_DIALECT;
 let preferredLanguage = DEFAULT_LANGUAGE;
 let autoTranslateEnabled = true;
-let backendUrl = DEFAULT_BACKEND_URL;
 let settingsReady = false;
 let dialxActive = false;
 let activePanelCleanup = null;
@@ -458,8 +457,7 @@ function loadSettings() {
       {
         preferredDialect: DEFAULT_DIALECT,
         preferredLanguage: DEFAULT_LANGUAGE,
-        autoTranslate: true,
-        backendUrl: DEFAULT_BACKEND_URL
+        autoTranslate: true
       },
       (data) => {
         if (chrome.runtime.lastError || !isExtensionContextValid()) {
@@ -477,7 +475,6 @@ function loadSettings() {
           catalog?.dialectById(migrated)?.languageId ||
           DEFAULT_LANGUAGE;
         autoTranslateEnabled = data.autoTranslate !== false;
-        backendUrl = normalizeBackendUrl(data.backendUrl);
         settingsReady = true;
 
         if (data.preferredDialect !== migrated || !data.preferredLanguage) {
@@ -501,9 +498,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
   if (changes.preferredLanguage?.newValue) {
     preferredLanguage = changes.preferredLanguage.newValue || DEFAULT_LANGUAGE;
-  }
-  if (changes.backendUrl) {
-    backendUrl = normalizeBackendUrl(changes.backendUrl.newValue);
   }
   if (changes.autoTranslate) {
     autoTranslateEnabled = changes.autoTranslate.newValue !== false;
@@ -639,14 +633,8 @@ function drainTranslationQueue() {
   }
 }
 
-/** Normalize a user-entered backend URL (trim, drop trailing slashes). */
-function normalizeBackendUrl(url) {
-  const trimmed = (url || "").trim().replace(/\/+$/, "");
-  return trimmed || DEFAULT_BACKEND_URL;
-}
-
 function getTranslateEndpoint() {
-  return `${normalizeBackendUrl(backendUrl)}/translate`;
+  return `${DEFAULT_BACKEND_URL}/translate`;
 }
 
 async function translateText(text, targetDialect, signal, clientSource = "clip") {
