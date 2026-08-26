@@ -111,6 +111,18 @@ globalThis.Dox = globalThis.Dox || {};
     return (row && row.label) || spokenId;
   }
 
+  function endonym(spokenId) {
+    const frozen = t("lang_endonym_" + spokenId);
+    if (frozen && frozen !== "lang_endonym_" + spokenId) return frozen;
+    return (Dox.CATALOG.endonyms && Dox.CATALOG.endonyms[spokenId]) || languageLabel(spokenId);
+  }
+
+  function languageAbbrev(spokenId) {
+    const row = Dox.CATALOG.spokenLanguages[spokenId];
+    if (row && row.abbrev) return row.abbrev;
+    return LANG_ABBREV[spokenId] || "";
+  }
+
   function groupLabel(groupId) {
     const key = "lang_group_" + groupId;
     const labeled = t(key);
@@ -149,6 +161,67 @@ globalThis.Dox = globalThis.Dox || {};
     el.style.fontFamily = FONT;
   }
 
+  const LANG_ABBREV = {
+    english: "EN",
+    spanish: "ES",
+    portuguese: "PT",
+    french: "FR",
+    italian: "IT",
+    romanian: "RO",
+    german: "DE",
+    dutch: "NL",
+    chinese: "ZH",
+    japanese: "JA",
+    korean: "KO",
+    russian: "RU",
+    ukrainian: "UK",
+    polish: "PL",
+    czech: "CS",
+    slovak: "SK",
+    arabic: "AR",
+    hebrew: "HE",
+    aramaic: "SYR",
+    persian: "FA",
+    kurdish: "KU",
+    thai: "TH",
+    vietnamese: "VI",
+    filipino: "FIL",
+    malay: "MS",
+    indonesian: "ID",
+    mongolian: "MN",
+    swahili: "SW",
+    zulu: "ZU",
+    serbian: "SR",
+    croatian: "HR",
+    bosnian: "BS",
+    bulgarian: "BG",
+    macedonian: "MK",
+    slovenian: "SL",
+    albanian: "SQ",
+    greek: "EL",
+    swedish: "SV",
+    norwegian: "NO",
+    danish: "DA",
+    icelandic: "IS",
+    finnish: "FI",
+    turkish: "TR",
+    kazakh: "KK",
+    uzbek: "UZ",
+    kyrgyz: "KY",
+    turkmen: "TK",
+    azerbaijani: "AZ",
+    indian: "HI",
+    punjabi: "PA",
+    telugu: "TE",
+    tamil: "TA",
+    urdu: "UR",
+    nepali: "NE",
+    lithuanian: "LT",
+    latvian: "LV",
+    georgian: "KA",
+    armenian: "HY",
+  };
+
   Dox.FONT = FONT;
   Dox.locale = {
     t,
@@ -157,6 +230,8 @@ globalThis.Dox = globalThis.Dox || {};
     dialectChip,
     dialectHint,
     languageLabel,
+    endonym,
+    languageAbbrev,
     groupLabel,
     chipButtonText,
     grokQuery,

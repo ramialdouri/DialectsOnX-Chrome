@@ -38,7 +38,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("sysTitle").textContent = t("system_language_title");
   document.getElementById("sysSearch").placeholder = t("system_language_search_hint");
-  document.getElementById("sysBack").textContent = t("action_back");
+  document.getElementById("sysSearch").setAttribute("aria-label", t("cd_language_search"));
+  document.getElementById("sysBack").setAttribute("aria-label", t("action_back"));
+  document.getElementById("sysSearchClear").title = t("cd_language_search_clear");
+  Dox.systemLanguage.injectStyles();
 
   function bindToggle(id, key, extra) {
     document.getElementById(id).addEventListener("change", async (e) => {
@@ -84,53 +87,41 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   document.getElementById("clearRecents").addEventListener("click", () => Dox.prefs.clearRecents());
 
+  const selectedSpoken = () =>
+    prefs.systemLanguageId || Dox.spokenIdOf(prefs.systemDialectId);
+
+  function renderSys(query) {
+    const input = document.getElementById("sysSearch");
+    const clear = document.getElementById("sysSearchClear");
+    if (input && input.value !== query) input.value = query;
+    if (clear) clear.hidden = !String(query || "").trim();
+    Dox.systemLanguage.renderList(
+      document.getElementById("sysList"),
+      query,
+      selectedSpoken(),
+      async (languageId) => {
+        if (languageId === selectedSpoken()) return;
+        await Dox.prefs.setSystemLanguage(languageId);
+        location.reload();
+      }
+    );
+  }
+
   document.getElementById("sysLangBtn").addEventListener("click", () => {
     document.getElementById("main").classList.add("hidden");
     document.getElementById("sysView").classList.remove("hidden");
+    document.getElementById("sysSearch").value = "";
     renderSys("");
+    document.getElementById("sysSearch").focus();
   });
   document.getElementById("sysBack").addEventListener("click", () => {
     document.getElementById("sysView").classList.add("hidden");
     document.getElementById("main").classList.remove("hidden");
   });
   document.getElementById("sysSearch").addEventListener("input", (e) => renderSys(e.target.value));
-
-  function renderSys(query) {
-    const q = query.trim().toLowerCase();
-    const list = document.getElementById("sysList");
-    list.replaceChildren();
-    for (const group of Dox.CATALOG.groups) {
-      for (const lang of group.languages) {
-        const endonym = lang.endonym || lang.label;
-        const en = lang.label;
-        const hay = (endonym + " " + en + " " + lang.id).toLowerCase();
-        if (q && !hay.includes(q)) continue;
-        const row = document.createElement("div");
-        row.className = "sys-row";
-        const left = document.createElement("span");
-        left.className = "sys-endonym";
-        left.textContent = endonym;
-        const right = document.createElement("span");
-        right.className = "sys-en";
-        right.textContent = endonym !== en ? en : "";
-        row.append(left, right);
-        if (lang.id === (prefs.systemLanguageId || Dox.spokenIdOf(prefs.systemDialectId))) {
-          const check = document.createElement("span");
-          check.textContent = "✓";
-          check.style.color = "#E0B83A";
-          row.appendChild(check);
-        }
-        row.addEventListener("click", async () => {
-          const did = await Dox.prefs.setSystemLanguage(lang.id);
-          document.getElementById("sysLangBtn").textContent = Dox.locale.languageLabel(lang.id);
-          Dox.locale.applyDir(document.documentElement);
-          document.getElementById("sysView").classList.add("hidden");
-          document.getElementById("main").classList.remove("hidden");
-          location.reload();
-          void did;
-        });
-        list.appendChild(row);
-      }
-    }
-  }
+  document.getElementById("sysSearchClear").addEventListener("click", () => {
+    document.getElementById("sysSearch").value = "";
+    renderSys("");
+    document.getElementById("sysSearch").focus();
+  });
 });

@@ -4,9 +4,12 @@
   <meta charset="utf-8" />
   <title>DialectsOnX Settings</title>
   <style>
+    html, body { height: 100%; }
     body {
       margin: 0; background: #000; color: #e7e9ea;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    #main {
       max-width: 720px; margin-inline: auto; padding: 20px 16px 48px;
     }
     h1 { font-size: 20px; margin: 0 0 16px; }
@@ -26,19 +29,7 @@
     }
     a { color: #1d9bf0; }
     .hint { color: #8b98a5; font-size: 12px; margin: 0 0 12px; }
-    .hidden { display: none; }
-    #sysList { display: flex; flex-direction: column; }
-    .sys-row {
-      display: flex; justify-content: space-between; gap: 8px;
-      padding: 8px 0; border-bottom: 1px solid #2f3336; cursor: pointer;
-    }
-    .sys-endonym { font-weight: 600; }
-    .sys-en { color: #8b98a5; }
-    #sysSearch {
-      width: 100%; box-sizing: border-box; margin-bottom: 12px;
-      background: #16181c; color: #e7e9ea; border: 1px solid #2f3336;
-      border-radius: 8px; padding: 8px 10px; font: inherit;
-    }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -81,11 +72,25 @@
     <p><a id="padLink" href="https://www.dialex-app.com" target="_blank" rel="noopener"></a></p>
     <p id="about"></p>
   </div>
-  <div id="sysView" class="hidden">
-    <button type="button" id="sysBack"></button>
-    <h1 id="sysTitle"></h1>
-    <input id="sysSearch" />
-    <div id="sysList"></div>
+  <div id="sysView" class="dox-sys hidden">
+    <div class="dox-sys-header">
+      <button type="button" id="sysBack" class="dox-sys-back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+          <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+      </button>
+      <h1 id="sysTitle" class="dox-sys-title"></h1>
+    </div>
+    <div class="dox-sys-card">
+      <div class="dox-sys-search-row">
+        <div class="dox-sys-search">
+          <span class="dox-sys-search-icon">⌕</span>
+          <input id="sysSearch" />
+          <button type="button" id="sysSearchClear" class="dox-sys-search-clear" hidden>×</button>
+        </div>
+      </div>
+      <div id="sysList" class="dox-sys-list"></div>
+    </div>
   </div>
   <script src="dialects.js"></script>
   <script src="locale.js"></script>
@@ -93,6 +98,7 @@
   <script src="api.js"></script>
   <script src="sheet.js"></script>
   <script src="faw.js"></script>
+  <script src="system-language.js"></script>
   <script src="settings.js"></script>
 </body>
 </html>
