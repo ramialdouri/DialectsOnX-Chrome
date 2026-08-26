@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>DialectsOnX System Language screenshot</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #000; color: #e7e9ea;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="sysView" class="dox-sys">
+    <div class="dox-sys-header">
+      <button type="button" class="dox-sys-back" aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+          <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+      </button>
+      <h1 id="sysTitle" class="dox-sys-title">System Language</h1>
+    </div>
+    <div class="dox-sys-card">
+      <div class="dox-sys-search-row">
+        <div class="dox-sys-search">
+          <span class="dox-sys-search-icon">⌕</span>
+          <input id="sysSearch" placeholder="Language" />
+        </div>
+      </div>
+      <div id="sysList" class="dox-sys-list"></div>
+    </div>
+  </div>
+  <script src="chrome-mock.js"></script>
+  <script src="../dialects.js"></script>
+  <script src="../locale.js"></script>
+  <script src="../prefs.js"></script>
+  <script src="../system-language.js"></script>
+  <script>
+    (async () => {
+      await Dox.prefs.set({
+        systemDialectId: "english_american",
+        systemLanguageId: "english",
+      });
+      await Dox.locale.reload("english_american");
+      Dox.systemLanguage.injectStyles();
+      document.getElementById("sysTitle").textContent = Dox.locale.t("system_language_title");
+      document.getElementById("sysSearch").placeholder = Dox.locale.t("system_language_search_hint");
+      Dox.systemLanguage.renderList(
+        document.getElementById("sysList"),
+        "",
+        "english",
+        () => {}
+      );
+      document.body.dataset.ready = "sys";
+    })();
+  </script>
+</body>
+</html>

@@ -268,6 +268,8 @@ globalThis.Dox = globalThis.Dox || {};
     for (const id of Dox.CATALOG.ids) {
       dialectInner = Math.max(dialectInner, textWidth(Dox.locale.dialectChip(id), 13, 600));
     }
+    const hintW = textWidth(t("language_search_hint"), 13, 600) + 18 + 36;
+    langInner = Math.max(langInner, hintW);
     const langMin = Math.ceil(langInner + 32 + 8);
     const dialectMin = Math.ceil(dialectInner + SLOT * 3 + 8 * 3 + 32 + 8);
     sheetEl.style.setProperty("--dox-lang-min", langMin + "px");
