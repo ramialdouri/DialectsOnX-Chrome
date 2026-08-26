@@ -7,7 +7,6 @@ let fawEnabled = true;
 let backendUrl = "";
 let settingsReady = false;
 let dialxActive = false;
-let activePanelCleanup = null;
 let domObserver = null;
 let domObserverTarget = null;
 let visibilityObserver = null;
@@ -143,145 +142,10 @@ function injectDialxStyles() {
       opacity: 0.55;
       cursor: default;
     }
-    .dialx-panel {
-      position: fixed;
-      z-index: 10000;
-      min-width: 280px;
-      max-width: min(320px, calc(100vw - 16px));
-      max-height: min(360px, calc(100vh - 16px));
-      overflow-y: auto;
-      padding: 12px;
-      border-radius: 16px;
-      background: rgb(0, 0, 0);
-      border: 1px solid rgb(47, 51, 54);
-      box-shadow: rgba(255, 255, 255, 0.2) 0 0 15px inset,
-        rgba(0, 0, 0, 0.5) 0 4px 24px;
-      font-size: 13px;
-      color: rgb(152, 157, 162);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    .dialx-panel-title {
-      font-weight: 700;
-      margin-bottom: 12px;
-      color: rgb(152, 157, 162);
-    }
-    .dialx-panel-auto-row {
-      display: grid;
-      grid-template-columns: 1fr 52px 76px;
-      align-items: center;
-      column-gap: 8px;
-      padding: 0 0 12px;
-      margin-bottom: 8px;
-      border-bottom: 1px solid rgb(47, 51, 54);
-      cursor: pointer;
-      color: rgb(152, 157, 162);
-      font-size: 13px;
-    }
-    .dialx-panel-auto-main {
-      display: flex;
-      align-items: flex-end;
-      gap: 4px;
-    }
-    .dialx-panel-auto-text {
-      font-size: 11px;
-    }
-    .dialx-panel-default-label {
-      font-size: 9px;
-      font-weight: 600;
-      color: rgb(113, 118, 123);
-      text-align: center;
-      white-space: nowrap;
-      align-self: end;
-      margin-bottom: -6px;
-    }
-    .dialx-panel-grid-header,
-    .dialx-panel-grid-row {
-      display: grid;
-      grid-template-columns: 1fr 52px 76px;
-      align-items: center;
-      column-gap: 8px;
-      padding: 8px 0;
-      border-bottom: 1px solid rgb(47, 51, 54);
-      color: rgb(152, 157, 162);
-    }
-    .dialx-panel-grid-header {
-      padding-top: 0;
-      padding-bottom: 6px;
-      border-bottom: 1px solid rgb(47, 51, 54);
-    }
-    .dialx-panel-grid-row:last-child {
-      border-bottom: none;
-    }
-    .dialx-panel-label {
-      color: rgb(152, 157, 162);
-    }
-    .dialx-panel-col-header {
-      font-size: 11px;
-      font-weight: 600;
-      color: rgb(113, 118, 123);
-      text-align: center;
-    }
-    .dialx-panel-radio-col {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .dialx-panel-translate-col {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-    }
-    .dialx-accent-input {
-      accent-color: #1d9bf0;
-      width: 16px;
-      height: 16px;
-      margin: 0;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .dialx-switch {
-      position: relative;
-      display: inline-flex;
-      width: 24px;
-      height: 14px;
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-    .dialx-switch input {
-      position: absolute;
-      opacity: 0;
-      width: 0;
-      height: 0;
-      margin: 0;
-    }
-    .dialx-switch-slider {
-      position: absolute;
-      inset: 0;
-      border-radius: 9999px;
-      background: rgb(62, 65, 68);
-      transition: background 0.15s ease;
-    }
-    .dialx-switch-slider::before {
-      content: "";
-      position: absolute;
-      height: 10px;
-      width: 10px;
-      left: 2px;
-      top: 2px;
-      border-radius: 50%;
-      background: #fff;
-      transition: transform 0.15s ease;
-    }
-    .dialx-switch input:checked + .dialx-switch-slider {
-      background: #1d9bf0;
-    }
-    .dialx-switch input:checked + .dialx-switch-slider::before {
-      transform: translateX(10px);
-    }
     .dialx-logo {
       display: inline-block;
-      height: 28px;
-      width: 76px;
+      height: 30px;
+      width: 82px;
       margin-left: 4px;
       flex-shrink: 0;
       pointer-events: none;
@@ -299,43 +163,8 @@ function injectDialxStyles() {
   `;
 }
 
-function positionDialectPanel(panel, anchorEl) {
-  const gap = 8;
-  const margin = 8;
-  const rect = anchorEl.getBoundingClientRect();
-
-  let top = rect.bottom + gap;
-  let left = rect.left;
-
-  panel.style.top = `${top}px`;
-  panel.style.left = `${left}px`;
-
-  const panelRect = panel.getBoundingClientRect();
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-
-  if (panelRect.right > vw - margin) {
-    left = Math.max(margin, vw - panelRect.width - margin);
-    panel.style.left = `${left}px`;
-  }
-  if (panelRect.left < margin) {
-    panel.style.left = `${margin}px`;
-  }
-
-  const updatedRect = panel.getBoundingClientRect();
-  if (updatedRect.bottom > vh - margin) {
-    const aboveTop = rect.top - updatedRect.height - gap;
-    if (aboveTop >= margin) {
-      panel.style.top = `${aboveTop}px`;
-    } else {
-      panel.style.top = `${margin}px`;
-      panel.style.maxHeight = `${vh - margin * 2}px`;
-    }
-  }
-}
-
 function globalCacheKey(text, dialect, statusId) {
-  if (statusId) return `${dialect}\nstatus:${statusId}`;
+  if (statusId) return `${dialect}\nstatus:${statusId}\n${text || ""}`;
   return `${dialect}\n${text}`;
 }
 
@@ -606,7 +435,12 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
   if (changes.systemDialectId?.newValue) {
     Dox.locale.reload(changes.systemDialectId.newValue).then(() => {
-      postStates.forEach((state) => state.updateMainButton?.());
+      postStates.forEach((state) => {
+        state.updateMainButton?.();
+        if (state.transEl && state.overlayText && !state.showingOriginal) {
+          Dox.feed.refreshOverlay(state);
+        }
+      });
     });
   }
   if (changes.newsToMsa) newsToMsa = changes.newsToMsa.newValue !== false;
@@ -649,7 +483,6 @@ function clearTranslationQueue() {
 
 function removeAllDialxUi() {
   document.querySelectorAll(".dialx-control-bar").forEach((bar) => bar.remove());
-  document.getElementById("dialect-panel")?.remove();
   Dox.sheet?.close?.();
 
   document.querySelectorAll("article[data-dialx-observed]").forEach((article) => {
@@ -708,7 +541,6 @@ function shutdownDialx() {
   postStates.clear();
 
   clearTranslationQueue();
-  activePanelCleanup?.();
   removeAllDialxUi();
 }
 
@@ -782,7 +614,7 @@ function getCachedTranslation(state, dialect) {
 
   const cacheId = state.cacheStatusId || state.statusId;
   if (cacheId) {
-    const statusKey = globalCacheKey(null, dialect, cacheId);
+    const statusKey = globalCacheKey(state.originalText, dialect, cacheId);
     if (globalTranslationCache.has(statusKey)) {
       const cached = globalTranslationCache.get(statusKey);
       state.translationCache.set(dialect, cached);
@@ -803,7 +635,7 @@ function storeTranslation(state, dialect, translated) {
   state.translationCache.set(dialect, translated);
   const cacheId = state.cacheStatusId || state.statusId;
   if (cacheId) {
-    globalTranslationCache.set(globalCacheKey(null, dialect, cacheId), translated);
+    globalTranslationCache.set(globalCacheKey(state.originalText, dialect, cacheId), translated);
   }
   globalTranslationCache.set(globalCacheKey(state.originalText, dialect), translated);
 }
@@ -819,9 +651,7 @@ async function fetchTranslation(state, dialect, signal) {
   if (cached) return cached;
 
   const cacheId = state.cacheStatusId || state.statusId;
-  const pendingKey = cacheId
-    ? `${cacheId}:${dialect}`
-    : `${dialect}\n${state.originalText}`;
+  const pendingKey = `${cacheId || ""}:${dialect}\n${state.originalText}`;
 
   if (pendingTranslationByKey.has(pendingKey)) {
     return pendingTranslationByKey.get(pendingKey);
@@ -999,8 +829,15 @@ async function expandAndRetranslate(state) {
     state.fullyExpanded = true;
     const full = extractPostText(cur);
     if (full && full.length > (state.originalText?.length || 0)) {
-      state.originalText = full;
+      const prev = state.originalText;
       invalidatePostStatusCache(state);
+      if (prev) {
+        for (const d of Dox.CATALOG.ids) {
+          globalTranslationCache.delete(globalCacheKey(prev, d));
+        }
+      }
+      state.originalText = full;
+      state.translationCache.clear();
     }
 
     // Keep the now-expanded original visible as a loading state while we fetch.
@@ -1491,6 +1328,7 @@ function invalidatePostStatusCache(state) {
   if (!cacheId) return;
   for (const dialect of Dox.CATALOG.ids) {
     globalTranslationCache.delete(globalCacheKey(null, dialect, cacheId));
+    globalTranslationCache.delete(globalCacheKey(state.originalText, dialect, cacheId));
   }
 }
 
@@ -1640,9 +1478,9 @@ function shouldProcessDomMutations(mutations) {
       if (!primary.contains(node) && node !== primary) continue;
       if (
         node.closest?.(
-          ".dialx-control-bar, #dialect-panel, [data-dialx-ignore-mutations]"
+          ".dialx-control-bar, .dox-sheet-scrim, [data-dialx-ignore-mutations]"
         ) ||
-        node.matches?.(".dialx-control-bar, #dialect-panel")
+        node.matches?.(".dialx-control-bar, .dox-sheet-scrim")
       ) {
         continue;
       }
@@ -2316,7 +2154,13 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
   mainBtn.setAttribute("role", "button");
   mainBtn.setAttribute("tabindex", "0");
 
+  const selectorBtn = document.createElement("button");
+  selectorBtn.type = "button";
+  selectorBtn.className = "dialx-btn dialx-btn-selector";
+  selectorBtn.textContent = Dox.locale.t("label_dialect_selector");
+
   state.updateMainButton = () => {
+    selectorBtn.textContent = Dox.locale.t("label_dialect_selector");
     if (state.showingOriginal) {
       mainBtn.textContent = Dox.locale.t("lens_view_original");
       return;
@@ -2367,10 +2211,6 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
     }
   };
 
-  const selectorBtn = document.createElement("button");
-  selectorBtn.type = "button";
-  selectorBtn.className = "dialx-btn dialx-btn-selector";
-  selectorBtn.textContent = Dox.locale.t("label_dialect_selector");
   selectorBtn.onclick = (e) => {
     e.stopPropagation();
     Dox.sheet.open({
@@ -2394,20 +2234,6 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
   bar.appendChild(selectorBtn);
   bar.appendChild(logo);
   return bar;
-}
-
-function showDialectSelector(controlBar, postId) {
-  const state = postStates.get(postId);
-  Dox.sheet.open({
-    mode: "x",
-    selectedId: preferredDialect,
-    onPick: (id) => {
-      if (state) state.manualDialect = id;
-      preferredDialect = id;
-      if (state) state.showingOriginal = false;
-      translatePostToDialect(postId, id);
-    },
-  });
 }
 
 let autoTranslateBudget = 0;

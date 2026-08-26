@@ -32,9 +32,12 @@
         Hello world
         <img alt="🔥" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" />
         more text that is long enough to look like a truncated post.
-        <a data-testid="tweet-text-show-more-link" href="#">Show more</a>
+        <a data-testid="tweet-text-show-more-link" href="#" id="nativeMore">Show more</a>
       </div>
     </article>
+    <p style="margin-top:24px">IME host (non-X field)</p>
+    <textarea id="imeHost" rows="3" style="width:100%;background:#16181c;color:#e7e9ea;border:1px solid #2f3336;border-radius:8px;padding:8px;">Good morning</textarea>
+    <input id="secret" type="password" value="hidden" style="margin-top:8px" />
   </div>
   <script src="chrome-mock.js"></script>
   <script src="../dialects.js"></script>
@@ -46,6 +49,13 @@
   <script src="../content.js"></script>
   <script src="../ime.js"></script>
   <script>
+    document.getElementById("nativeMore")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const tt = document.querySelector('[data-testid="tweetText"]');
+      const more = document.getElementById("nativeMore");
+      more?.remove();
+      tt.appendChild(document.createTextNode(" Extra expanded line about the match."));
+    });
     document.getElementById("openSheet").onclick = () => {
       Dox.sheet.open({ mode: "x", selectedId: "arabic_msa" });
     };

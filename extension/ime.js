@@ -50,6 +50,7 @@ globalThis.Dox = globalThis.Dox || {};
   let dragDy = 0;
   let inflight = null;
   let statusEl = null;
+  let lastField = null;
 
   function t(k, ...a) {
     return Dox.locale.t(k, ...a);
@@ -69,10 +70,11 @@ globalThis.Dox = globalThis.Dox || {};
 
   function focusedInput() {
     const el = document.activeElement;
-    if (!el || skipField(el)) return null;
-    if (el.isContentEditable) return el;
-    const tag = el.tagName;
-    if (tag === "INPUT" || tag === "TEXTAREA") return el;
+    if (el && !skipField(el) && (el.isContentEditable || el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
+      lastField = el;
+      return el;
+    }
+    if (lastField?.isConnected && !skipField(lastField)) return lastField;
     return null;
   }
 
@@ -179,6 +181,7 @@ globalThis.Dox = globalThis.Dox || {};
     statusEl.className = "dox-ime-status";
     const mic = document.createElement("button");
     mic.type = "button";
+    mic.className = "dox-ime-mic";
     mic.textContent = t("ime_mic");
     mic.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -186,6 +189,7 @@ globalThis.Dox = globalThis.Dox || {};
     });
     const go = document.createElement("button");
     go.type = "button";
+    go.className = "dox-ime-go";
     go.textContent = t("ime_translate");
     go.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -230,6 +234,12 @@ globalThis.Dox = globalThis.Dox || {};
     const prefs = await Dox.prefs.get();
     const chip = bar.querySelector(".dox-ime-chip");
     if (chip) chip.textContent = Dox.locale.chipButtonText(prefs.imeDialect);
+    const mic = bar.querySelector(".dox-ime-mic");
+    const go = bar.querySelector(".dox-ime-go");
+    const close = bar.querySelector(".dox-ime-x");
+    if (mic && !inflight) mic.textContent = t("ime_mic");
+    if (go && !inflight) go.textContent = t("ime_translate");
+    if (close) close.title = t("dox_ime_collapse");
     if (statusEl) statusEl.textContent = t("dox_ime_idle");
     Dox.locale.applyDir(bar);
   }
@@ -256,7 +266,7 @@ globalThis.Dox = globalThis.Dox || {};
         clientSource: "ime",
         signal: inflight.signal,
       });
-      if (document.activeElement !== el) {
+      if (!el.isConnected || skipField(el)) {
         if (statusEl) statusEl.textContent = t("ime_host_changed");
         return;
       }
@@ -300,6 +310,19 @@ globalThis.Dox = globalThis.Dox || {};
       if (statusEl) statusEl.textContent = t("pad_error_stt");
     }
   }
+
+  document.addEventListener(
+    "focusin",
+    (e) => {
+      const el = e.target;
+      if (!(el instanceof Element)) return;
+      if (skipField(el)) return;
+      if (el.isContentEditable || el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+        lastField = el;
+      }
+    },
+    true
+  );
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg?.type === "dox-ime-show") {

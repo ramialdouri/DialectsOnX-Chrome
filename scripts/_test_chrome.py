@@ -67,7 +67,8 @@ def test_feed_contract() -> None:
     _assert("autoTranslateEnabled = prefs.autoTranslate === true" in content, "unset auto-off")
     _assert("showingOriginal: !autoTranslateEnabled" in content, "Original first")
     _assert("Dox.sheet.open" in content, "sheet not radios")
-    _assert("height: 28px" in content, "logo height matches Original")
+    _assert(".dialx-panel" not in content, "v0.1 radio panel css gone")
+    _assert("height: 30px" in content, "logo height matches Original")
     _assert("align-items: flex-end" in content, "shared baseline")
     manifest = json.loads((EXT / "manifest.json").read_text(encoding="utf-8"))
     _assert(manifest["version"] == "0.3.0", manifest["version"])
@@ -94,6 +95,7 @@ def test_feed_contract() -> None:
     _assert("setImePosition" in ime, "ime position local")
     _assert("window.top !== window" in ime, "ime top frame")
     _assert("STT_CODES" in ime, "stt bcp47")
+    _assert("lastField" in ime, "ime remembers focused field")
     _assert("arabicStringLocks" in locale, "arabic locks")
     faw = (EXT / "faw.js").read_text(encoding="utf-8")
     _assert("refreshOverlay" in faw, "faw uses feed refresh")
@@ -107,6 +109,10 @@ def test_extract_emoji() -> None:
     demo = (EXT / "test" / "demo.html").read_text(encoding="utf-8")
     _assert("primaryColumn" in demo, "demo feed column")
     _assert("chrome-mock.js" in demo, "demo chrome stub")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    _assert("dialectsonx.onrender.com" not in readme, "no Render URL")
+    _assert("dialex-backend-f6b7" in readme, "Cloud Run URL")
+    _assert(not (ROOT / "backend" / "main.py").exists(), "Render backend deleted")
 
 
 def test_faw_neighbor() -> None:
