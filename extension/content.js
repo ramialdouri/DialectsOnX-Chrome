@@ -1,12 +1,12 @@
-const DEFAULT_DIALECT = "msa";
-const DEFAULT_BACKEND_URL = "https://dialectsonx.onrender.com";
+const DEFAULT_DIALECT = "arabic_msa";
 
 let preferredDialect = DEFAULT_DIALECT;
-let autoTranslateEnabled = true;
-let backendUrl = DEFAULT_BACKEND_URL;
+let autoTranslateEnabled = false;
+let newsToMsa = true;
+let fawEnabled = true;
+let backendUrl = "";
 let settingsReady = false;
 let dialxActive = false;
-let activePanelCleanup = null;
 let domObserver = null;
 let domObserverTarget = null;
 let visibilityObserver = null;
@@ -63,36 +63,6 @@ const NON_FEED_REGION_SELECTOR = [
 let activeTranslations = 0;
 const translationQueue = [];
 
-const dialectLabels = {
-  msa: "MSA",
-  uae: "Emirati",
-  saudi_najdi: "Saudi-Najdi",
-  saudi_hijazi: "Saudi-Hijazi",
-  kuwait: "Kuwaiti",
-  qatar: "Qatari",
-  syria: "Syrian",
-  lebanon: "Lebanese",
-  jordan: "Jordanian",
-  palestine: "Palestinian",
-  iraq: "Iraqi",
-  egypt: "Egyptian",
-  sudan: "Sudanese",
-  morocco: "Moroccan",
-  algeria: "Algerian",
-  tunisia: "Tunisian"
-};
-
-const dialectOrder = [
-  "msa", "uae", "saudi_najdi", "saudi_hijazi", "kuwait", "qatar",
-  "syria", "lebanon", "jordan", "palestine", "iraq", "egypt",
-  "sudan", "morocco", "algeria", "tunisia"
-];
-
-function getFlagEmoji(dialect) {
-  if (dialect === "msa") return "🌐";
-  return "";
-}
-
 function injectDialxStyles() {
   let style = document.getElementById("dialx-styles");
   if (!style) {
@@ -116,7 +86,7 @@ function injectDialxStyles() {
       margin-top: 6px;
       font-size: 13px;
       position: relative;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: var(--dox-font, ${Dox.FONT});
     }
     .dialx-translation {
       white-space: pre-wrap;
@@ -124,11 +94,13 @@ function injectDialxStyles() {
       unicode-bidi: plaintext;
     }
     .dialx-overlay-showmore {
-      color: rgb(29, 155, 240);
+      color: var(--dox-muted, #8E8E93);
       cursor: pointer;
       white-space: nowrap;
+      font-weight: 600;
     }
     .dialx-overlay-showmore:hover {
+      color: var(--dox-text, #F4F4F5);
       text-decoration: underline;
     }
     .dialx-btn,
@@ -139,15 +111,15 @@ function injectDialxStyles() {
       gap: 6px;
       padding: 4px 12px;
       border-radius: 9999px;
-      background: rgb(32, 35, 39);
-      color: rgb(152, 157, 162);
-      border: 1px solid rgb(47, 51, 54);
+      background: var(--dox-field, #1C1C1F);
+      color: var(--dox-muted, #8E8E93);
+      border: 1px solid var(--dox-line, #2C2C31);
       cursor: pointer;
       font-weight: 500;
       font-size: 13px;
       font-family: inherit;
       line-height: 1.3;
-      transition: background 0.15s ease, border-color 0.15s ease;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
       box-sizing: border-box;
     }
     .dialx-btn-sm {
@@ -165,156 +137,22 @@ function injectDialxStyles() {
     }
     .dialx-btn:hover,
     .dialx-btn-sm:hover:not(:disabled) {
-      background: rgb(39, 43, 48);
-      border-color: rgb(62, 68, 73);
+      background: var(--dox-accent-hover, rgba(138, 124, 92, 0.16));
+      border-color: var(--dox-accent, #8A7C5C);
+      color: var(--dox-text, #F4F4F5);
     }
     .dialx-btn-sm:disabled {
       opacity: 0.55;
       cursor: default;
     }
-    .dialx-panel {
-      position: fixed;
-      z-index: 10000;
-      min-width: 280px;
-      max-width: min(320px, calc(100vw - 16px));
-      max-height: min(360px, calc(100vh - 16px));
-      overflow-y: auto;
-      padding: 12px;
-      border-radius: 16px;
-      background: rgb(0, 0, 0);
-      border: 1px solid rgb(47, 51, 54);
-      box-shadow: rgba(255, 255, 255, 0.2) 0 0 15px inset,
-        rgba(0, 0, 0, 0.5) 0 4px 24px;
-      font-size: 13px;
-      color: rgb(152, 157, 162);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    .dialx-panel-title {
-      font-weight: 700;
-      margin-bottom: 12px;
-      color: rgb(152, 157, 162);
-    }
-    .dialx-panel-auto-row {
-      display: grid;
-      grid-template-columns: 1fr 52px 76px;
-      align-items: center;
-      column-gap: 8px;
-      padding: 0 0 12px;
-      margin-bottom: 8px;
-      border-bottom: 1px solid rgb(47, 51, 54);
-      cursor: pointer;
-      color: rgb(152, 157, 162);
-      font-size: 13px;
-    }
-    .dialx-panel-auto-main {
-      display: flex;
-      align-items: flex-end;
-      gap: 4px;
-    }
-    .dialx-panel-auto-text {
-      font-size: 11px;
-    }
-    .dialx-panel-default-label {
-      font-size: 9px;
-      font-weight: 600;
-      color: rgb(113, 118, 123);
-      text-align: center;
-      white-space: nowrap;
-      align-self: end;
-      margin-bottom: -6px;
-    }
-    .dialx-panel-grid-header,
-    .dialx-panel-grid-row {
-      display: grid;
-      grid-template-columns: 1fr 52px 76px;
-      align-items: center;
-      column-gap: 8px;
-      padding: 8px 0;
-      border-bottom: 1px solid rgb(47, 51, 54);
-      color: rgb(152, 157, 162);
-    }
-    .dialx-panel-grid-header {
-      padding-top: 0;
-      padding-bottom: 6px;
-      border-bottom: 1px solid rgb(47, 51, 54);
-    }
-    .dialx-panel-grid-row:last-child {
-      border-bottom: none;
-    }
-    .dialx-panel-label {
-      color: rgb(152, 157, 162);
-    }
-    .dialx-panel-col-header {
-      font-size: 11px;
-      font-weight: 600;
-      color: rgb(113, 118, 123);
-      text-align: center;
-    }
-    .dialx-panel-radio-col {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .dialx-panel-translate-col {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-    }
-    .dialx-accent-input {
-      accent-color: #1d9bf0;
-      width: 16px;
-      height: 16px;
-      margin: 0;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .dialx-switch {
-      position: relative;
-      display: inline-flex;
-      width: 24px;
-      height: 14px;
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-    .dialx-switch input {
-      position: absolute;
-      opacity: 0;
-      width: 0;
-      height: 0;
-      margin: 0;
-    }
-    .dialx-switch-slider {
-      position: absolute;
-      inset: 0;
-      border-radius: 9999px;
-      background: rgb(62, 65, 68);
-      transition: background 0.15s ease;
-    }
-    .dialx-switch-slider::before {
-      content: "";
-      position: absolute;
-      height: 10px;
-      width: 10px;
-      left: 2px;
-      top: 2px;
-      border-radius: 50%;
-      background: #fff;
-      transition: transform 0.15s ease;
-    }
-    .dialx-switch input:checked + .dialx-switch-slider {
-      background: #1d9bf0;
-    }
-    .dialx-switch input:checked + .dialx-switch-slider::before {
-      transform: translateX(10px);
-    }
     .dialx-logo {
       display: inline-block;
-      height: 20px;
-      width: 54px;
-      margin-left: 4px;
+      height: 30px;
+      width: 82px;
+      margin-inline-start: 4px;
       flex-shrink: 0;
       pointer-events: none;
-      background-color: rgb(152, 157, 162);
+      background-color: var(--dox-muted, #8E8E93);
       -webkit-mask-image: url("${logoUrl}");
       mask-image: url("${logoUrl}");
       -webkit-mask-repeat: no-repeat;
@@ -328,43 +166,8 @@ function injectDialxStyles() {
   `;
 }
 
-function positionDialectPanel(panel, anchorEl) {
-  const gap = 8;
-  const margin = 8;
-  const rect = anchorEl.getBoundingClientRect();
-
-  let top = rect.bottom + gap;
-  let left = rect.left;
-
-  panel.style.top = `${top}px`;
-  panel.style.left = `${left}px`;
-
-  const panelRect = panel.getBoundingClientRect();
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-
-  if (panelRect.right > vw - margin) {
-    left = Math.max(margin, vw - panelRect.width - margin);
-    panel.style.left = `${left}px`;
-  }
-  if (panelRect.left < margin) {
-    panel.style.left = `${margin}px`;
-  }
-
-  const updatedRect = panel.getBoundingClientRect();
-  if (updatedRect.bottom > vh - margin) {
-    const aboveTop = rect.top - updatedRect.height - gap;
-    if (aboveTop >= margin) {
-      panel.style.top = `${aboveTop}px`;
-    } else {
-      panel.style.top = `${margin}px`;
-      panel.style.maxHeight = `${vh - margin * 2}px`;
-    }
-  }
-}
-
 function globalCacheKey(text, dialect, statusId) {
-  if (statusId) return `${dialect}\nstatus:${statusId}`;
+  if (statusId) return `${dialect}\nstatus:${statusId}\n${text || ""}`;
   return `${dialect}\n${text}`;
 }
 
@@ -587,7 +390,7 @@ function isExtensionContextValid() {
 }
 
 function isValidDialect(dialect) {
-  return Boolean(dialect && dialectLabels[dialect]);
+  return Dox.isValidDialect(dialect);
 }
 
 function canOperate() {
@@ -602,50 +405,58 @@ function canAutoTranslate() {
   return canOperate() && autoTranslateEnabled;
 }
 
-function loadSettings() {
-  return new Promise((resolve) => {
-    if (!isExtensionContextValid()) {
-      dialxActive = false;
-      settingsReady = false;
-      resolve();
-      return;
-    }
-
-    chrome.storage.sync.get(
-      { preferredDialect: DEFAULT_DIALECT, autoTranslate: true, backendUrl: DEFAULT_BACKEND_URL },
-      (data) => {
-        if (chrome.runtime.lastError || !isExtensionContextValid()) {
-          dialxActive = false;
-          settingsReady = false;
-          resolve();
-          return;
-        }
-
-        dialxActive = true;
-        preferredDialect = isValidDialect(data.preferredDialect)
-          ? data.preferredDialect
-          : DEFAULT_DIALECT;
-        autoTranslateEnabled = data.autoTranslate !== false;
-        backendUrl = normalizeBackendUrl(data.backendUrl);
-        settingsReady = true;
-        resolve();
-      }
-    );
-  });
+async function loadSettings() {
+  if (!isExtensionContextValid()) {
+    dialxActive = false;
+    settingsReady = false;
+    return;
+  }
+  await Dox.locale.ready();
+  const prefs = await Dox.prefs.get();
+  if (chrome.runtime.lastError || !isExtensionContextValid()) {
+    dialxActive = false;
+    settingsReady = false;
+    return;
+  }
+  dialxActive = prefs.extensionEnabled !== false;
+  preferredDialect = isValidDialect(prefs.preferredDialect)
+    ? prefs.preferredDialect
+    : DEFAULT_DIALECT;
+  autoTranslateEnabled = prefs.autoTranslate === true;
+  newsToMsa = prefs.newsToMsa !== false;
+  fawEnabled = prefs.fawEnabled !== false;
+  backendUrl = Dox.prefs.normalizeBackendUrl(prefs.backendUrl);
+  settingsReady = true;
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "sync" || !isExtensionContextValid()) return;
 
+  if (changes.extensionEnabled) {
+    if (changes.extensionEnabled.newValue === false) shutdownDialx();
+    else if (!dialxActive) bootstrapDialx();
+  }
+  if (changes.systemDialectId?.newValue) {
+    Dox.locale.reload(changes.systemDialectId.newValue).then(() => {
+      postStates.forEach((state) => {
+        state.updateMainButton?.();
+        if (state.transEl && state.overlayText && !state.showingOriginal) {
+          Dox.feed.refreshOverlay(state);
+        }
+      });
+    });
+  }
+  if (changes.newsToMsa) newsToMsa = changes.newsToMsa.newValue !== false;
+  if (changes.fawEnabled) fawEnabled = changes.fawEnabled.newValue !== false;
   if (changes.preferredDialect?.newValue) {
-    const next = changes.preferredDialect.newValue;
+    const next = Dox.migrateDialectId(changes.preferredDialect.newValue);
     if (isValidDialect(next)) preferredDialect = next;
   }
   if (changes.backendUrl) {
     backendUrl = normalizeBackendUrl(changes.backendUrl.newValue);
   }
   if (changes.autoTranslate) {
-    autoTranslateEnabled = changes.autoTranslate.newValue !== false;
+    autoTranslateEnabled = changes.autoTranslate.newValue === true;
     if (!autoTranslateEnabled) {
       postStates.forEach((state) => {
         if (state.autoTranslatePending && state.abortController) {
@@ -675,7 +486,7 @@ function clearTranslationQueue() {
 
 function removeAllDialxUi() {
   document.querySelectorAll(".dialx-control-bar").forEach((bar) => bar.remove());
-  document.getElementById("dialect-panel")?.remove();
+  Dox.sheet?.close?.();
 
   document.querySelectorAll("article[data-dialx-observed]").forEach((article) => {
     delete article.dataset.dialxObserved;
@@ -733,7 +544,6 @@ function shutdownDialx() {
   postStates.clear();
 
   clearTranslationQueue();
-  activePanelCleanup?.();
   removeAllDialxUi();
 }
 
@@ -778,35 +588,26 @@ function drainTranslationQueue() {
   }
 }
 
-/** Normalize a user-entered backend URL (trim, drop trailing slashes). */
 function normalizeBackendUrl(url) {
-  const trimmed = (url || "").trim().replace(/\/+$/, "");
-  return trimmed || DEFAULT_BACKEND_URL;
+  return Dox.prefs.normalizeBackendUrl(url);
 }
 
-function getTranslateEndpoint() {
-  return `${normalizeBackendUrl(backendUrl)}/translate`;
-}
-
-async function translateText(text, targetDialect, signal) {
+async function translateText(text, targetDialect, signal, fingerprint) {
   if (!canOperate()) {
     throw new DOMException("DialectsOnX inactive", "AbortError");
   }
-
-  try {
-    const response = await fetch(getTranslateEndpoint(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, source: "auto", target: targetDialect }),
-      signal
-    });
-    const data = await response.json();
-    return data.translation;
-  } catch (e) {
-    if (e.name === "AbortError") throw e;
-    console.error("Translation error:", e);
-    return text;
+  const result = await Dox.api.translate({
+    text,
+    targetDialect,
+    clientSource: "dialectsonx",
+    signal,
+    fingerprint,
+  });
+  let out = result.translation;
+  if (typeof Dox.faw?.applyPersonal === "function") {
+    out = await Dox.faw.applyPersonal(targetDialect, out);
   }
+  return out;
 }
 
 function getCachedTranslation(state, dialect) {
@@ -816,7 +617,7 @@ function getCachedTranslation(state, dialect) {
 
   const cacheId = state.cacheStatusId || state.statusId;
   if (cacheId) {
-    const statusKey = globalCacheKey(null, dialect, cacheId);
+    const statusKey = globalCacheKey(state.originalText, dialect, cacheId);
     if (globalTranslationCache.has(statusKey)) {
       const cached = globalTranslationCache.get(statusKey);
       state.translationCache.set(dialect, cached);
@@ -837,7 +638,7 @@ function storeTranslation(state, dialect, translated) {
   state.translationCache.set(dialect, translated);
   const cacheId = state.cacheStatusId || state.statusId;
   if (cacheId) {
-    globalTranslationCache.set(globalCacheKey(null, dialect, cacheId), translated);
+    globalTranslationCache.set(globalCacheKey(state.originalText, dialect, cacheId), translated);
   }
   globalTranslationCache.set(globalCacheKey(state.originalText, dialect), translated);
 }
@@ -847,20 +648,21 @@ async function fetchTranslation(state, dialect, signal) {
     throw new DOMException("DialectsOnX inactive", "AbortError");
   }
 
-  const cached = getCachedTranslation(state, dialect);
+  const fp = await Dox.api.fawFingerprint(dialect);
+  const cacheKey = dialect + ":faw" + (fp || "");
+  const cached = getCachedTranslation(state, cacheKey) || getCachedTranslation(state, dialect);
   if (cached) return cached;
 
   const cacheId = state.cacheStatusId || state.statusId;
-  const pendingKey = cacheId
-    ? `${cacheId}:${dialect}`
-    : `${dialect}\n${state.originalText}`;
+  const pendingKey = `${cacheId || ""}:${dialect}\n${state.originalText}`;
 
   if (pendingTranslationByKey.has(pendingKey)) {
     return pendingTranslationByKey.get(pendingKey);
   }
 
-  const request = translateText(state.originalText, dialect, signal)
+  const request = translateText(state.originalText, dialect, signal, fp)
     .then((translated) => {
+      storeTranslation(state, cacheKey, translated);
       storeTranslation(state, dialect, translated);
       return translated;
     })
@@ -875,45 +677,8 @@ async function fetchTranslation(state, dialect, signal) {
 function applyTranslated(state, dialect) {
   const translated = getCachedTranslation(state, dialect);
   if (!translated || !state.postElement) return false;
-
-  // Posts truncated with a "Show more" (inside the text node OR next to it) use
-  // an overlay so X's native inline expansion keeps working; everything else is
-  // replaced in place.
-  if (state.useOverlay === undefined) {
-    state.useOverlay = Boolean(findPostShowMore(state));
-  }
-  if (state.useOverlay) return applyTranslatedOverlay(state, dialect, translated);
-
-  // Idempotent: skip the DOM write when the translation is already on screen.
-  // Comparing against the normalized read-back avoids redundant writes (and
-  // flicker) during the frequent re-scans that keep status pages in sync.
-  const alreadyShown =
-    state.activeDialect === dialect &&
-    !state.showingOriginal &&
-    state.appliedHtml != null &&
-    state.postElement.innerHTML === state.appliedHtml;
-
-  if (!alreadyShown) {
-    suppressDomScan = true;
-    // On the timeline, permanently ignore mutations to translated posts for
-    // performance. On /status/ pages we must keep detecting X's re-renders so a
-    // reverted main/ancestor post can recover, so we rely on suppressDomScan
-    // (frame-scoped) instead of the permanent flag there.
-    if (!isOnStatusDetailPage()) {
-      state.postElement.setAttribute("data-dialx-ignore-mutations", "1");
-    }
-    state.postElement.innerHTML = translated;
-    state.appliedHtml = state.postElement.innerHTML;
-    requestAnimationFrame(() => {
-      suppressDomScan = false;
-    });
-  }
-
-  state.activeDialect = dialect;
-  state.showingOriginal = false;
-  state.autoTranslated = true;
-  state.updateMainButton?.();
-  return true;
+  state.useOverlay = true;
+  return applyTranslatedOverlay(state, dialect, translated);
 }
 
 /** Hide X's real tweet-text node while leaving it in the DOM (React-controlled). */
@@ -981,6 +746,7 @@ function applyTranslatedOverlay(state, dialect, translated) {
   state.showingOriginal = false;
   state.autoTranslated = true;
   state.updateMainButton?.();
+  if (typeof Dox.faw?.bindOverlay === "function") Dox.faw.bindOverlay(state);
   return true;
 }
 
@@ -996,7 +762,7 @@ function renderOverlayContent(state, translated) {
     more.className = "dialx-overlay-showmore";
     more.setAttribute("role", "button");
     more.setAttribute("tabindex", "0");
-    more.textContent = "Show more";
+    more.textContent = Dox.locale.t("dox_show_more");
     const run = (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -1064,10 +830,17 @@ async function expandAndRetranslate(state) {
     }
 
     state.fullyExpanded = true;
-    const full = stripShowMoreLabel((cur.innerText || cur.textContent || "").trim());
+    const full = extractPostText(cur);
     if (full && full.length > (state.originalText?.length || 0)) {
-      state.originalText = full;
+      const prev = state.originalText;
       invalidatePostStatusCache(state);
+      if (prev) {
+        for (const d of Dox.CATALOG.ids) {
+          globalTranslationCache.delete(globalCacheKey(prev, d));
+        }
+      }
+      state.originalText = full;
+      state.translationCache.clear();
     }
 
     // Keep the now-expanded original visible as a loading state while we fetch.
@@ -1450,7 +1223,7 @@ function isNewsOrOfficialPost(article, text) {
 }
 
 function getAutoTranslateDialect(state) {
-  if (state.isNews) return "msa";
+  if (state.isNews && newsToMsa) return "arabic_msa";
   return isValidDialect(preferredDialect) ? preferredDialect : DEFAULT_DIALECT;
 }
 
@@ -1529,13 +1302,36 @@ function stripShowMoreLabel(text) {
   return (text || "").replace(/\s*(show|see|read)\s+more\s*$/i, "").trim();
 }
 
+function extractPostText(el) {
+  if (!el) return "";
+  const parts = [];
+  const walk = (node) => {
+    if (!node) return;
+    if (node.nodeType === Node.TEXT_NODE) {
+      parts.push(node.textContent || "");
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const tag = node.tagName;
+    if (tag === "IMG" && node.alt) {
+      parts.push(node.alt);
+      return;
+    }
+    if (node.classList?.contains("dialx-overlay-showmore")) return;
+    for (const child of node.childNodes) walk(child);
+  };
+  walk(el);
+  return stripShowMoreLabel(parts.join("").replace(/\s+/g, " ").trim());
+}
+
 /** Forget cached translations of the truncated text so the full text is re-fetched. */
 function invalidatePostStatusCache(state) {
   state.translationCache.clear();
   const cacheId = state.cacheStatusId || state.statusId;
   if (!cacheId) return;
-  for (const dialect of dialectOrder) {
+  for (const dialect of Dox.CATALOG.ids) {
     globalTranslationCache.delete(globalCacheKey(null, dialect, cacheId));
+    globalTranslationCache.delete(globalCacheKey(state.originalText, dialect, cacheId));
   }
 }
 
@@ -1685,9 +1481,9 @@ function shouldProcessDomMutations(mutations) {
       if (!primary.contains(node) && node !== primary) continue;
       if (
         node.closest?.(
-          ".dialx-control-bar, #dialect-panel, [data-dialx-ignore-mutations]"
+          ".dialx-control-bar, .dox-sheet-scrim, [data-dialx-ignore-mutations]"
         ) ||
-        node.matches?.(".dialx-control-bar, #dialect-panel")
+        node.matches?.(".dialx-control-bar, .dox-sheet-scrim")
       ) {
         continue;
       }
@@ -2262,8 +2058,9 @@ function setAsDefault(dialect) {
 }
 
 function resolvePostDialect(state, overrideDialect) {
-  if (state.isNews) return "msa";
   if (overrideDialect && isValidDialect(overrideDialect)) return overrideDialect;
+  if (state.manualDialect && isValidDialect(state.manualDialect)) return state.manualDialect;
+  if (state.isNews && newsToMsa) return "arabic_msa";
   if (state.activeDialect && isValidDialect(state.activeDialect)) return state.activeDialect;
   return getAutoTranslateDialect(state);
 }
@@ -2273,27 +2070,59 @@ async function translatePostToDialect(postId, targetDialect, translateBtn) {
 
   const state = postStates.get(postId);
   if (!state?.postElement || !state.originalText) return;
+  const dialect = Dox.migrateDialectId(targetDialect);
 
-  if (getCachedTranslation(state, targetDialect)) {
-    applyTranslated(state, targetDialect);
+  if (getCachedTranslation(state, dialect)) {
+    state.showingOriginal = false;
+    applyTranslated(state, dialect);
+    if (typeof Dox.faw?.bindOverlay === "function") Dox.faw.bindOverlay(state);
     return;
   }
 
   if (translateBtn) {
     translateBtn.disabled = true;
-    translateBtn.textContent = "Translating...";
+    translateBtn.textContent = Dox.locale.t("status_translating");
   }
+  showBarStatus(state, Dox.locale.t("status_translating"));
 
-  const translated = await runQueuedTranslation(
-    () => fetchTranslation(state, targetDialect),
-    state.priority
-  );
-  applyTranslated(state, targetDialect);
-
-  if (translateBtn) {
-    translateBtn.disabled = false;
-    translateBtn.textContent = "Translate";
+  try {
+    await runQueuedTranslation(
+      () => fetchTranslation(state, dialect),
+      state.priority
+    );
+    state.showingOriginal = false;
+    applyTranslated(state, dialect);
+    if (typeof Dox.faw?.bindOverlay === "function") Dox.faw.bindOverlay(state);
+    showBarStatus(state, "");
+  } catch (e) {
+    if (e && e.name === "AbortError") return;
+    const msg = e && e.code === "rate_limited"
+      ? Dox.locale.t("dox_rate_limited")
+      : (e && e.message) || Dox.locale.t("dox_translate_failed");
+    showBarStatus(state, msg);
+  } finally {
+    if (translateBtn) {
+      translateBtn.disabled = false;
+      translateBtn.textContent = Dox.locale.t("pad_translate");
+    }
+    state.updateMainButton?.();
   }
+}
+
+function showBarStatus(state, message) {
+  if (!state?.bar) return;
+  let el = state.bar.querySelector(".dialx-status");
+  if (!message) {
+    el?.remove();
+    return;
+  }
+  if (!el) {
+    el = document.createElement("span");
+    el.className = "dialx-status";
+    el.style.cssText = "font-size:11px;color:var(--dox-danger, #FF453A);margin-inline-start:6px;white-space:nowrap;";
+    state.bar.appendChild(el);
+  }
+  el.textContent = message;
 }
 
 function createControlBar(postElement, postId, isNews, existingState = null) {
@@ -2303,14 +2132,14 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
   bar.classList.add("dialx-control-bar");
   bar.dataset.dialxPostId = postId;
 
-  const originalText = stripShowMoreLabel(postElement.innerText.trim());
+  const originalText = extractPostText(postElement);
   let state = existingState || postStates.get(postId);
 
   if (!state) {
     state = {
       originalText,
       postElement,
-      showingOriginal: false,
+      showingOriginal: !autoTranslateEnabled,
       autoTranslated: false,
       translationCache: new Map(),
       activeDialect: getAutoTranslateDialect({ isNews }),
@@ -2328,72 +2157,77 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
   mainBtn.setAttribute("role", "button");
   mainBtn.setAttribute("tabindex", "0");
 
-  state.updateMainButton = () => {
-    if (state.showingOriginal) {
-      mainBtn.textContent = "Original";
-      return;
-    }
-    if (isNews) {
-      mainBtn.textContent = "🌐 MSA";
-      return;
-    }
-    const d = resolvePostDialect(state);
-    mainBtn.textContent = `${getFlagEmoji(d)} ${dialectLabels[d]}`;
-  };
-  state.updateMainButton();
-
-  mainBtn.onclick = (e) => {
-    e.stopPropagation();
-    if (!canOperate()) return;
-
-    // Arabic news/official posts are shown as-is (MSA) with no translation —
-    // there is nothing to toggle and we must never issue a request for them.
-    if (state.isNews && isArabicText(state.originalText)) return;
-
-    state.showingOriginal = !state.showingOriginal;
-    const target = state.postElement || postElement;
-
-    if (state.showingOriginal) {
-      if (state.useOverlay) {
-        // Reveal X's real text node (native "Show more" intact); hide overlay.
-        if (state.transEl) state.transEl.style.display = "none";
-        if (state.postElement) showOriginalTextNode(state.postElement);
-        if (state.nativeShowMore) state.nativeShowMore.style.removeProperty("display");
-      } else {
-        suppressDomScan = true;
-        target.textContent = state.originalText;
-        requestAnimationFrame(() => {
-          suppressDomScan = false;
-        });
-      }
-    } else {
-      const dialect = resolvePostDialect(state);
-      if (!applyTranslated(state, dialect)) {
-        runQueuedTranslation(
-          () => fetchTranslation(state, dialect),
-          state.priority ?? PRIORITY_REPLY
-        ).then(() => {
-          if (!state.showingOriginal && state.postElement?.isConnected) {
-            applyTranslated(state, dialect);
-          }
-        });
-      }
-    }
-    state.updateMainButton();
-  };
-
   const selectorBtn = document.createElement("button");
   selectorBtn.type = "button";
   selectorBtn.className = "dialx-btn dialx-btn-selector";
-  selectorBtn.textContent = "Dialect Selector";
+  selectorBtn.textContent = Dox.locale.t("label_dialect_selector");
+
+  state.updateMainButton = () => {
+    selectorBtn.textContent = Dox.locale.t("label_dialect_selector");
+    if (state.showingOriginal) {
+      mainBtn.textContent = Dox.locale.t("lens_view_original");
+      return;
+    }
+    const d = resolvePostDialect(state);
+    mainBtn.textContent = Dox.locale.chipButtonText(d);
+  };
+  state.updateMainButton();
+
+  Dox.bindActivate(mainBtn, (e) => {
+    e.stopPropagation();
+    if (!canOperate()) return;
+
+    if (state.isNews && newsToMsa && isArabicText(state.originalText) && !state.manualDialect) return;
+
+    if (!state.showingOriginal) {
+      state.showingOriginal = true;
+      if (state.transEl) state.transEl.style.display = "none";
+      if (state.postElement) showOriginalTextNode(state.postElement);
+      if (state.nativeShowMore) state.nativeShowMore.style.removeProperty("display");
+      state.updateMainButton();
+      return;
+    }
+
+    const dialect = resolvePostDialect(state);
+    state.showingOriginal = false;
+    state.updateMainButton();
+    if (!applyTranslated(state, dialect)) {
+      runQueuedTranslation(
+        () => fetchTranslation(state, dialect),
+        state.priority ?? PRIORITY_REPLY
+      ).then(() => {
+        if (!state.showingOriginal && state.postElement?.isConnected) {
+          applyTranslated(state, dialect);
+          if (typeof Dox.faw?.bindOverlay === "function") Dox.faw.bindOverlay(state);
+        }
+      }).catch((err) => {
+        if (err && err.name === "AbortError") return;
+        state.showingOriginal = true;
+        const msg = err && err.code === "rate_limited"
+          ? Dox.locale.t("dox_rate_limited")
+          : Dox.locale.t("dox_translate_failed");
+        showBarStatus(state, msg);
+        state.updateMainButton();
+      });
+    } else if (typeof Dox.faw?.bindOverlay === "function") {
+      Dox.faw.bindOverlay(state);
+    }
+  });
+
   selectorBtn.onclick = (e) => {
     e.stopPropagation();
-    showDialectSelector(bar, postId);
+    Dox.sheet.open({
+      mode: "x",
+      selectedId: preferredDialect,
+      onPick: (id) => {
+        state.manualDialect = id;
+        preferredDialect = id;
+        state.showingOriginal = false;
+        translatePostToDialect(postId, id, mainBtn);
+      },
+    });
   };
 
-  // DialectsOnX wordmark rendered as a luminance mask over a neutral gray fill: the
-  // black background drops out (transparent) and the mark blends on both X
-  // light and dark themes. Height matches the selector button.
   const logo = document.createElement("span");
   logo.className = "dialx-logo";
   logo.setAttribute("aria-label", "DialectsOnX");
@@ -2403,145 +2237,6 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
   bar.appendChild(selectorBtn);
   bar.appendChild(logo);
   return bar;
-}
-
-function addDialectRow(panel, label, dialectKey, postId) {
-  const row = document.createElement("div");
-  row.className = "dialx-panel-grid-row";
-
-  const name = document.createElement("span");
-  name.className = "dialx-panel-label";
-  name.textContent = label;
-
-  const radioCol = document.createElement("div");
-  radioCol.className = "dialx-panel-radio-col";
-
-  const radio = document.createElement("input");
-  radio.type = "radio";
-  radio.className = "dialx-accent-input";
-  radio.name = "defaultDialect";
-  radio.checked = dialectKey === preferredDialect;
-  radio.addEventListener("change", () => {
-    if (radio.checked) setAsDefault(dialectKey);
-  });
-  radioCol.appendChild(radio);
-
-  const translateCol = document.createElement("div");
-  translateCol.className = "dialx-panel-translate-col";
-
-  const translateBtn = document.createElement("button");
-  translateBtn.type = "button";
-  translateBtn.className = "dialx-btn-sm";
-  translateBtn.textContent = "Translate";
-  translateBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    translatePostToDialect(postId, dialectKey, translateBtn);
-  });
-  translateCol.appendChild(translateBtn);
-
-  row.appendChild(name);
-  row.appendChild(radioCol);
-  row.appendChild(translateCol);
-  panel.appendChild(row);
-}
-
-function showDialectSelector(controlBar, postId) {
-  if (!canOperate()) return;
-  injectDialxStyles();
-
-  if (activePanelCleanup) {
-    activePanelCleanup();
-    activePanelCleanup = null;
-  }
-  const existing = document.getElementById("dialect-panel");
-  if (existing) existing.remove();
-
-  const panel = document.createElement("div");
-  panel.id = "dialect-panel";
-  panel.className = "dialx-panel";
-
-  const title = document.createElement("div");
-  title.className = "dialx-panel-title";
-  title.textContent = "Choose Dialect";
-  panel.appendChild(title);
-
-  const autoRow = document.createElement("label");
-  autoRow.className = "dialx-panel-auto-row";
-
-  const autoMain = document.createElement("span");
-  autoMain.className = "dialx-panel-auto-main";
-
-  const autoSwitch = document.createElement("span");
-  autoSwitch.className = "dialx-switch";
-
-  const autoCheckbox = document.createElement("input");
-  autoCheckbox.type = "checkbox";
-  autoCheckbox.checked = autoTranslateEnabled;
-  autoCheckbox.addEventListener("change", () => {
-    if (!canOperate()) return;
-    autoTranslateEnabled = autoCheckbox.checked;
-    chrome.storage.sync.set({ autoTranslate: autoTranslateEnabled });
-  });
-
-  const autoSlider = document.createElement("span");
-  autoSlider.className = "dialx-switch-slider";
-
-  autoSwitch.appendChild(autoCheckbox);
-  autoSwitch.appendChild(autoSlider);
-  autoMain.appendChild(autoSwitch);
-
-  const autoText = document.createElement("span");
-  autoText.className = "dialx-panel-auto-text";
-  autoText.innerHTML = '<span style="font-size:13px;">⚙️</span> <strong>Auto-Translate</strong>';
-  autoMain.appendChild(autoText);
-  autoRow.appendChild(autoMain);
-
-  const defaultLabel = document.createElement("span");
-  defaultLabel.className = "dialx-panel-default-label";
-  defaultLabel.textContent = "Default";
-  autoRow.appendChild(defaultLabel);
-
-  autoRow.appendChild(document.createElement("span"));
-
-  panel.appendChild(autoRow);
-
-  addDialectRow(panel, "🌐 MSA", "msa", postId);
-
-  const regionalOrder = dialectOrder.filter((k) => k !== "msa");
-  regionalOrder.forEach((key) => {
-    addDialectRow(panel, `${getFlagEmoji(key)} ${dialectLabels[key]}`, key, postId);
-  });
-
-  document.body.appendChild(panel);
-  positionDialectPanel(panel, controlBar);
-
-  const reposition = () => {
-    if (document.getElementById("dialect-panel") === panel) {
-      positionDialectPanel(panel, controlBar);
-    }
-  };
-  window.addEventListener("scroll", reposition, true);
-  window.addEventListener("resize", reposition);
-
-  const cleanup = () => {
-    window.removeEventListener("scroll", reposition, true);
-    window.removeEventListener("resize", reposition);
-    document.removeEventListener("click", closeOnOutside, true);
-    if (activePanelCleanup === cleanup) activePanelCleanup = null;
-  };
-  activePanelCleanup = cleanup;
-
-  const closeOnOutside = (e) => {
-    if (!panel.contains(e.target) && !controlBar.contains(e.target)) {
-      panel.remove();
-      cleanup();
-    }
-  };
-  setTimeout(() => {
-    document.addEventListener("click", closeOnOutside, true);
-  }, 0);
-
-  panel.addEventListener("click", (e) => e.stopPropagation());
 }
 
 let autoTranslateBudget = 0;
@@ -2630,7 +2325,7 @@ async function maybeAutoTranslate(postId) {
   // already in Arabic script, show it as-is and never request a translation.
   if (state.isNews && isArabicText(state.originalText)) {
     state.autoTranslated = true;
-    state.activeDialect = "msa";
+    state.activeDialect = "arabic_msa";
     state.appliedHtml = state.postElement.innerHTML;
     state.updateMainButton?.();
     maybeUnobserveArticle(state.article);
@@ -2700,12 +2395,12 @@ function registerPostTarget(target, options = {}) {
   let state = postStates.get(postId);
 
   if (!state) {
-    const isNews = isNewsOrOfficialPost(article, el.innerText.trim());
+    const isNews = isNewsOrOfficialPost(article, extractPostText(el));
     const bar = createControlBar(el, postId, isNews); // creates and stores the state
     state = postStates.get(postId);
     state.postId = postId;
     state.isNews = isNews;
-    state.showingOriginal = false;
+    state.showingOriginal = !autoTranslateEnabled;
     state.bar = bar;
   }
 
@@ -2723,7 +2418,7 @@ function registerPostTarget(target, options = {}) {
 
   // Keep original text current only while untranslated (avoids corruption).
   if (!state.autoTranslated) {
-    mergeOriginalText(state, stripShowMoreLabel(el.innerText.trim()));
+    mergeOriginalText(state, extractPostText(el));
   }
 
   ensureControlBar(state, el, article);
@@ -2968,7 +2663,20 @@ function initObservers() {
   bindDomObserver();
 }
 
+Dox.feed = {
+  extractPostText,
+  applyTranslated,
+  refreshOverlay(state) {
+    if (!state?.transEl || state.overlayText == null) return;
+    renderOverlayContent(state, state.overlayText);
+    if (state.transEl) state.transEl.dataset.doxFawBound = "";
+    if (typeof Dox.faw?.bindOverlay === "function") Dox.faw.bindOverlay(state);
+  },
+};
+
 async function bootstrapDialx() {
+  if (window.__doxFeedInit) return;
+  window.__doxFeedInit = true;
   if (!isExtensionContextValid()) {
     shutdownDialx();
     return;

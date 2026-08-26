@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>DialectsOnX sheet screenshot</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #000; }
+  </style>
+</head>
+<body>
+  <script src="chrome-mock.js"></script>
+  <script src="../theme.js"></script>
+  <script src="../dialects.js"></script>
+  <script src="../locale.js"></script>
+  <script src="../prefs.js"></script>
+  <script src="../sheet.js"></script>
+  <script>
+    (async () => {
+      await Dox.prefs.set({
+        systemDialectId: "english_american",
+        systemLanguageId: "english",
+        preferredDialect: "arabic_msa",
+        favorites: ["arabic_egyptian", "english_american"],
+        recents: ["spanish_mexican", "french_parisian"],
+        hamaUnlocked: false,
+      });
+      await Dox.locale.reload("english_american");
+      Dox.sheet.open({ mode: "x", selectedId: "arabic_msa" });
+      document.body.dataset.ready = "sheet";
+    })();
+  </script>
+</body>
+</html>
