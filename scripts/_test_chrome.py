@@ -128,6 +128,8 @@ def test_extract_emoji() -> None:
     _assert("chrome-mock.js" in demo, "demo chrome stub")
     _assert("system-language.js" in demo, "demo system language")
     _assert("dox-sys-card" in demo, "demo sys card")
+    layout = (EXT / "test" / "layout-check.html").read_text(encoding="utf-8")
+    _assert("LAYOUT CHECK" in layout, "headless layout check page")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     _assert("dialectsonx.onrender.com" not in readme, "no Render URL")
     _assert("dialex-backend-f6b7" in readme, "Cloud Run URL")

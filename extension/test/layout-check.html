@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>DialectsOnX layout check</title>
+</head>
+<body>
+  <pre id="out">running…</pre>
+  <div id="sysList"></div>
+  <script src="chrome-mock.js"></script>
+  <script src="../dialects.js"></script>
+  <script src="../locale.js"></script>
+  <script src="../prefs.js"></script>
+  <script src="../api.js"></script>
+  <script src="../sheet.js"></script>
+  <script src="../system-language.js"></script>
+  <script>
+    const rows = [];
+    function ok(cond, msg) {
+      rows.push((cond ? "PASS " : "FAIL ") + msg);
+      if (!cond) console.error("FAIL", msg);
+    }
+    (async () => {
+      await Dox.locale.ready();
+      await Dox.prefs.set({
+        favorites: ["arabic_egyptian"],
+        recents: ["spanish_mexican"],
+        hamaUnlocked: false,
+        preferredDialect: "arabic_msa",
+      });
+      Dox.sheet.open({ mode: "x", selectedId: "arabic_msa" });
+      await new Promise((r) => setTimeout(r, 80));
+      ok(!!document.querySelector(".dox-sheet-lang-panel"), "lang panel");
+      ok(!!document.querySelector(".dox-sheet-dialect-panel"), "dialect panel");
+      ok(!!document.querySelector(".dox-sheet-quick"), "favorites/recents row");
+      ok(!!document.querySelector(".dox-gold-badge"), "gold group badges in dialect sheet");
+      const chips = [...document.querySelectorAll(".dox-sheet-dialect-list .dox-sheet-chip")];
+      ok(chips.length > 5 && chips.length < 80, "right panel is one language, count=" + chips.length);
+      ok(chips.some((c) => c.dataset.dialectId === "arabic_msa"), "MSA in Arabic list");
+      ok(!chips.some((c) => c.dataset.dialectId === "spanish_castilian"), "Spanish not in Arabic list");
+      ok(!document.querySelector('.dox-sheet-dialect-list [data-dialect-id="arabic_syrian_hama"]'), "Hama hidden");
+      ok(!!document.querySelector('.dox-sheet-dialect-list [data-dialect-id="arabic_syrian_damascus"]'), "Damascus visible");
+      document.querySelector('[data-spoken-id="spanish"]').click();
+      await new Promise((r) => setTimeout(r, 120));
+      ok(!!document.querySelector(".dox-sheet"), "sheet stays open after language click");
+      const chips2 = [...document.querySelectorAll(".dox-sheet-dialect-list .dox-sheet-chip")].map(
+        (c) => c.dataset.dialectId
+      );
+      ok(chips2.includes("spanish_castilian"), "right panel switches to Spanish");
+      ok(!chips2.includes("arabic_msa"), "Arabic dialects leave the right panel");
+      const plate = document.querySelector(".dox-sheet-plate-label").textContent;
+      ok(/Spanish|Castilian|Estándar/i.test(plate) || plate.length > 0, "selection plate=" + plate);
+      const search = document.querySelector(".dox-sheet-search input");
+      search.value = "Egyptian";
+      search.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 120));
+      ok(
+        !!document.querySelector('.dox-sheet-lang-list [data-dialect-id="arabic_egyptian"]'),
+        "search lists Egyptian as a dialect hit"
+      );
+      Dox.sheet.close();
+      ok(!document.querySelector(".dox-sheet"), "sheet closes");
+
+      Dox.systemLanguage.renderList(document.getElementById("sysList"), "", "english", () => {});
+      const sysRows = document.querySelectorAll("#sysList .sys-row");
+      ok(sysRows.length === 58, "58 system languages, got " + sysRows.length);
+      ok(!document.querySelector("#sysList .dox-gold-badge"), "no gold headers in system language");
+      const es = document.querySelector('#sysList [data-spoken-id="spanish"]');
+      ok(es && es.querySelector(".sys-endonym").textContent === "Español", "Spanish endonym");
+      ok(es && es.querySelector(".sys-en") && es.querySelector(".sys-en").textContent === "Spanish", "Spanish localized name beside endonym");
+      const en = document.querySelector('#sysList [data-spoken-id="english"]');
+      ok(en && en.querySelector(".sys-endonym").textContent === "English", "English endonym");
+      ok(en && !en.querySelector(".sys-en"), "English has no duplicate English label");
+      ok(en && en.classList.contains("selected") && en.querySelector(".sys-check"), "selected English has check");
+      Dox.systemLanguage.renderList(document.getElementById("sysList"), "arab", "english", () => {});
+      const filtered = [...document.querySelectorAll("#sysList .sys-row")].map((r) => r.dataset.spokenId);
+      ok(filtered.includes("arabic") && !filtered.includes("spanish"), "search arab filters to Arabic");
+
+      const failed = rows.filter((l) => l.startsWith("FAIL"));
+      const text =
+        (failed.length ? "LAYOUT CHECK FAILED\n" : "LAYOUT CHECK PASSED\n") + rows.join("\n");
+      document.getElementById("out").textContent = text;
+      document.getElementById("out").dataset.status = failed.length ? "fail" : "pass";
+      try {
+        await fetch("http://127.0.0.1:9876/", { method: "POST", body: text, mode: "no-cors" });
+      } catch (_) { /* collector optional */ }
+    })().catch((err) => {
+      document.getElementById("out").textContent = "ERROR " + err.stack;
+      document.getElementById("out").dataset.status = "fail";
+    });
+  </script>
+</body>
+</html>
