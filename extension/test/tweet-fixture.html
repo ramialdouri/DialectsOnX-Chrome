@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>DialectsOnX tweet fixture</title>
+  <style>
+    body { font-family: sans-serif; background: #000; color: #e7e9ea; padding: 24px; }
+    article { max-width: 540px; border: 1px solid #2f3336; padding: 16px; border-radius: 12px; }
+  </style>
+</head>
+<body>
+  <p>Local tweet DOM fixture (no x.com login).</p>
+  <article data-testid="tweet">
+    <div data-testid="tweetText">
+      Hello world
+      <img alt="🔥" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" />
+      more text
+      <span>Show more</span>
+    </div>
+  </article>
+  <pre id="out"></pre>
+  <script src="../dialects.js"></script>
+  <script>
+    function extractPostText(el) {
+      const parts = [];
+      const walk = (node) => {
+        if (!node) return;
+        if (node.nodeType === Node.TEXT_NODE) {
+          parts.push(node.textContent || "");
+          return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        if (node.tagName === "IMG" && node.alt) {
+          parts.push(node.alt);
+          return;
+        }
+        for (const child of node.childNodes) walk(child);
+      };
+      walk(el);
+      return parts.join("").replace(/\s+/g, " ").replace(/\s*(show|see|read)\s+more\s*$/i, "").trim();
+    }
+    const el = document.querySelector('[data-testid="tweetText"]');
+    const text = extractPostText(el);
+    document.getElementById("out").textContent = JSON.stringify({
+      text,
+      hasFire: text.includes("🔥"),
+      dialectCount: Dox.CATALOG.ids.length,
+    }, null, 2);
+  </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>DialectsOnX 0.3 local demo</title>
+  <style>
+    body { margin: 0; background: #000; color: #e7e9ea; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    header { padding: 12px 16px; border-bottom: 1px solid #2f3336; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    header button { background: #202327; color: #e7e9ea; border: 1px solid #2f3336; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+    #primaryColumn { max-width: 540px; margin: 24px auto; }
+    article { border: 1px solid #2f3336; border-radius: 12px; padding: 16px; }
+    [data-testid="User-Name"] { font-weight: 700; margin-bottom: 8px; }
+    [data-testid="tweetText"] { font-size: 17px; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>DialectsOnX 0.3 demo</strong>
+    <button type="button" id="openSheet">Open dialect sheet</button>
+    <button type="button" id="openSys">System Language</button>
+    <button type="button" id="showIme">Show IME</button>
+    <span id="status"></span>
+  </header>
+  <div data-testid="primaryColumn" id="primaryColumn">
+    <article data-testid="tweet">
+      <div data-testid="User-Name">
+        <a href="/demo_user">Demo User</a>
+        <time datetime="2026-08-26T12:00:00Z">26m</time>
+      </div>
+      <a href="/demo_user/status/123456789">permalink</a>
+      <div data-testid="tweetText" lang="en" dir="auto">
+        Hello world
+        <img alt="🔥" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" />
+        more text that is long enough to look like a truncated post.
+        <a data-testid="tweet-text-show-more-link" href="#">Show more</a>
+      </div>
+    </article>
+  </div>
+  <script src="chrome-mock.js"></script>
+  <script src="../dialects.js"></script>
+  <script src="../locale.js"></script>
+  <script src="../prefs.js"></script>
+  <script src="../api.js"></script>
+  <script src="../sheet.js"></script>
+  <script src="../faw.js"></script>
+  <script src="../content.js"></script>
+  <script src="../ime.js"></script>
+  <script>
+    document.getElementById("openSheet").onclick = () => {
+      Dox.sheet.open({ mode: "x", selectedId: "arabic_msa" });
+    };
+    document.getElementById("showIme").onclick = () => {
+      Dox.prefs.set({ imeCollapsed: false, imeEnabled: true, extensionEnabled: true });
+    };
+    document.getElementById("openSys").onclick = async () => {
+      await Dox.prefs.setSystemLanguage("spanish");
+      document.getElementById("status").textContent =
+        Dox.locale.t("dox_show_more") + " · " + Dox.locale.t("label_dialect_selector");
+    };
+    document.getElementById("status").textContent =
+      "dialects=" + Dox.CATALOG.ids.length +
+      " extract=" + Dox.feed.extractPostText(document.querySelector('[data-testid="tweetText"]'));
+  </script>
+</body>
+</html>

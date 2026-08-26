@@ -1,23 +1,22 @@
 {
   "manifest_version": 3,
   "name": "DialectsOnX",
-  "version": "0.1.0",
-  "description": "Translate X posts to your preferred Arabic dialect",
-  "permissions": ["activeTab", "storage"],
-  "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
+  "version": "0.3.0",
+  "description": "Translate X posts into Dialex dialects. Includes a translation IME for every site.",
+  "permissions": ["storage", "offscreen", "unlimitedStorage"],
+  "host_permissions": [
+    "https://dialex-backend-f6b7-1086119311146.europe-west3.run.app/*",
+    "http://127.0.0.1/*",
+    "http://localhost/*",
+    "http://*/*",
+    "https://*/*"
+  ],
   "icons": {
     "16": "icon16.png",
     "32": "icon32.png",
     "48": "icon48.png",
     "128": "icon128.png"
   },
-  "content_scripts": [
-    {
-      "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
-  ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "DialectsOnX",
@@ -28,10 +27,35 @@
       "128": "icon128.png"
     }
   },
+  "options_page": "settings.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": [
+        "dialects.js",
+        "locale.js",
+        "prefs.js",
+        "api.js",
+        "sheet.js",
+        "faw.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["dialects.js", "locale.js", "prefs.js", "api.js", "sheet.js", "ime.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
   "web_accessible_resources": [
     {
-      "resources": ["DialectsOnX-logo.png"],
-      "matches": ["https://x.com/*", "https://twitter.com/*"]
+      "resources": ["DialectsOnX-logo.png", "i18n/*.json"],
+      "matches": ["http://*/*", "https://*/*"]
     }
   ]
 }

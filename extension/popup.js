@@ -1,54 +1,28 @@
-const DEFAULT_BACKEND_URL = "https://dialectsonx.onrender.com";
-
-const input = document.getElementById("backendUrl");
-const saveBtn = document.getElementById("save");
-const resetLink = document.getElementById("reset");
-const status = document.getElementById("status");
-
-function normalizeBackendUrl(url) {
-  return (url || "").trim().replace(/\/+$/, "");
-}
-
-function showStatus(message, isError = false) {
-  status.textContent = message;
-  status.classList.toggle("error", isError);
-  status.classList.add("show");
-  clearTimeout(showStatus._t);
-  showStatus._t = setTimeout(() => status.classList.remove("show"), 2000);
-}
-
-function loadSavedUrl() {
-  chrome.storage.sync.get({ backendUrl: DEFAULT_BACKEND_URL }, (data) => {
-    input.value = normalizeBackendUrl(data.backendUrl) || DEFAULT_BACKEND_URL;
+document.addEventListener("DOMContentLoaded", async () => {
+  await Dox.locale.ready();
+  Dox.locale.applyDir(document.documentElement);
+  const prefs = await Dox.prefs.get();
+  document.getElementById("ver").textContent = Dox.locale.t("dox_about_line", "0.3.0");
+  document.getElementById("onLabel").textContent = prefs.extensionEnabled
+    ? Dox.locale.t("dox_on")
+    : Dox.locale.t("dox_off");
+  const enabled = document.getElementById("enabled");
+  enabled.checked = prefs.extensionEnabled;
+  enabled.addEventListener("change", async () => {
+    await Dox.prefs.set({ extensionEnabled: enabled.checked });
+    document.getElementById("onLabel").textContent = enabled.checked
+      ? Dox.locale.t("dox_on")
+      : Dox.locale.t("dox_off");
   });
-}
-
-function save() {
-  const url = normalizeBackendUrl(input.value) || DEFAULT_BACKEND_URL;
-  try {
-    new URL(url);
-  } catch {
-    showStatus("Enter a valid URL", true);
-    return;
-  }
-  input.value = url;
-  chrome.storage.sync.set({ backendUrl: url }, () => {
-    if (chrome.runtime.lastError) {
-      showStatus("Could not save", true);
-      return;
-    }
-    showStatus("Saved");
+  document.getElementById("ime").textContent = Dox.locale.t("dox_ime_show");
+  document.getElementById("settings").textContent = Dox.locale.t("home_settings");
+  document.getElementById("ime").addEventListener("click", async () => {
+    await Dox.prefs.set({ imeCollapsed: false, imeEnabled: true, extensionEnabled: true });
+    chrome.runtime.sendMessage({ type: "dox-ime-show" });
   });
-}
-
-saveBtn.addEventListener("click", save);
-input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") save();
+  document.getElementById("settings").addEventListener("click", () => {
+    chrome.runtime.openOptionsPage
+      ? chrome.runtime.openOptionsPage()
+      : window.open(chrome.runtime.getURL("settings.html"));
+  });
 });
-resetLink.addEventListener("click", () => {
-  input.value = DEFAULT_BACKEND_URL;
-  save();
-});
-
-document.addEventListener("DOMContentLoaded", loadSavedUrl);
-loadSavedUrl();

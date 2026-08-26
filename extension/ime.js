@@ -1,0 +1,324 @@
+/* Floating DialectsOnX IME bar — all sites, not an OS keyboard. */
+globalThis.Dox = globalThis.Dox || {};
+
+(function () {
+  if (window.__doxImeInit) return;
+  window.__doxImeInit = true;
+  if (location.protocol === "chrome-extension:") return;
+  try {
+    if (window.top !== window) return;
+  } catch {
+    return;
+  }
+
+  const STT_CODES = {
+    arabic: "ar",
+    czech: "cs",
+    danish: "da",
+    dutch: "nl",
+    english: "en",
+    filipino: "fil",
+    french: "fr",
+    german: "de",
+    hindi: "hi",
+    indonesian: "id",
+    italian: "it",
+    japanese: "ja",
+    korean: "ko",
+    macedonian: "mk",
+    malay: "ms",
+    persian: "fa",
+    polish: "pl",
+    portuguese: "pt",
+    romanian: "ro",
+    russian: "ru",
+    spanish: "es",
+    swedish: "sv",
+    thai: "th",
+    turkish: "tr",
+    vietnamese: "vi",
+  };
+
+  function sttLanguage(systemDialectId) {
+    const spoken = Dox.spokenIdOf(systemDialectId);
+    return STT_CODES[spoken] || "en";
+  }
+
+  let bar = null;
+  let dragging = false;
+  let dragDx = 0;
+  let dragDy = 0;
+  let inflight = null;
+  let statusEl = null;
+
+  function t(k, ...a) {
+    return Dox.locale.t(k, ...a);
+  }
+
+  function skipField(el) {
+    if (!el) return true;
+    const type = (el.getAttribute("type") || "").toLowerCase();
+    if (type === "password" || type === "email" || type === "url") return true;
+    const mode = (el.getAttribute("inputmode") || "").toLowerCase();
+    if (mode === "url" || mode === "email") return true;
+    const ac = (el.getAttribute("autocomplete") || "").toLowerCase();
+    if (ac.includes("url") || ac.includes("email") || ac.includes("password")) return true;
+    if (el.closest("[data-dox-ime-bar]")) return true;
+    return false;
+  }
+
+  function focusedInput() {
+    const el = document.activeElement;
+    if (!el || skipField(el)) return null;
+    if (el.isContentEditable) return el;
+    const tag = el.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return el;
+    return null;
+  }
+
+  function readValue(el) {
+    if (el.isContentEditable) return el.innerText || el.textContent || "";
+    return el.value || "";
+  }
+
+  function writeValue(el, text) {
+    if (el.isContentEditable) {
+      el.textContent = text;
+      el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+      return;
+    }
+    const proto = el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const desc = Object.getOwnPropertyDescriptor(proto, "value");
+    desc?.set?.call(el, text);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function injectImeStyles() {
+    if (document.getElementById("dox-ime-styles")) return;
+    const style = document.createElement("style");
+    style.id = "dox-ime-styles";
+    style.textContent = `
+      #dialx-ime-bar {
+        position: fixed; z-index: 2147482500;
+        display: flex; align-items: center; gap: 6px;
+        background: #16181c; color: #e7e9ea; border: 1px solid #2f3336;
+        border-radius: 14px; padding: 8px 10px 8px 12px;
+        font-family: ${Dox.FONT}; font-size: 13px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.4);
+        user-select: none;
+      }
+      #dialx-ime-bar button, #dialx-ime-bar .dox-ime-chip {
+        font: inherit; border-radius: 999px; cursor: pointer;
+        background: #202327; color: #e7e9ea; border: 1px solid #2f3336;
+        padding: 5px 10px;
+      }
+      #dialx-ime-bar .dox-ime-x {
+        position: absolute; top: 2px; right: 6px;
+        background: transparent; border: 0; color: #8b98a5;
+        padding: 0 4px; font-size: 16px; line-height: 1;
+      }
+      #dialx-ime-bar .dox-ime-status { color: #8b98a5; font-size: 11px; min-width: 4em; }
+      #dialx-ime-bar.dox-ime-drag { cursor: grabbing; }
+    `;
+    document.documentElement.appendChild(style);
+  }
+
+  async function place(prefs) {
+    const pos = await Dox.prefs.getImePosition();
+    const x = prefs.imeRememberPosition && pos.imeX != null ? pos.imeX : window.innerWidth - 420;
+    const y = prefs.imeRememberPosition && pos.imeY != null ? pos.imeY : window.innerHeight - 80;
+    bar.style.left = Math.max(8, Math.min(x, window.innerWidth - 80)) + "px";
+    bar.style.top = Math.max(8, Math.min(y, window.innerHeight - 40)) + "px";
+  }
+
+  async function mount() {
+    const prefs = await Dox.prefs.get();
+    if (!prefs.extensionEnabled || !prefs.imeEnabled || prefs.imeCollapsed) {
+      bar?.remove();
+      bar = null;
+      return;
+    }
+    if (bar) {
+      await refresh();
+      return;
+    }
+    injectImeStyles();
+    await Dox.locale.ready();
+    bar = document.createElement("div");
+    bar.id = "dialx-ime-bar";
+    bar.dataset.doxImeBar = "1";
+    Dox.locale.applyDir(bar);
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "dox-ime-x";
+    close.textContent = "×";
+    close.title = t("dox_ime_collapse");
+    close.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await Dox.prefs.set({ imeCollapsed: true });
+      bar.remove();
+      bar = null;
+    });
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "dox-ime-chip";
+    chip.addEventListener("click", (e) => {
+      e.stopPropagation();
+      Dox.prefs.get().then((p) => {
+        Dox.sheet.open({
+          mode: "ime",
+          selectedId: p.imeDialect,
+          onPick: async () => {
+            await refresh();
+          },
+        });
+      });
+    });
+    statusEl = document.createElement("span");
+    statusEl.className = "dox-ime-status";
+    const mic = document.createElement("button");
+    mic.type = "button";
+    mic.textContent = t("ime_mic");
+    mic.addEventListener("click", (e) => {
+      e.stopPropagation();
+      startStt();
+    });
+    const go = document.createElement("button");
+    go.type = "button";
+    go.textContent = t("ime_translate");
+    go.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (inflight) {
+        inflight.abort();
+        inflight = null;
+        go.textContent = t("ime_translate");
+        return;
+      }
+      translateFocused(go);
+    });
+    bar.append(close, chip, statusEl, mic, go);
+    bar.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("button")) return;
+      dragging = true;
+      bar.classList.add("dox-ime-drag");
+      dragDx = e.clientX - bar.offsetLeft;
+      dragDy = e.clientY - bar.offsetTop;
+      bar.setPointerCapture(e.pointerId);
+    });
+    bar.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      bar.style.left = e.clientX - dragDx + "px";
+      bar.style.top = e.clientY - dragDy + "px";
+    });
+    bar.addEventListener("pointerup", async () => {
+      if (!dragging) return;
+      dragging = false;
+      bar.classList.remove("dox-ime-drag");
+      const next = await Dox.prefs.get();
+      if (next.imeRememberPosition) {
+        await Dox.prefs.setImePosition(parseInt(bar.style.left, 10), parseInt(bar.style.top, 10));
+      }
+    });
+    document.documentElement.appendChild(bar);
+    await place(prefs);
+    await refresh();
+  }
+
+  async function refresh() {
+    if (!bar) return;
+    const prefs = await Dox.prefs.get();
+    const chip = bar.querySelector(".dox-ime-chip");
+    if (chip) chip.textContent = Dox.locale.chipButtonText(prefs.imeDialect);
+    if (statusEl) statusEl.textContent = t("dox_ime_idle");
+    Dox.locale.applyDir(bar);
+  }
+
+  async function translateFocused(go) {
+    const el = focusedInput();
+    if (!el) {
+      if (statusEl) statusEl.textContent = t("dox_skip_field");
+      return;
+    }
+    const text = readValue(el).trim();
+    if (!text) {
+      if (statusEl) statusEl.textContent = t("ime_empty_host");
+      return;
+    }
+    const prefs = await Dox.prefs.get();
+    inflight = new AbortController();
+    go.textContent = t("ime_translate_cancel");
+    if (statusEl) statusEl.textContent = t("status_translating");
+    try {
+      const result = await Dox.api.translate({
+        text,
+        targetDialect: prefs.imeDialect,
+        clientSource: "ime",
+        signal: inflight.signal,
+      });
+      if (document.activeElement !== el) {
+        if (statusEl) statusEl.textContent = t("ime_host_changed");
+        return;
+      }
+      writeValue(el, result.translation);
+      if (statusEl) statusEl.textContent = t("dox_status_ready");
+    } catch (e) {
+      if (e && e.name === "AbortError") {
+        if (statusEl) statusEl.textContent = t("dox_ime_idle");
+        return;
+      }
+      if (statusEl) {
+        statusEl.textContent =
+          e && e.code === "rate_limited" ? t("dox_rate_limited") : t("dox_translate_failed");
+      }
+    } finally {
+      inflight = null;
+      go.textContent = t("ime_translate");
+    }
+  }
+
+  async function startStt() {
+    if (statusEl) statusEl.textContent = t("pad_recording");
+    try {
+      const prefs = await Dox.prefs.get();
+      const language = sttLanguage(prefs.systemDialectId);
+      const result = await chrome.runtime.sendMessage({
+        type: "dox-stt",
+        language,
+      });
+      if (result?.error) throw new Error(result.error);
+      if (!result?.wav) throw new Error("no audio");
+      const blob = new Blob([new Uint8Array(result.wav)], { type: "audio/wav" });
+      const stt = await Dox.api.stt(blob, language);
+      const el = focusedInput();
+      if (el && stt?.text) {
+        const cur = readValue(el);
+        writeValue(el, (cur ? cur + " " : "") + stt.text);
+      }
+      if (statusEl) statusEl.textContent = t("dox_status_ready");
+    } catch (e) {
+      if (statusEl) statusEl.textContent = t("pad_error_stt");
+    }
+  }
+
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg?.type === "dox-ime-show") {
+      Dox.prefs.set({ imeCollapsed: false, imeEnabled: true }).then(mount);
+    }
+  });
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "sync") return;
+    if (
+      changes.imeEnabled ||
+      changes.imeCollapsed ||
+      changes.extensionEnabled ||
+      changes.imeDialect ||
+      changes.systemDialectId
+    ) {
+      Dox.locale.ready().then(mount);
+    }
+  });
+
+  Dox.locale.ready().then(mount);
+})();

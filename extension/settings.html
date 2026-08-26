@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>DialectsOnX Settings</title>
+  <style>
+    body {
+      margin: 0; background: #000; color: #e7e9ea;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      max-width: 720px; margin-inline: auto; padding: 20px 16px 48px;
+    }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 14px; color: #8b98a5; margin: 20px 0 8px; }
+    .row, .toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 10px 0; border-bottom: 1px solid #2f3336;
+    }
+    button, input[type="text"] {
+      font: inherit; border-radius: 8px; padding: 8px 10px;
+    }
+    button {
+      background: #202327; color: #e7e9ea; border: 1px solid #2f3336; cursor: pointer;
+    }
+    input[type="text"] {
+      background: #16181c; color: #e7e9ea; border: 1px solid #2f3336; min-width: 16em; flex: 1;
+    }
+    a { color: #1d9bf0; }
+    .hint { color: #8b98a5; font-size: 12px; margin: 0 0 12px; }
+    .hidden { display: none; }
+    #sysList { display: flex; flex-direction: column; }
+    .sys-row {
+      display: flex; justify-content: space-between; gap: 8px;
+      padding: 8px 0; border-bottom: 1px solid #2f3336; cursor: pointer;
+    }
+    .sys-endonym { font-weight: 600; }
+    .sys-en { color: #8b98a5; }
+    #sysSearch {
+      width: 100%; box-sizing: border-box; margin-bottom: 12px;
+      background: #16181c; color: #e7e9ea; border: 1px solid #2f3336;
+      border-radius: 8px; padding: 8px 10px; font: inherit;
+    }
+  </style>
+</head>
+<body>
+  <div id="main">
+    <h1 id="title"></h1>
+    <div class="row">
+      <span id="sysLangLabel"></span>
+      <button type="button" id="sysLangBtn"></button>
+    </div>
+    <div class="row">
+      <span id="defaultLabel"></span>
+      <button type="button" id="defaultBtn"></button>
+    </div>
+    <label class="toggle"><span id="autoLabel"></span><input type="checkbox" id="autoTranslate" /></label>
+    <label class="toggle"><span id="fawLabel"></span><input type="checkbox" id="fawEnabled" /></label>
+    <label class="toggle"><span id="newsLabel"></span><input type="checkbox" id="newsToMsa" /></label>
+    <div class="row">
+      <span id="addresseeLabel"></span>
+      <span>
+        <label><input type="radio" name="addressee" value="masculine" /> <span id="mLabel"></span></label>
+        <label><input type="radio" name="addressee" value="feminine" /> <span id="fLabel"></span></label>
+      </span>
+    </div>
+    <label class="toggle"><span id="imeLabel"></span><input type="checkbox" id="imeEnabled" /></label>
+    <label class="toggle"><span id="imeRememberLabel"></span><input type="checkbox" id="imeRemember" /></label>
+    <h2 id="advLabel"></h2>
+    <div class="row">
+      <span id="urlLabel"></span>
+    </div>
+    <div class="row">
+      <input type="text" id="backendUrl" />
+      <button type="button" id="saveUrl"></button>
+    </div>
+    <p class="hint" id="urlHint"></p>
+    <div class="row">
+      <button type="button" id="clearCache"></button>
+      <button type="button" id="clearRecents"></button>
+    </div>
+    <p class="hint" id="cacheHint"></p>
+    <p><a id="padLink" href="https://www.dialex-app.com" target="_blank" rel="noopener"></a></p>
+    <p id="about"></p>
+  </div>
+  <div id="sysView" class="hidden">
+    <button type="button" id="sysBack"></button>
+    <h1 id="sysTitle"></h1>
+    <input id="sysSearch" />
+    <div id="sysList"></div>
+  </div>
+  <script src="dialects.js"></script>
+  <script src="locale.js"></script>
+  <script src="prefs.js"></script>
+  <script src="api.js"></script>
+  <script src="sheet.js"></script>
+  <script src="faw.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>
