@@ -16,8 +16,9 @@ globalThis.Dox = globalThis.Dox || {};
         max-width: 720px;
         margin: 0 auto;
         padding: 8px 24px 24px;
-        font-family: ${Dox.FONT};
-        color: #e7e9ea;
+        font-family: var(--dox-font, ${Dox.FONT});
+        color: var(--dox-text, #F4F4F5);
+        background: var(--dox-ink, #000000);
       }
       .dox-sys.hidden { display: none; }
       .dox-sys-header {
@@ -28,21 +29,22 @@ globalThis.Dox = globalThis.Dox || {};
       }
       .dox-sys-back {
         width: 44px; height: 44px; flex-shrink: 0;
-        background: none; border: 0; color: #e7e9ea;
+        background: none; border: 0; color: var(--dox-text, #F4F4F5);
         cursor: pointer; padding: 0;
         display: inline-flex; align-items: center; justify-content: center;
       }
+      .dox-sys-back svg { width: 24px; height: 24px; display: block; }
       .dox-sys-title {
         margin: 0;
-        font-size: 28px; font-weight: 400; line-height: 1.2;
+        font-size: 28px; font-weight: 500; line-height: 1.2;
       }
       .dox-sys-card {
         flex: 1; min-height: 0;
         margin-top: 17px;
         display: flex; flex-direction: column;
-        background: #202327;
-        border: 1px solid #2f3336;
-        border-radius: 16px;
+        background: var(--dox-panel, #151518);
+        border: 1px solid var(--dox-line, #2C2C31);
+        border-radius: 12px;
         overflow: hidden;
       }
       .dox-sys-search-row {
@@ -53,24 +55,30 @@ globalThis.Dox = globalThis.Dox || {};
         display: flex; align-items: center; gap: 4px;
         height: 36px;
         box-sizing: border-box;
-        background: #0f1113;
-        border: 1px solid #2f3336;
+        background: var(--dox-field, #1C1C1F);
+        border: 1px solid var(--dox-line, #2C2C31);
         border-radius: 8px;
         padding: 0 4px 0 10px;
       }
-      .dox-sys-search:focus-within { border-color: #E0B83A; }
-      .dox-sys-search-icon { color: #8b98a5; font-size: 14px; flex-shrink: 0; }
+      .dox-sys-search:focus-within { border-color: var(--dox-accent, #8A7C5C); }
+      .dox-sys-search-icon {
+        color: var(--dox-muted, #8E8E93); flex-shrink: 0;
+        width: 16px; height: 16px; display: inline-flex;
+      }
+      .dox-sys-search-icon svg { width: 16px; height: 16px; display: block; }
       .dox-sys-search input {
         flex: 1; min-width: 0;
-        background: transparent; border: 0; color: #e7e9ea;
-        font: 600 13px ${Dox.FONT}; outline: none;
+        background: transparent; border: 0; color: var(--dox-text, #F4F4F5);
+        font: 600 13px var(--dox-font, ${Dox.FONT}); outline: none;
       }
-      .dox-sys-search input::placeholder { color: #8b98a5; font-weight: 600; }
+      .dox-sys-search input::placeholder { color: var(--dox-muted, #8E8E93); font-weight: 600; }
       .dox-sys-search-clear {
         width: 36px; height: 36px; flex-shrink: 0;
-        background: none; border: 0; color: #8b98a5; cursor: pointer;
-        font-size: 16px;
+        background: none; border: 0; color: var(--dox-muted, #8E8E93); cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: 0;
       }
+      .dox-sys-search-clear svg { width: 16px; height: 16px; display: block; }
       .dox-sys-list {
         flex: 1; min-height: 0;
         overflow: auto;
@@ -88,21 +96,22 @@ globalThis.Dox = globalThis.Dox || {};
         font: inherit;
         text-align: start;
       }
+      .sys-row:hover .sys-endonym { color: var(--dox-text, #F4F4F5); }
       .sys-row-text {
         flex: 1; min-width: 0;
         display: flex; align-items: center;
       }
       .sys-endonym {
         font-weight: 600; font-size: 13px;
-        color: #8b98a5;
+        color: var(--dox-muted, #8E8E93);
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         flex: 0 1 auto;
         max-width: 100%;
       }
-      .sys-row.selected .sys-endonym { color: #e7e9ea; }
+      .sys-row.selected .sys-endonym { color: var(--dox-text, #F4F4F5); }
       .sys-en {
         font-weight: 500; font-size: 12px;
-        color: #8b98a5;
+        color: var(--dox-muted, #8E8E93);
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         flex: 1 1 0;
         margin-inline-start: 8px;
@@ -110,11 +119,11 @@ globalThis.Dox = globalThis.Dox || {};
       }
       .sys-check {
         width: 16px; height: 16px; flex-shrink: 0;
-        color: #e7e9ea;
-        font-size: 12px; line-height: 16px;
-        text-align: center;
+        color: var(--dox-accent, #8A7C5C);
         margin-inline-start: 8px;
+        display: inline-flex; align-items: center; justify-content: center;
       }
+      .sys-check svg { width: 16px; height: 16px; display: block; }
     `;
     document.documentElement.appendChild(style);
   }
@@ -133,8 +142,24 @@ globalThis.Dox = globalThis.Dox || {};
     );
   }
 
+  function decorateSearch(root) {
+    const icon = root.querySelector(".dox-sys-search-icon");
+    if (icon && !icon.querySelector("svg") && Dox.icon) {
+      icon.replaceChildren(Dox.icon("search", 16));
+    }
+    const clear = root.querySelector(".dox-sys-search-clear");
+    if (clear && !clear.querySelector("svg") && Dox.icon) {
+      clear.replaceChildren(Dox.icon("close", 16));
+    }
+    const back = root.querySelector(".dox-sys-back");
+    if (back && Dox.icon) {
+      back.replaceChildren(Dox.icon("back", 24));
+    }
+  }
+
   function renderList(listEl, query, selectedId, onSelect) {
     injectStyles();
+    decorateSearch(listEl.closest(".dox-sys") || document);
     listEl.replaceChildren();
     for (const group of Dox.CATALOG.groups) {
       for (const lang of group.languages) {
@@ -162,7 +187,7 @@ globalThis.Dox = globalThis.Dox || {};
         if (selected) {
           const check = document.createElement("span");
           check.className = "sys-check";
-          check.textContent = "✓";
+          check.appendChild(Dox.icon("check", 16));
           row.appendChild(check);
         }
         row.addEventListener("click", () => onSelect(lang.id));

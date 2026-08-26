@@ -4,7 +4,8 @@ globalThis.Dox = globalThis.Dox || {};
 (function () {
   if (Dox.locale) return;
   const FONT =
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+    (Dox.THEME && Dox.THEME.font) ||
+    '"Quicksand", ui-rounded, "Hiragino Maru Gothic ProN", sans-serif';
   const frozen = new Set((Dox.CATALOG && Dox.CATALOG.frozenKeys) || []);
   const deltaKeys = new Set((Dox.CATALOG && Dox.CATALOG.deltaKeys) || []);
 
@@ -158,7 +159,7 @@ globalThis.Dox = globalThis.Dox || {};
   function applyDir(el) {
     if (!el) return;
     el.setAttribute("dir", Dox.locale.rtl ? "rtl" : "ltr");
-    el.style.fontFamily = FONT;
+    el.style.fontFamily = Dox.FONT || FONT;
   }
 
   const LANG_ABBREV = {

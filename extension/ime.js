@@ -104,23 +104,36 @@ globalThis.Dox = globalThis.Dox || {};
       #dialx-ime-bar {
         position: fixed; z-index: 2147482500;
         display: flex; align-items: center; gap: 6px;
-        background: #16181c; color: #e7e9ea; border: 1px solid #2f3336;
-        border-radius: 14px; padding: 8px 10px 8px 12px;
-        font-family: ${Dox.FONT}; font-size: 13px;
+        background: var(--dox-elevated, #0E0E10); color: var(--dox-text, #F4F4F5);
+        border: 1px solid var(--dox-line, #2C2C31);
+        border-radius: 12px; padding: 10px 12px;
+        padding-inline-end: 36px;
+        font-family: var(--dox-font, ${Dox.FONT}); font-size: 13px;
         box-shadow: 0 8px 24px rgba(0,0,0,.4);
         user-select: none;
       }
       #dialx-ime-bar button, #dialx-ime-bar .dox-ime-chip {
         font: inherit; border-radius: 999px; cursor: pointer;
-        background: #202327; color: #e7e9ea; border: 1px solid #2f3336;
+        background: var(--dox-field, #1C1C1F); color: var(--dox-text, #F4F4F5);
+        border: 1px solid var(--dox-line, #2C2C31);
         padding: 5px 10px;
       }
-      #dialx-ime-bar .dox-ime-x {
-        position: absolute; top: 2px; right: 6px;
-        background: transparent; border: 0; color: #8b98a5;
-        padding: 0 4px; font-size: 16px; line-height: 1;
+      #dialx-ime-bar .dox-ime-go {
+        background: transparent;
+        border-color: var(--dox-accent, #8A7C5C);
       }
-      #dialx-ime-bar .dox-ime-status { color: #8b98a5; font-size: 11px; min-width: 4em; }
+      #dialx-ime-bar .dox-ime-x {
+        position: absolute; top: 4px; inset-inline-end: 4px;
+        width: 28px; height: 28px;
+        background: transparent; border: 0; color: var(--dox-muted, #8E8E93);
+        padding: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      #dialx-ime-bar .dox-ime-x:hover { color: #B4B4B8; }
+      #dialx-ime-bar .dox-ime-status {
+        color: var(--dox-muted, #8E8E93); font-size: 11px; min-width: 4em;
+        margin-inline-start: 2px;
+      }
       #dialx-ime-bar.dox-ime-drag { cursor: grabbing; }
     `;
     document.documentElement.appendChild(style);
@@ -154,7 +167,7 @@ globalThis.Dox = globalThis.Dox || {};
     const close = document.createElement("button");
     close.type = "button";
     close.className = "dox-ime-x";
-    close.textContent = "×";
+    close.appendChild(Dox.icon("close", 16));
     close.title = t("dox_ime_collapse");
     close.addEventListener("click", async (e) => {
       e.stopPropagation();

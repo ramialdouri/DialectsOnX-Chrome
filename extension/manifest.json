@@ -35,6 +35,7 @@
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
       "js": [
+        "theme.js",
         "dialects.js",
         "locale.js",
         "prefs.js",
@@ -47,14 +48,14 @@
     },
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["dialects.js", "locale.js", "prefs.js", "api.js", "sheet.js", "ime.js"],
+      "js": ["theme.js", "dialects.js", "locale.js", "prefs.js", "api.js", "sheet.js", "ime.js"],
       "run_at": "document_idle",
       "all_frames": true
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["DialectsOnX-logo.png", "i18n/*.json"],
+      "resources": ["DialectsOnX-logo.png", "i18n/*.json", "fonts/*.woff2"],
       "matches": ["http://*/*", "https://*/*"]
     }
   ]

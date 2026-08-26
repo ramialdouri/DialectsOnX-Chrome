@@ -86,6 +86,34 @@ def test_feed_contract() -> None:
     locale = (EXT / "locale.js").read_text(encoding="utf-8")
     _assert("deltaKeys.has(key)" in locale, "no english fallback for delta")
     _assert("@font-face" not in locale, "no latin font")
+    theme = (EXT / "theme.js").read_text(encoding="utf-8")
+    _assert("@font-face" in theme and "Quicksand" in theme, "bundled Quicksand")
+    _assert("quicksand-500.woff2" in theme and "quicksand-700.woff2" in theme, "woff2 weights")
+    _assert("#8A7C5C" in theme, "muted brass accent")
+    _assert((EXT / "fonts" / "quicksand-500.woff2").exists(), "500 woff2")
+    _assert((EXT / "fonts" / "quicksand-600.woff2").exists(), "600 woff2")
+    _assert((EXT / "fonts" / "quicksand-700.woff2").exists(), "700 woff2")
+    _assert((EXT / "fonts" / "OFL.txt").exists(), "Quicksand OFL")
+    banned = ("#E0B83A", "#C4B48A", "#FFDEC7", "#4C4540", "#1d9bf0", "rgb(29, 155, 240)")
+    ui_files = [
+        "theme.js",
+        "sheet.js",
+        "system-language.js",
+        "settings.html",
+        "settings.js",
+        "popup.html",
+        "popup.js",
+        "content.js",
+        "ime.js",
+        "faw.js",
+        "locale.js",
+    ]
+    for name in ui_files:
+        text = (EXT / name).read_text(encoding="utf-8")
+        for token in banned:
+            _assert(token not in text, f"{name} still has {token}")
+    _assert("theme.js" in json.dumps(manifest), "theme in manifest")
+    _assert("fonts/*.woff2" in json.dumps(manifest), "fonts web accessible")
     sheet = (EXT / "sheet.js").read_text(encoding="utf-8")
     _assert("90vh" in sheet, "sheet height")
     _assert("nowrap" in sheet, "no clip chips")
@@ -96,6 +124,18 @@ def test_feed_contract() -> None:
     _assert("dox-sheet-cols" not in sheet, "old all-dialect table gone")
     _assert("standardDialectFor" in sheet, "language click uses prestige dialect")
     _assert("browseSpokenId" in sheet, "browse spoken language")
+    _assert("dox-sheet-settings" in sheet, "settings gear in sheet chrome")
+    _assert("dox-gold-badge" not in sheet, "no glazed gold badges")
+    _assert('wrap.setAttribute("role", "button")' in sheet, "favorite chips are not nested buttons")
+    _assert("dox-sheet-group-label" in sheet, "typographic group headers")
+    _assert("inset-inline-start" in sheet, "RTL hint coords")
+    _assert("inset-inline-end" in (EXT / "ime.js").read_text(encoding="utf-8"), "IME close logical inset")
+    _assert('e.key === "Escape"' in (EXT / "faw.js").read_text(encoding="utf-8"), "FAW Escape")
+    popup_html = (EXT / "popup.html").read_text(encoding="utf-8")
+    _assert("dox-popup-head" in popup_html and 'id="settings"' in popup_html, "popup settings in top row")
+    _assert("dox-icon-btn" in popup_html, "muted settings icon")
+    _assert((EXT / "test" / "screenshot-popup.html").exists(), "popup screenshot page")
+    _assert((EXT / "test" / "screenshot-settings.html").exists(), "settings screenshot page")
     sys_js = (EXT / "system-language.js").read_text(encoding="utf-8")
     _assert("dox-sys-card" in sys_js, "system language card")
     _assert("dox-gold" not in sys_js and "dox-sheet-group" not in sys_js, "system language has no gold group headers")
@@ -108,7 +148,8 @@ def test_feed_contract() -> None:
     locale = (EXT / "locale.js").read_text(encoding="utf-8")
     _assert("function endonym" in locale, "endonym helper")
     _assert("LANG_ABBREV" in locale, "system language abbrev search")
-    _assert("refreshOverlay" in content, "faw rebind overlay")
+    _assert("Dox.bindActivate" in content, "Original / dialect keyboard")
+    _assert("margin-inline-start" in content, "RTL feed logo/status")
     _assert("setImePosition" in ime, "ime position local")
     _assert("window.top !== window" in ime, "ime top frame")
     _assert("STT_CODES" in ime, "stt bcp47")

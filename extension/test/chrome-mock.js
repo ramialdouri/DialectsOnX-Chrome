@@ -34,6 +34,9 @@
       getURL(path) {
         return new URL(path, root).href;
       },
+      openOptionsPage() {
+        window.open(new URL("settings.html", root).href);
+      },
       sendMessage() {
         return Promise.resolve({ ok: true });
       },

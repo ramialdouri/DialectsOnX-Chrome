@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>DialectsOnX</title>
+  <title>DialectsOnX popup screenshot</title>
   <style>
-    html, body { margin: 0; }
+    html, body { margin: 0; background: #000; }
     body.dox-popup {
       width: 280px;
       box-sizing: border-box;
@@ -43,7 +43,6 @@
       background: var(--dox-muted, #8E8E93);
       top: 3px;
       inset-inline-start: 3px;
-      transition: inset-inline-start .15s ease, background .15s ease;
     }
     .dox-switch:checked { background: rgba(138, 124, 92, 0.35); }
     .dox-switch:checked::after {
@@ -55,7 +54,7 @@
 </head>
 <body class="dox-popup">
   <div class="dox-popup-head">
-    <img class="logo" src="DialectsOnX-logo.png" alt="DialectsOnX" />
+    <img class="logo" src="../DialectsOnX-logo.png" alt="DialectsOnX" />
     <button type="button" class="dox-icon-btn" id="settings"></button>
   </div>
   <div class="ver" id="ver"></div>
@@ -64,10 +63,16 @@
     <input class="dox-switch" type="checkbox" id="enabled" />
   </div>
   <button type="button" class="dox-outline-btn" id="ime"></button>
-  <script src="theme.js"></script>
-  <script src="dialects.js"></script>
-  <script src="locale.js"></script>
-  <script src="prefs.js"></script>
-  <script src="popup.js"></script>
+  <script src="chrome-mock.js"></script>
+  <script src="../theme.js"></script>
+  <script src="../dialects.js"></script>
+  <script src="../locale.js"></script>
+  <script src="../prefs.js"></script>
+  <script src="../popup.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.body.dataset.ready = "popup";
+    });
+  </script>
 </body>
 </html>

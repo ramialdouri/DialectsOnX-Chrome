@@ -3,11 +3,7 @@ globalThis.Dox = globalThis.Dox || {};
 
 (function () {
   if (Dox.sheet) return;
-  const GOLD = "#E0B83A";
-  const GOLD_SHADOW = "#9A6F12";
-  const GOLD_LABEL = "#3D2A08";
   const DAMASCUS = "arabic_syrian_damascus";
-  const HAMA = "arabic_syrian_hama";
   const SLOT = 16;
   let host = null;
   let onPick = null;
@@ -35,9 +31,9 @@ globalThis.Dox = globalThis.Dox || {};
     style.textContent = `
       .dox-sheet-scrim {
         position: fixed; inset: 0; z-index: 2147483000;
-        background: rgba(0,0,0,.45);
+        background: rgba(0,0,0,.55);
         display: flex; align-items: center; justify-content: center;
-        font-family: ${Dox.FONT};
+        font-family: var(--dox-font, ${Dox.FONT});
       }
       .dox-sheet {
         position: relative;
@@ -45,28 +41,39 @@ globalThis.Dox = globalThis.Dox || {};
         max-height: 90vh;
         width: max-content;
         max-width: calc(100vw - 24px);
-        background: #16181c;
-        color: #e7e9ea;
-        border: 1px solid #2f3336;
-        border-radius: 16px;
+        background: var(--dox-elevated, #0E0E10);
+        color: var(--dox-text, #F4F4F5);
+        border: 1px solid var(--dox-line, #2C2C31);
+        border-radius: 12px;
         display: flex; flex-direction: column;
         overflow: hidden;
         box-shadow: 0 12px 48px rgba(0,0,0,.55);
       }
-      .dox-sheet-close {
-        position: absolute; top: 4px; inset-inline-end: 4px; z-index: 2;
-        background: transparent; border: 0; color: #8b98a5; cursor: pointer;
-        font-size: 20px; line-height: 1; padding: 4px 8px;
+      .dox-sheet-chrome {
+        position: absolute; top: 0; inset-inline-end: 0; z-index: 2;
+        display: flex; align-items: center;
+        height: 44px;
       }
+      .dox-sheet-settings,
+      .dox-sheet-close {
+        width: 44px; height: 44px;
+        background: transparent; border: 0; color: var(--dox-muted, #8E8E93);
+        cursor: pointer; padding: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      .dox-sheet-settings:hover,
+      .dox-sheet-close:hover { color: #B4B4B8; }
+      .dox-sheet-settings svg,
+      .dox-sheet-close svg { width: 16px; height: 16px; display: block; }
       .dox-sheet-quick {
         flex-shrink: 0;
         padding: 12px 12px 10px;
-        padding-inline-end: 36px;
+        padding-inline-end: 96px;
         display: flex; flex-direction: column; gap: 10px;
       }
       .dox-sheet-quick[hidden] { display: none; }
       .dox-sheet-section {
-        font-size: 12px; font-weight: 700; color: #8b98a5;
+        font-size: 12px; font-weight: 700; color: var(--dox-muted, #8E8E93);
         margin: 0 0 6px; white-space: nowrap;
       }
       .dox-sheet-chip-row {
@@ -76,13 +83,16 @@ globalThis.Dox = globalThis.Dox || {};
       .dox-sheet-quick-chip {
         flex: 0 0 auto;
         display: inline-flex; align-items: center; gap: 4px;
-        background: #202327; color: #e7e9ea;
-        border: 1px solid #2f3336; border-radius: 999px;
-        padding: 6px 10px; font: 600 12px ${Dox.FONT};
+        background: var(--dox-field, #1C1C1F); color: var(--dox-text, #F4F4F5);
+        border: 1px solid var(--dox-line, #2C2C31); border-radius: 999px;
+        padding: 6px 10px; font: 600 12px var(--dox-font, ${Dox.FONT});
         cursor: pointer; white-space: nowrap;
       }
-      .dox-sheet-quick-chip.selected { background: rgba(231,233,234,.16); }
-      .dox-sheet-quick-chip .dox-sheet-star { width: 14px; height: 14px; opacity: 1; color: #e7e9ea; }
+      .dox-sheet-quick-chip.selected { border-color: var(--dox-accent, #8A7C5C); }
+      .dox-sheet-quick-chip .dox-sheet-star {
+        width: 28px; height: 28px; margin: -6px;
+        opacity: 1; color: var(--dox-accent, #8A7C5C);
+      }
       .dox-sheet-split {
         flex: 1; min-height: 0;
         display: flex; flex-direction: row;
@@ -94,9 +104,9 @@ globalThis.Dox = globalThis.Dox || {};
       .dox-sheet-dialect-panel {
         min-height: 0;
         display: flex; flex-direction: column;
-        background: #202327;
-        border: 1px solid #2f3336;
-        border-radius: 10px;
+        background: var(--dox-panel, #151518);
+        border: 1px solid var(--dox-line, #2C2C31);
+        border-radius: 12px;
         overflow: hidden;
         flex: 0 0 auto;
       }
@@ -124,35 +134,40 @@ globalThis.Dox = globalThis.Dox || {};
         width: 100%;
         height: 36px;
         box-sizing: border-box;
-        background: #0f1113;
-        border: 1px solid #2f3336;
+        background: var(--dox-field, #1C1C1F);
+        border: 1px solid var(--dox-line, #2C2C31);
         border-radius: 8px;
-        padding: 0 10px 0 10px;
+        padding: 0 10px;
         min-width: 0;
       }
       .dox-sheet-plate {
-        background: rgba(231,233,234,.10);
-        font-weight: 900;
+        font-weight: 700;
         white-space: nowrap;
         overflow: hidden;
       }
       .dox-sheet-plate-label {
         white-space: nowrap; overflow: hidden; text-overflow: clip;
-        font-size: 13px; font-weight: 900;
+        font-size: 13px; font-weight: 700;
       }
       .dox-sheet-search input {
         flex: 1; min-width: 0;
-        background: transparent; border: 0; color: #e7e9ea;
-        font: 600 13px ${Dox.FONT}; outline: none;
+        background: transparent; border: 0; color: var(--dox-text, #F4F4F5);
+        font: 600 13px var(--dox-font, ${Dox.FONT}); outline: none;
       }
-      .dox-sheet-search input::placeholder { color: #8b98a5; }
-      .dox-sheet-search:focus-within { border-color: ${GOLD}; }
-      .dox-sheet-search-icon { color: #8b98a5; font-size: 14px; flex-shrink: 0; }
+      .dox-sheet-search input::placeholder { color: var(--dox-muted, #8E8E93); }
+      .dox-sheet-search:focus-within { border-color: var(--dox-accent, #8A7C5C); }
+      .dox-sheet-search-icon {
+        color: var(--dox-muted, #8E8E93); flex-shrink: 0;
+        width: 16px; height: 16px; display: inline-flex;
+      }
+      .dox-sheet-search-icon svg { width: 16px; height: 16px; display: block; }
       .dox-sheet-search-clear {
         width: 36px; height: 36px; flex-shrink: 0;
-        background: none; border: 0; color: #8b98a5; cursor: pointer;
-        font-size: 16px;
+        background: none; border: 0; color: var(--dox-muted, #8E8E93); cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: 0;
       }
+      .dox-sheet-search-clear svg { width: 16px; height: 16px; display: block; }
       .dox-sheet-lang-list,
       .dox-sheet-dialect-list {
         flex: 1; min-height: 0; overflow: auto;
@@ -163,27 +178,23 @@ globalThis.Dox = globalThis.Dox || {};
         cursor: pointer; user-select: none;
         gap: 8px;
       }
-      .dox-gold-badge {
-        display: inline-block;
-        color: ${GOLD_LABEL};
-        font-weight: 600;
+      .dox-sheet-group-label {
         font-size: 11px;
-        line-height: 1.2;
-        padding: 2px 6px;
-        border-radius: 6px;
-        border: 1px solid ${GOLD};
-        background: linear-gradient(${GOLD}, ${GOLD} 55%, ${GOLD_SHADOW});
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--dox-muted, #8E8E93);
         white-space: nowrap;
       }
       .dox-sheet-chevron {
         margin-inline-start: auto;
         width: 20px; height: 20px;
-        color: #8b98a5;
+        color: var(--dox-muted, #8E8E93);
         display: inline-flex; align-items: center; justify-content: center;
         transition: transform .2s;
         flex-shrink: 0;
-        font-size: 12px;
       }
+      .dox-sheet-chevron svg { width: 16px; height: 16px; display: block; }
       .dox-sheet-chevron.open { transform: rotate(180deg); }
       .dox-sheet-lang-row,
       .dox-sheet-dialect-row {
@@ -193,7 +204,9 @@ globalThis.Dox = globalThis.Dox || {};
         min-width: 0;
       }
       .dox-sheet-lang-row:hover .dox-sheet-lang-name,
-      .dox-sheet-dialect-row:hover .dox-sheet-chip { color: ${GOLD}; }
+      .dox-sheet-dialect-row:hover .dox-sheet-chip {
+        color: var(--dox-text, #F4F4F5);
+      }
       .dox-sheet-lang-name,
       .dox-sheet-chip,
       .dox-sheet-lang-support {
@@ -208,36 +221,45 @@ globalThis.Dox = globalThis.Dox || {};
         display: flex; flex-direction: column;
       }
       .dox-sheet-lang-name {
-        font-weight: 600; color: #8b98a5;
+        font-weight: 600; color: var(--dox-muted, #8E8E93);
       }
-      .dox-sheet-lang-row.selected .dox-sheet-lang-name { color: #e7e9ea; }
+      .dox-sheet-lang-row.selected .dox-sheet-lang-name { color: var(--dox-text, #F4F4F5); }
       .dox-sheet-lang-support {
-        font-size: 12px; font-weight: 500; color: #8b98a5;
+        font-size: 12px; font-weight: 500; color: var(--dox-muted, #8E8E93);
       }
       .dox-sheet-chip {
-        background: none; border: 0; color: #8b98a5;
-        font: 600 13px ${Dox.FONT}; cursor: pointer;
+        background: none; border: 0; color: var(--dox-muted, #8E8E93);
+        font: 600 13px var(--dox-font, ${Dox.FONT});
         padding: 0; text-align: start; width: 100%;
+        pointer-events: none;
       }
-      .dox-sheet-chip.selected, .dox-sheet-chip.hit { color: #e7e9ea; }
+      .dox-sheet-chip.selected, .dox-sheet-chip.hit { color: var(--dox-text, #F4F4F5); }
       .dox-sheet-slot {
         width: ${SLOT}px; height: ${SLOT}px;
         flex-shrink: 0;
         display: inline-flex; align-items: center; justify-content: center;
+        position: relative;
       }
       .dox-sheet-i, .dox-sheet-star, .dox-sheet-check {
-        width: ${SLOT}px; height: ${SLOT}px; flex-shrink: 0;
-        background: none; border: 0; cursor: pointer; color: #8b98a5;
-        padding: 0; font-size: 12px; line-height: ${SLOT}px;
+        width: 32px; height: 32px; margin: -8px;
+        flex-shrink: 0;
+        background: none; border: 0; cursor: pointer;
+        color: var(--dox-muted, #8E8E93);
+        padding: 0;
+        display: inline-flex; align-items: center; justify-content: center;
       }
-      .dox-sheet-star { opacity: .4; color: #e7e9ea; }
-      .dox-sheet-star.on { opacity: 1; color: ${GOLD}; }
-      .dox-sheet-check { color: #e7e9ea; cursor: default; }
+      .dox-sheet-i svg, .dox-sheet-star svg, .dox-sheet-check svg {
+        width: 16px; height: 16px; display: block;
+      }
+      .dox-sheet-star { opacity: .35; color: var(--dox-muted, #8E8E93); }
+      .dox-sheet-star.on { opacity: 1; color: var(--dox-accent, #8A7C5C); }
+      .dox-sheet-check { color: var(--dox-accent, #8A7C5C); cursor: default; margin: 0; width: 16px; height: 16px; }
       .dox-hint {
         position: absolute; z-index: 2147483001;
-        background: #0f1113; color: #e7e9ea; border: 1px solid ${GOLD};
-        border-radius: 10px; padding: 8px 10px; max-width: 240px;
-        font-size: 12px; cursor: pointer;
+        background: var(--dox-elevated, #0E0E10); color: var(--dox-text, #F4F4F5);
+        border: 1px solid var(--dox-accent, #8A7C5C);
+        border-radius: 12px; padding: 8px 10px; max-width: 240px;
+        font-size: 12px; font-family: var(--dox-font, ${Dox.FONT}); cursor: pointer;
       }
     `;
   }
@@ -253,15 +275,10 @@ globalThis.Dox = globalThis.Dox || {};
   function applyColumnMins(sheetEl) {
     let langInner = 0;
     for (const group of Dox.CATALOG.groups) {
-      langInner = Math.max(langInner, textWidth(Dox.locale.groupLabel(group.id), 11, 600) + 12 + 20);
+      langInner = Math.max(langInner, textWidth(Dox.locale.groupLabel(group.id), 11, 700) + 12 + 20);
       for (const lang of group.languages) {
         const label = Dox.locale.languageLabel(lang.id);
-        let row = textWidth(label, 13, 600) + SLOT;
-        if (lang.id === "english") {
-          const badge = textWidth(Dox.locale.groupLabel("germanic"), 11, 600) + 12;
-          row = badge + 8 + textWidth(label, 13, 600) + SLOT;
-        }
-        langInner = Math.max(langInner, row);
+        langInner = Math.max(langInner, textWidth(label, 13, 600) + SLOT);
       }
     }
     let dialectInner = 0;
@@ -297,16 +314,24 @@ globalThis.Dox = globalThis.Dox || {};
     if (!text) return;
     const pop = document.createElement("div");
     pop.className = "dox-hint";
+    pop.setAttribute("role", "button");
+    pop.tabIndex = 0;
     pop.textContent = text;
-    pop.addEventListener("click", (e) => {
+    const go = (e) => {
       e.stopPropagation();
       const q = Dox.locale.grokQuery(dialectId);
       window.open("https://grok.com/?q=" + encodeURIComponent(q), "_blank", "noopener");
       closeHint();
-    });
+    };
+    Dox.bindActivate(pop, go);
     document.documentElement.appendChild(pop);
     const r = anchor.getBoundingClientRect();
-    pop.style.left = Math.min(r.left, window.innerWidth - 260) + "px";
+    const rtl = Dox.locale.rtl || document.documentElement.getAttribute("dir") === "rtl";
+    const start = rtl ? window.innerWidth - r.right : r.left;
+    pop.style.setProperty(
+      "inset-inline-start",
+      Math.max(8, Math.min(start, window.innerWidth - 260)) + "px"
+    );
     pop.style.top = r.bottom + 6 + "px";
     hintPopup = pop;
   }
@@ -341,23 +366,21 @@ globalThis.Dox = globalThis.Dox || {};
     await redraw();
   }
 
-  function goldBadge(label) {
-    const el = document.createElement("span");
-    el.className = "dox-gold-badge";
-    el.textContent = label;
-    return el;
-  }
-
   function renderGroupHeader(group, expanded) {
     const row = document.createElement("div");
     row.className = "dox-sheet-group";
     row.dataset.groupId = group.id;
-    row.appendChild(goldBadge(Dox.locale.groupLabel(group.id)));
+    row.setAttribute("role", "button");
+    row.tabIndex = 0;
+    const label = document.createElement("span");
+    label.className = "dox-sheet-group-label";
+    label.textContent = Dox.locale.groupLabel(group.id);
+    row.appendChild(label);
     const chev = document.createElement("span");
     chev.className = "dox-sheet-chevron" + (expanded ? " open" : "");
-    chev.textContent = "▾";
+    chev.appendChild(Dox.icon("chevron", 16));
     row.appendChild(chev);
-    row.addEventListener("click", async () => {
+    Dox.bindActivate(row, async () => {
       if (search.trim()) return;
       if (expandedGroups.has(group.id)) expandedGroups.delete(group.id);
       else expandedGroups.add(group.id);
@@ -371,9 +394,8 @@ globalThis.Dox = globalThis.Dox || {};
     const row = document.createElement("div");
     row.className = "dox-sheet-lang-row" + (selected ? " selected" : "");
     row.dataset.spokenId = spokenId;
-    if (spokenId === "english") {
-      row.appendChild(goldBadge(Dox.locale.groupLabel("germanic")));
-    }
+    row.setAttribute("role", "button");
+    row.tabIndex = 0;
     const grow = document.createElement("div");
     grow.className = "dox-sheet-lang-grow";
     const name = document.createElement("div");
@@ -392,17 +414,17 @@ globalThis.Dox = globalThis.Dox || {};
     if (selected) {
       const check = document.createElement("span");
       check.className = "dox-sheet-check";
-      check.textContent = "✓";
+      check.appendChild(Dox.icon("check", 16));
       slot.appendChild(check);
     }
     row.appendChild(slot);
-    row.addEventListener("click", onClick);
+    Dox.bindActivate(row, onClick);
     return row;
   }
 
   function bindHamaHold(row, prefs) {
     if (prefs.hamaUnlocked) {
-      row.addEventListener("click", () => pick(DAMASCUS));
+      Dox.bindActivate(row, () => pick(DAMASCUS));
       return;
     }
     let holding = false;
@@ -430,18 +452,25 @@ globalThis.Dox = globalThis.Dox || {};
       holding = false;
       clearTimeout(hamaTimer);
     });
+    row.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        pick(DAMASCUS);
+      }
+    });
   }
 
   function renderDialectRow(prefs, dialectId) {
     const row = document.createElement("div");
     row.className = "dox-sheet-dialect-row";
     row.dataset.dialectId = dialectId;
+    row.setAttribute("role", "button");
+    row.tabIndex = 0;
     const q = search.trim().toLowerCase();
     const chipName = Dox.locale.dialectChip(dialectId);
     const grow = document.createElement("div");
     grow.className = "dox-sheet-dialect-grow";
-    const chip = document.createElement("button");
-    chip.type = "button";
+    const chip = document.createElement("span");
     chip.className = "dox-sheet-chip";
     chip.dataset.dialectId = dialectId;
     chip.textContent = chipName;
@@ -457,8 +486,9 @@ globalThis.Dox = globalThis.Dox || {};
       const info = document.createElement("button");
       info.type = "button";
       info.className = "dox-sheet-i";
-      info.textContent = "i";
       info.title = t("cd_dialect_info", chipName);
+      info.setAttribute("aria-label", t("cd_dialect_info", chipName));
+      info.appendChild(Dox.icon("info", 16));
       info.addEventListener("click", (e) => {
         e.stopPropagation();
         showHint(info, dialectId);
@@ -472,7 +502,7 @@ globalThis.Dox = globalThis.Dox || {};
     if (selectedId === dialectId) {
       const check = document.createElement("span");
       check.className = "dox-sheet-check";
-      check.textContent = "✓";
+      check.appendChild(Dox.icon("check", 16));
       checkSlot.appendChild(check);
     }
     row.appendChild(checkSlot);
@@ -480,11 +510,12 @@ globalThis.Dox = globalThis.Dox || {};
     const star = document.createElement("button");
     star.type = "button";
     star.className = "dox-sheet-star" + (prefs.favorites.includes(dialectId) ? " on" : "");
-    star.textContent = "★";
+    star.appendChild(Dox.icon("star", 16));
     star.title = t(
       prefs.favorites.includes(dialectId) ? "cd_dialect_unfavorite" : "cd_dialect_favorite",
       chipName
     );
+    star.setAttribute("aria-label", star.title);
     star.addEventListener("click", async (e) => {
       e.stopPropagation();
       await Dox.prefs.toggleFavorite(dialectId);
@@ -495,39 +526,42 @@ globalThis.Dox = globalThis.Dox || {};
     if (dialectId === DAMASCUS) {
       bindHamaHold(row, prefs);
     } else {
-      const choose = () => pick(dialectId);
-      row.addEventListener("click", choose);
-      chip.addEventListener("click", (e) => {
-        e.stopPropagation();
-        choose();
+      Dox.bindActivate(row, (e) => {
+        if (e.target.closest(".dox-sheet-star, .dox-sheet-i")) return;
+        pick(dialectId);
       });
     }
     return row;
   }
 
   function renderQuickChip(id, opts) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "dox-sheet-quick-chip" + (id === selectedId ? " selected" : "");
-    btn.dataset.dialectId = id;
+    const wrap = document.createElement("div");
+    wrap.className = "dox-sheet-quick-chip" + (id === selectedId ? " selected" : "");
+    wrap.dataset.dialectId = id;
+    wrap.setAttribute("role", "button");
+    wrap.tabIndex = 0;
     const label = document.createElement("span");
     label.textContent = Dox.locale.dialectChip(id);
-    btn.appendChild(label);
+    wrap.appendChild(label);
     if (opts && opts.star) {
       const star = document.createElement("button");
       star.type = "button";
       star.className = "dox-sheet-star on";
-      star.textContent = "★";
+      star.appendChild(Dox.icon("star", 14));
       star.title = t("cd_dialect_unfavorite", Dox.locale.dialectChip(id));
+      star.setAttribute("aria-label", star.title);
       star.addEventListener("click", async (e) => {
         e.stopPropagation();
         await Dox.prefs.toggleFavorite(id);
         await redraw();
       });
-      btn.appendChild(star);
+      wrap.appendChild(star);
     }
-    btn.addEventListener("click", () => pick(id));
-    return btn;
+    Dox.bindActivate(wrap, (e) => {
+      if (e.target.closest(".dox-sheet-star")) return;
+      pick(id);
+    });
+    return wrap;
   }
 
   function renderQuick(prefs) {
@@ -709,11 +743,22 @@ globalThis.Dox = globalThis.Dox || {};
     Dox.locale.applyDir(sheet);
     applyColumnMins(sheet);
 
-    const closeBtn = document.createElement("button");
-    closeBtn.type = "button";
-    closeBtn.className = "dox-sheet-close";
-    closeBtn.textContent = "×";
+    const chromeRow = document.createElement("div");
+    chromeRow.className = "dox-sheet-chrome";
+    const settingsBtn = Dox.iconButton("gear", {
+      className: "dox-sheet-settings",
+      title: t("home_settings"),
+    });
+    settingsBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      Dox.openSettings();
+    });
+    const closeBtn = Dox.iconButton("close", {
+      className: "dox-sheet-close",
+      title: t("settings_cancel"),
+    });
     closeBtn.addEventListener("click", close);
+    chromeRow.append(settingsBtn, closeBtn);
 
     const quick = document.createElement("div");
     quick.className = "dox-sheet-quick";
@@ -729,7 +774,7 @@ globalThis.Dox = globalThis.Dox || {};
     searchBox.className = "dox-sheet-search";
     const searchIcon = document.createElement("span");
     searchIcon.className = "dox-sheet-search-icon";
-    searchIcon.textContent = "⌕";
+    searchIcon.appendChild(Dox.icon("search", 16));
     searchInput = document.createElement("input");
     searchInput.type = "search";
     searchInput.placeholder = t("language_search_hint");
@@ -741,8 +786,9 @@ globalThis.Dox = globalThis.Dox || {};
     const clearBtn = document.createElement("button");
     clearBtn.type = "button";
     clearBtn.className = "dox-sheet-search-clear";
-    clearBtn.textContent = "×";
     clearBtn.title = t("cd_language_search_clear");
+    clearBtn.setAttribute("aria-label", t("cd_language_search_clear"));
+    clearBtn.appendChild(Dox.icon("close", 16));
     clearBtn.hidden = true;
     clearBtn.addEventListener("click", async () => {
       search = "";
@@ -771,11 +817,11 @@ globalThis.Dox = globalThis.Dox || {};
     dialectPanel.append(plateWrap, dialectList);
 
     split.append(langPanel, dialectPanel);
-    sheet.append(closeBtn, quick, split);
+    sheet.append(chromeRow, quick, split);
     host.appendChild(sheet);
     host.addEventListener("click", (e) => {
       if (e.target === host) close();
-      else if (hintPopup && !hintPopup.contains(e.target) && !e.target.classList.contains("dox-sheet-i")) {
+      else if (hintPopup && !hintPopup.contains(e.target) && !e.target.closest(".dox-sheet-i")) {
         closeHint();
       }
     });

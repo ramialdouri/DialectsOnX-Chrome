@@ -86,7 +86,7 @@ function injectDialxStyles() {
       margin-top: 6px;
       font-size: 13px;
       position: relative;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: var(--dox-font, ${Dox.FONT});
     }
     .dialx-translation {
       white-space: pre-wrap;
@@ -94,11 +94,13 @@ function injectDialxStyles() {
       unicode-bidi: plaintext;
     }
     .dialx-overlay-showmore {
-      color: rgb(29, 155, 240);
+      color: var(--dox-muted, #8E8E93);
       cursor: pointer;
       white-space: nowrap;
+      font-weight: 600;
     }
     .dialx-overlay-showmore:hover {
+      color: var(--dox-text, #F4F4F5);
       text-decoration: underline;
     }
     .dialx-btn,
@@ -109,15 +111,15 @@ function injectDialxStyles() {
       gap: 6px;
       padding: 4px 12px;
       border-radius: 9999px;
-      background: rgb(32, 35, 39);
-      color: rgb(152, 157, 162);
-      border: 1px solid rgb(47, 51, 54);
+      background: var(--dox-field, #1C1C1F);
+      color: var(--dox-muted, #8E8E93);
+      border: 1px solid var(--dox-line, #2C2C31);
       cursor: pointer;
       font-weight: 500;
       font-size: 13px;
       font-family: inherit;
       line-height: 1.3;
-      transition: background 0.15s ease, border-color 0.15s ease;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
       box-sizing: border-box;
     }
     .dialx-btn-sm {
@@ -135,8 +137,9 @@ function injectDialxStyles() {
     }
     .dialx-btn:hover,
     .dialx-btn-sm:hover:not(:disabled) {
-      background: rgb(39, 43, 48);
-      border-color: rgb(62, 68, 73);
+      background: var(--dox-accent-hover, rgba(138, 124, 92, 0.16));
+      border-color: var(--dox-accent, #8A7C5C);
+      color: var(--dox-text, #F4F4F5);
     }
     .dialx-btn-sm:disabled {
       opacity: 0.55;
@@ -146,10 +149,10 @@ function injectDialxStyles() {
       display: inline-block;
       height: 30px;
       width: 82px;
-      margin-left: 4px;
+      margin-inline-start: 4px;
       flex-shrink: 0;
       pointer-events: none;
-      background-color: rgb(152, 157, 162);
+      background-color: var(--dox-muted, #8E8E93);
       -webkit-mask-image: url("${logoUrl}");
       mask-image: url("${logoUrl}");
       -webkit-mask-repeat: no-repeat;
@@ -2116,7 +2119,7 @@ function showBarStatus(state, message) {
   if (!el) {
     el = document.createElement("span");
     el.className = "dialx-status";
-    el.style.cssText = "font-size:11px;color:#f4212e;margin-left:6px;white-space:nowrap;";
+    el.style.cssText = "font-size:11px;color:var(--dox-danger, #FF453A);margin-inline-start:6px;white-space:nowrap;";
     state.bar.appendChild(el);
   }
   el.textContent = message;
@@ -2170,7 +2173,7 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
   };
   state.updateMainButton();
 
-  mainBtn.onclick = (e) => {
+  Dox.bindActivate(mainBtn, (e) => {
     e.stopPropagation();
     if (!canOperate()) return;
 
@@ -2209,7 +2212,7 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
     } else if (typeof Dox.faw?.bindOverlay === "function") {
       Dox.faw.bindOverlay(state);
     }
-  };
+  });
 
   selectorBtn.onclick = (e) => {
     e.stopPropagation();

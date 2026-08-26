@@ -15,14 +15,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       : Dox.locale.t("dox_off");
   });
   document.getElementById("ime").textContent = Dox.locale.t("dox_ime_show");
-  document.getElementById("settings").textContent = Dox.locale.t("home_settings");
+  const settings = document.getElementById("settings");
+  settings.replaceChildren(Dox.icon("gear", 16));
+  settings.setAttribute("aria-label", Dox.locale.t("home_settings"));
+  settings.title = Dox.locale.t("home_settings");
   document.getElementById("ime").addEventListener("click", async () => {
     await Dox.prefs.set({ imeCollapsed: false, imeEnabled: true, extensionEnabled: true });
     chrome.runtime.sendMessage({ type: "dox-ime-show" });
   });
-  document.getElementById("settings").addEventListener("click", () => {
-    chrome.runtime.openOptionsPage
-      ? chrome.runtime.openOptionsPage()
-      : window.open(chrome.runtime.getURL("settings.html"));
-  });
+  settings.addEventListener("click", () => Dox.openSettings());
 });

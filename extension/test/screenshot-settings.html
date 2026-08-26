@@ -1,19 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>DialectsOnX Settings</title>
+  <title>DialectsOnX settings screenshot</title>
   <style>
-    html, body { height: 100%; }
+    html, body { height: 100%; margin: 0; }
     body.dox-settings {
-      margin: 0;
       background: var(--dox-ink, #000000);
       color: var(--dox-text, #F4F4F5);
       font-family: var(--dox-font);
     }
-    #main {
-      max-width: 720px; margin-inline: auto; padding: 20px 16px 48px;
-    }
+    #main { max-width: 720px; margin-inline: auto; padding: 20px 16px 48px; }
     h1 { font-size: 20px; font-weight: 600; margin: 0 0 16px; }
     h2 { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
       color: var(--dox-muted, #8E8E93); margin: 20px 0 8px; }
@@ -21,51 +18,34 @@
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--dox-line, #2C2C31);
     }
-    button, input[type="text"] {
-      font: inherit; border-radius: 8px; padding: 8px 10px;
-    }
+    button, input[type="text"] { font: inherit; border-radius: 8px; padding: 8px 10px; }
     button {
       background: transparent; color: var(--dox-text, #F4F4F5);
       border: 1px solid var(--dox-line, #2C2C31); cursor: pointer;
     }
-    button:hover { border-color: var(--dox-accent, #8A7C5C); background: var(--dox-accent-hover, rgba(138,124,92,.16)); }
     input[type="text"] {
       background: var(--dox-field, #1C1C1F); color: var(--dox-text, #F4F4F5);
       border: 1px solid var(--dox-line, #2C2C31); min-width: 16em; flex: 1;
     }
-    input[type="text"]:focus { outline: none; border-color: var(--dox-accent, #8A7C5C); }
     a { color: var(--dox-muted, #8E8E93); }
-    a:hover { color: var(--dox-text, #F4F4F5); }
     .hint { color: var(--dox-muted, #8E8E93); font-size: 12px; margin: 0 0 12px; }
     .hidden { display: none !important; }
     .dox-switch {
       appearance: none; -webkit-appearance: none;
       width: 40px; height: 24px; margin: 0;
       background: var(--dox-line, #2C2C31);
-      border-radius: 999px;
-      position: relative;
-      cursor: pointer;
-      border: 0;
-      flex-shrink: 0;
+      border-radius: 999px; position: relative; cursor: pointer; border: 0; flex-shrink: 0;
     }
     .dox-switch::after {
-      content: "";
-      position: absolute;
-      width: 18px; height: 18px;
-      border-radius: 50%;
-      background: var(--dox-muted, #8E8E93);
-      top: 3px;
-      inset-inline-start: 3px;
-      transition: inset-inline-start .15s ease, background .15s ease;
+      content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--dox-muted, #8E8E93); top: 3px; inset-inline-start: 3px;
     }
     .dox-switch:checked { background: rgba(138, 124, 92, 0.35); }
     .dox-switch:checked::after {
-      background: var(--dox-accent, #8A7C5C);
-      inset-inline-start: 19px;
+      background: var(--dox-accent, #8A7C5C); inset-inline-start: 19px;
     }
     input[type="radio"] { accent-color: var(--dox-accent, #8A7C5C); }
   </style>
-  <script src="theme.js"></script>
 </head>
 <body class="dox-settings">
   <div id="main">
@@ -91,9 +71,7 @@
     <label class="toggle"><span id="imeLabel"></span><input class="dox-switch" type="checkbox" id="imeEnabled" /></label>
     <label class="toggle"><span id="imeRememberLabel"></span><input class="dox-switch" type="checkbox" id="imeRemember" /></label>
     <h2 id="advLabel"></h2>
-    <div class="row">
-      <span id="urlLabel"></span>
-    </div>
+    <div class="row"><span id="urlLabel"></span></div>
     <div class="row">
       <input type="text" id="backendUrl" />
       <button type="button" id="saveUrl"></button>
@@ -123,13 +101,20 @@
       <div id="sysList" class="dox-sys-list"></div>
     </div>
   </div>
-  <script src="dialects.js"></script>
-  <script src="locale.js"></script>
-  <script src="prefs.js"></script>
-  <script src="api.js"></script>
-  <script src="sheet.js"></script>
-  <script src="faw.js"></script>
-  <script src="system-language.js"></script>
-  <script src="settings.js"></script>
+  <script src="chrome-mock.js"></script>
+  <script src="../theme.js"></script>
+  <script src="../dialects.js"></script>
+  <script src="../locale.js"></script>
+  <script src="../prefs.js"></script>
+  <script src="../api.js"></script>
+  <script src="../sheet.js"></script>
+  <script src="../faw.js"></script>
+  <script src="../system-language.js"></script>
+  <script src="../settings.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.body.dataset.ready = "settings";
+    });
+  </script>
 </body>
 </html>

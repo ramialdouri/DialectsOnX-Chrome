@@ -8,6 +8,7 @@
   <pre id="out">running…</pre>
   <div id="sysList"></div>
   <script src="chrome-mock.js"></script>
+  <script src="../theme.js"></script>
   <script src="../dialects.js"></script>
   <script src="../locale.js"></script>
   <script src="../prefs.js"></script>
@@ -33,7 +34,12 @@
       ok(!!document.querySelector(".dox-sheet-lang-panel"), "lang panel");
       ok(!!document.querySelector(".dox-sheet-dialect-panel"), "dialect panel");
       ok(!!document.querySelector(".dox-sheet-quick"), "favorites/recents row");
-      ok(!!document.querySelector(".dox-gold-badge"), "gold group badges in dialect sheet");
+      ok(!document.querySelector(".dox-gold-badge"), "no gold group badges");
+      ok(!!document.querySelector(".dox-sheet-group"), "typographic group headers");
+      ok(!!document.querySelector(".dox-sheet-settings"), "muted settings gear in top row");
+      ok(!!document.querySelector(".dox-sheet-close"), "close in top row");
+      ok(!document.querySelector("button.dox-sheet-quick-chip"), "favorite chips are not nested buttons");
+      ok(!document.querySelector('.dox-sheet-lang-row[data-spoken-id="english"] .dox-gold-badge'), "English has no group pill");
       const chips = [...document.querySelectorAll(".dox-sheet-dialect-list .dox-sheet-chip")];
       ok(chips.length > 5 && chips.length < 80, "right panel is one language, count=" + chips.length);
       ok(chips.some((c) => c.dataset.dialectId === "arabic_msa"), "MSA in Arabic list");

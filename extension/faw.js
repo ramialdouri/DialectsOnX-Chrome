@@ -67,30 +67,40 @@ globalThis.Dox = globalThis.Dox || {};
     const style = document.createElement("style");
     style.id = "dox-faw-styles";
     style.textContent = `
-      .dox-faw-hi { background: rgba(224,184,58,.38); border-radius: 3px; }
+      .dox-faw-hi { background: var(--dox-faw-hi, rgba(138, 124, 92, 0.22)); border-radius: 3px; }
       .dox-faw-chip {
         position: fixed; z-index: 2147482500;
-        background: #E0B83A; color: #3D2A08; border: 0; border-radius: 999px;
-        font: 600 12px ${Dox.FONT}; padding: 3px 10px; cursor: pointer;
+        background: var(--dox-elevated, #0E0E10); color: var(--dox-text, #F4F4F5);
+        border: 1px solid var(--dox-accent, #8A7C5C); border-radius: 999px;
+        font: 600 12px var(--dox-font, ${Dox.FONT}); padding: 3px 10px; cursor: pointer;
       }
       .dox-faw-dlg {
-        position: fixed; inset: 0; z-index: 2147483600; background: rgba(0,0,0,.45);
+        position: fixed; inset: 0; z-index: 2147483600; background: rgba(0,0,0,.55);
         display: flex; align-items: center; justify-content: center;
-        font-family: ${Dox.FONT};
+        font-family: var(--dox-font, ${Dox.FONT});
       }
       .dox-faw-card {
-        background: #16181c; color: #e7e9ea; border: 1px solid #2f3336;
-        border-radius: 14px; padding: 16px; width: min(360px, calc(100vw - 24px));
+        background: var(--dox-elevated, #0E0E10); color: var(--dox-text, #F4F4F5);
+        border: 1px solid var(--dox-line, #2C2C31);
+        border-radius: 12px; padding: 16px; width: min(360px, calc(100vw - 24px));
         display: flex; flex-direction: column; gap: 8px;
       }
       .dox-faw-card input, .dox-faw-card button {
         font: inherit; border-radius: 8px; padding: 8px 10px;
       }
       .dox-faw-card input {
-        background: #0f1113; border: 1px solid #2f3336; color: #e7e9ea;
+        background: var(--dox-field, #1C1C1F); border: 1px solid var(--dox-line, #2C2C31);
+        color: var(--dox-text, #F4F4F5);
       }
-      .dox-faw-save { background: #E0B83A; color: #3D2A08; border: 0; font-weight: 700; cursor: pointer; }
-      .dox-faw-skip { background: transparent; border: 1px solid #2f3336; color: #8b98a5; cursor: pointer; }
+      .dox-faw-card input:focus { outline: none; border-color: var(--dox-accent, #8A7C5C); }
+      .dox-faw-save {
+        background: transparent; color: var(--dox-text, #F4F4F5);
+        border: 1px solid var(--dox-accent, #8A7C5C); font-weight: 700; cursor: pointer;
+      }
+      .dox-faw-skip {
+        background: transparent; border: 1px solid var(--dox-line, #2C2C31);
+        color: var(--dox-muted, #8E8E93); cursor: pointer;
+      }
     `;
     document.documentElement.appendChild(style);
   }
@@ -172,11 +182,18 @@ globalThis.Dox = globalThis.Dox || {};
     skip.textContent = Dox.locale.t("settings_cancel");
     card.append(title, input, save, skip);
     dlg.appendChild(card);
-    const close = () => dlg.remove();
+    const close = () => {
+      document.removeEventListener("keydown", onEsc);
+      dlg.remove();
+    };
+    const onEsc = (e) => {
+      if (e.key === "Escape") close();
+    };
     skip.addEventListener("click", close);
     dlg.addEventListener("click", (e) => {
       if (e.target === dlg) close();
     });
+    document.addEventListener("keydown", onEsc);
 
     async function submit(correction, transliteration) {
       if (!correction || correction === original) {
