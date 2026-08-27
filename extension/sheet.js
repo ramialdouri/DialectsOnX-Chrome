@@ -261,6 +261,30 @@ globalThis.Dox = globalThis.Dox || {};
         border-radius: 12px; padding: 8px 10px; max-width: 240px;
         font-size: 12px; font-family: var(--dox-font, ${Dox.FONT}); cursor: pointer;
       }
+      .dox-sheet-auto {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; padding: 4px 8px 10px;
+        font: 600 13px var(--dox-font, ${Dox.FONT});
+        color: var(--dox-text, #F4F4F5);
+      }
+      .dox-sheet-auto .dox-switch {
+        appearance: none; -webkit-appearance: none;
+        width: 40px; height: 24px; margin: 0;
+        background: var(--dox-line, #2C2C31);
+        border-radius: 999px; position: relative; cursor: pointer; border: 0; flex-shrink: 0;
+      }
+      .dox-sheet-auto .dox-switch::after {
+        content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%;
+        background: var(--dox-muted, #8E8E93); top: 3px; inset-inline-start: 3px;
+        transition: inset-inline-start .15s ease, background .15s ease;
+      }
+      .dox-sheet-auto .dox-switch:checked { background: rgba(138, 124, 92, 0.35); }
+      .dox-sheet-auto .dox-switch:checked::after {
+        background: var(--dox-accent, #8A7C5C); inset-inline-start: 19px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .dox-sheet-auto .dox-switch::after { transition: none; }
+      }
     `;
   }
 
@@ -740,6 +764,9 @@ globalThis.Dox = globalThis.Dox || {};
     host.className = "dox-sheet-scrim";
     const sheet = document.createElement("div");
     sheet.className = "dox-sheet";
+    sheet.setAttribute("role", "dialog");
+    sheet.setAttribute("aria-modal", "true");
+    sheet.setAttribute("aria-label", t("label_dialect_selector"));
     Dox.locale.applyDir(sheet);
     applyColumnMins(sheet);
 
@@ -800,7 +827,26 @@ globalThis.Dox = globalThis.Dox || {};
     searchRow.appendChild(searchBox);
     const langList = document.createElement("div");
     langList.className = "dox-sheet-lang-list";
-    langPanel.append(searchRow, langList);
+    if (mode !== "ime") {
+      const autoRow = document.createElement("label");
+      autoRow.className = "dox-sheet-auto";
+      const autoLabel = document.createElement("span");
+      autoLabel.textContent = t("dox_auto_translate");
+      const autoInput = document.createElement("input");
+      autoInput.type = "checkbox";
+      autoInput.className = "dox-switch";
+      autoInput.setAttribute("role", "switch");
+      autoInput.checked = prefs.autoTranslate === true;
+      autoInput.setAttribute("aria-checked", autoInput.checked ? "true" : "false");
+      autoInput.addEventListener("change", async () => {
+        autoInput.setAttribute("aria-checked", autoInput.checked ? "true" : "false");
+        await Dox.prefs.set({ autoTranslate: autoInput.checked });
+      });
+      autoRow.append(autoLabel, autoInput);
+      langPanel.append(searchRow, autoRow, langList);
+    } else {
+      langPanel.append(searchRow, langList);
+    }
 
     const dialectPanel = document.createElement("div");
     dialectPanel.className = "dox-sheet-dialect-panel";

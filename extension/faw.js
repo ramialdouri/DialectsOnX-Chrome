@@ -81,9 +81,9 @@ globalThis.Dox = globalThis.Dox || {};
       }
       .dox-faw-card {
         background: var(--dox-elevated, #0E0E10); color: var(--dox-text, #F4F4F5);
-        border: 1px solid var(--dox-line, #2C2C31);
-        border-radius: 12px; padding: 16px; width: min(360px, calc(100vw - 24px));
-        display: flex; flex-direction: column; gap: 8px;
+        border: 1px solid var(--dox-line, #2C2C31); border-radius: 12px;
+        padding: 16px; width: min(420px, calc(100vw - 32px));
+        display: flex; flex-direction: column; gap: 10px;
       }
       .dox-faw-card input, .dox-faw-card button {
         font: inherit; border-radius: 8px; padding: 8px 10px;
@@ -164,6 +164,8 @@ globalThis.Dox = globalThis.Dox || {};
     const needsPhonetic = Dox.spokenIdOf(dialectId) !== "english";
     const dlg = document.createElement("div");
     dlg.className = "dox-faw-dlg";
+    dlg.setAttribute("role", "dialog");
+    dlg.setAttribute("aria-modal", "true");
     Dox.locale.applyDir(dlg);
     const card = document.createElement("div");
     card.className = "dox-faw-card";
@@ -188,6 +190,19 @@ globalThis.Dox = globalThis.Dox || {};
     };
     const onEsc = (e) => {
       if (e.key === "Escape") close();
+      if (e.key === "Tab") {
+        const list = [...card.querySelectorAll("button, input, [href], [tabindex]:not([tabindex='-1'])")];
+        if (!list.length) return;
+        const first = list[0];
+        const last = list[list.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     skip.addEventListener("click", close);
     dlg.addEventListener("click", (e) => {

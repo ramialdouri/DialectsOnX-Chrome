@@ -85,7 +85,7 @@ globalThis.Dox = globalThis.Dox || {};
 
   function writeValue(el, text) {
     if (el.isContentEditable) {
-      el.textContent = text;
+      el.innerText = text;
       el.dispatchEvent(new InputEvent("input", { bubbles: true }));
       return;
     }
@@ -123,8 +123,8 @@ globalThis.Dox = globalThis.Dox || {};
         border-color: var(--dox-accent, #8A7C5C);
       }
       #dialx-ime-bar .dox-ime-x {
-        position: absolute; top: 4px; inset-inline-end: 4px;
-        width: 28px; height: 28px;
+        position: absolute; top: 0; inset-inline-end: 0;
+        width: 44px; height: 44px;
         background: transparent; border: 0; color: var(--dox-muted, #8E8E93);
         padding: 0;
         display: inline-flex; align-items: center; justify-content: center;
@@ -133,18 +133,43 @@ globalThis.Dox = globalThis.Dox || {};
       #dialx-ime-bar .dox-ime-status {
         color: var(--dox-muted, #8E8E93); font-size: 11px; min-width: 4em;
         margin-inline-start: 2px;
+        display: inline-flex; align-items: center;
       }
+      #dialx-ime-bar .dox-ime-status.is-busy { color: var(--dox-status, #A8B4C0); }
+      #dialx-ime-bar .dox-ime-status.is-error { color: var(--dox-danger, #FF453A); }
       #dialx-ime-bar.dox-ime-drag { cursor: grabbing; }
     `;
     document.documentElement.appendChild(style);
   }
 
-  async function place(prefs) {
-    const pos = await Dox.prefs.getImePosition();
-    const x = prefs.imeRememberPosition && pos.imeX != null ? pos.imeX : window.innerWidth - 420;
-    const y = prefs.imeRememberPosition && pos.imeY != null ? pos.imeY : window.innerHeight - 80;
-    bar.style.left = Math.max(8, Math.min(x, window.innerWidth - 80)) + "px";
-    bar.style.top = Math.max(8, Math.min(y, window.innerHeight - 40)) + "px";
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(n, max));
+  }
+
+  function placeUnderField(field) {
+    if (!bar) return;
+    const el = field || focusedInput();
+    const barW = bar.offsetWidth || 360;
+    const barH = bar.offsetHeight || 52;
+    let x;
+    let y;
+    if (el && typeof el.getBoundingClientRect === "function") {
+      const r = el.getBoundingClientRect();
+      x = r.left;
+      y = r.bottom + 8;
+      if (y + barH > window.innerHeight - 8) {
+        y = Math.max(8, r.top - barH - 8);
+      }
+    } else {
+      x = window.innerWidth - barW - 16;
+      y = window.innerHeight - barH - 16;
+    }
+    bar.style.left = clamp(x, 8, window.innerWidth - barW - 8) + "px";
+    bar.style.top = clamp(y, 8, window.innerHeight - barH - 8) + "px";
+  }
+
+  async function place() {
+    placeUnderField();
   }
 
   async function mount() {
@@ -228,17 +253,13 @@ globalThis.Dox = globalThis.Dox || {};
       bar.style.left = e.clientX - dragDx + "px";
       bar.style.top = e.clientY - dragDy + "px";
     });
-    bar.addEventListener("pointerup", async () => {
+    bar.addEventListener("pointerup", () => {
       if (!dragging) return;
       dragging = false;
       bar.classList.remove("dox-ime-drag");
-      const next = await Dox.prefs.get();
-      if (next.imeRememberPosition) {
-        await Dox.prefs.setImePosition(parseInt(bar.style.left, 10), parseInt(bar.style.top, 10));
-      }
     });
     document.documentElement.appendChild(bar);
-    await place(prefs);
+    await place();
     await refresh();
   }
 
@@ -253,7 +274,10 @@ globalThis.Dox = globalThis.Dox || {};
     if (mic && !inflight) mic.textContent = t("ime_mic");
     if (go && !inflight) go.textContent = t("ime_translate");
     if (close) close.title = t("dox_ime_collapse");
-    if (statusEl) statusEl.textContent = t("dox_ime_idle");
+    if (statusEl && !inflight) {
+      statusEl.classList.remove("is-busy", "is-error");
+      statusEl.textContent = t("dox_ime_idle");
+    }
     Dox.locale.applyDir(bar);
   }
 
@@ -271,7 +295,10 @@ globalThis.Dox = globalThis.Dox || {};
     const prefs = await Dox.prefs.get();
     inflight = new AbortController();
     go.textContent = t("ime_translate_cancel");
-    if (statusEl) statusEl.textContent = t("status_translating");
+    if (statusEl) {
+      if (typeof Dox.fillBusyStatus === "function") Dox.fillBusyStatus(statusEl, t("status_translating"));
+      else statusEl.textContent = t("status_translating");
+    }
     try {
       const result = await Dox.api.translate({
         text,
@@ -284,15 +311,23 @@ globalThis.Dox = globalThis.Dox || {};
         return;
       }
       writeValue(el, result.translation);
-      if (statusEl) statusEl.textContent = t("dox_status_ready");
+      if (statusEl) {
+        statusEl.classList.remove("is-busy", "is-error");
+        statusEl.textContent = t("dox_status_ready");
+      }
     } catch (e) {
       if (e && e.name === "AbortError") {
-        if (statusEl) statusEl.textContent = t("dox_ime_idle");
+        if (statusEl) {
+          statusEl.classList.remove("is-busy", "is-error");
+          statusEl.textContent = t("dox_ime_idle");
+        }
         return;
       }
       if (statusEl) {
-        statusEl.textContent =
+        const msg =
           e && e.code === "rate_limited" ? t("dox_rate_limited") : t("dox_translate_failed");
+        if (typeof Dox.fillErrorStatus === "function") Dox.fillErrorStatus(statusEl, msg);
+        else statusEl.textContent = msg;
       }
     } finally {
       inflight = null;
@@ -332,6 +367,7 @@ globalThis.Dox = globalThis.Dox || {};
       if (skipField(el)) return;
       if (el.isContentEditable || el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
         lastField = el;
+        if (bar && !dragging) placeUnderField(el);
       }
     },
     true

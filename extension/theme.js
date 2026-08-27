@@ -17,6 +17,7 @@ globalThis.Dox = globalThis.Dox || {};
     accent: "#8A7C5C",
     onAccent: "#0E0E10",
     danger: "#FF453A",
+    status: "#A8B4C0",
     font: FONT,
   };
   Dox.FONT = FONT;
@@ -97,11 +98,40 @@ globalThis.Dox = globalThis.Dox || {};
         --dox-accent: #8A7C5C;
         --dox-on-accent: #0E0E10;
         --dox-danger: #FF453A;
+        --dox-status: #A8B4C0;
         --dox-font: ${FONT};
         --dox-focus: rgba(138, 124, 92, 0.45);
         --dox-accent-hover: rgba(138, 124, 92, 0.16);
         --dox-faw-hi: rgba(138, 124, 92, 0.22);
       }
+      html, body.dox-settings, body.dox-popup, .dox-sheet, #dialx-ime-bar, .dox-faw-dlg {
+        color-scheme: dark;
+      }
+      .dox-dots {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        margin-inline-start: 5px;
+        vertical-align: middle;
+      }
+      .dox-dots i {
+        width: 4px; height: 4px; border-radius: 50%;
+        background: currentColor;
+        opacity: 0.3;
+        animation: dox-dot 1s ease-in-out infinite;
+      }
+      .dox-dots i:nth-child(2) { animation-delay: .15s; }
+      .dox-dots i:nth-child(3) { animation-delay: .3s; }
+      @keyframes dox-dot {
+        0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+        40% { opacity: 1; transform: translateY(-2px); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .dox-dots i { animation: none; opacity: 0.7; transform: none; }
+        .dox-sheet-chevron { transition: none; }
+      }
+      .dox-status-busy { color: var(--dox-status, #A8B4C0); }
+      .dox-status-error { color: var(--dox-danger, #FF453A); }
       .dox-sheet-scrim :focus-visible,
       .dox-sys :focus-visible,
       .dox-popup :focus-visible,
@@ -173,8 +203,51 @@ globalThis.Dox = globalThis.Dox || {};
     });
   };
 
+  Dox.stripStatusEllipsis = function (message) {
+    return String(message || "").replace(/[.…⋯]+$/u, "").trimEnd();
+  };
+
+  Dox.fillBusyStatus = function (el, message) {
+    if (!el) return;
+    el.classList.add("dox-status-busy");
+    el.classList.remove("dox-status-error");
+    el.replaceChildren();
+    el.appendChild(document.createTextNode(Dox.stripStatusEllipsis(message)));
+    const dots = document.createElement("span");
+    dots.className = "dox-dots";
+    dots.setAttribute("aria-hidden", "true");
+    dots.append(document.createElement("i"), document.createElement("i"), document.createElement("i"));
+    el.appendChild(dots);
+  };
+
+  Dox.fillErrorStatus = function (el, message) {
+    if (!el) return;
+    el.classList.add("dox-status-error");
+    el.classList.remove("dox-status-busy");
+    el.textContent = message || "";
+  };
+
+  Dox.isTranslatingStatus = function (message) {
+    try {
+      return message === Dox.locale.t("status_translating");
+    } catch (_) {
+      return /…|...$/.test(String(message || "")) && /translat|ترجم|翻訳|번역/i.test(String(message || ""));
+    }
+  };
+
   Dox.openSettings = function () {
     try {
+      const extPage =
+        typeof location !== "undefined" && location.protocol === "chrome-extension:";
+      if (
+        !extPage &&
+        typeof chrome !== "undefined" &&
+        chrome.runtime?.sendMessage &&
+        chrome.runtime.id
+      ) {
+        chrome.runtime.sendMessage({ type: "dox-open-settings" });
+        return;
+      }
       if (typeof chrome !== "undefined" && chrome.runtime?.openOptionsPage) {
         chrome.runtime.openOptionsPage();
         return;

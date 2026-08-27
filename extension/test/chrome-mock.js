@@ -37,7 +37,10 @@
       openOptionsPage() {
         window.open(new URL("settings.html", root).href);
       },
-      sendMessage() {
+      sendMessage(msg) {
+        if (msg?.type === "dox-open-settings") {
+          chrome.runtime.openOptionsPage();
+        }
         return Promise.resolve({ ok: true });
       },
       onMessage: { addListener() {} },

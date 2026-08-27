@@ -14,13 +14,49 @@
     #main {
       max-width: 720px; margin-inline: auto; padding: 20px 16px 48px;
     }
-    h1 { font-size: 20px; font-weight: 600; margin: 0 0 16px; }
+    .dox-settings-head {
+      display: flex; align-items: center; gap: 12px;
+      margin: 0 0 16px;
+    }
+    .dox-settings-logo {
+      display: inline-block;
+      height: 32px;
+      width: 32px;
+      flex-shrink: 0;
+      background-color: var(--dox-muted, #8E8E93);
+      -webkit-mask-image: url("DialectsOnX-logo.png");
+      mask-image: url("DialectsOnX-logo.png");
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      mask-mode: luminance;
+    }
+    h1 { font-size: 20px; font-weight: 600; margin: 0; }
     h2 { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
       color: var(--dox-muted, #8E8E93); margin: 20px 0 8px; }
     .row, .toggle {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--dox-line, #2C2C31);
+      min-height: 44px;
     }
+    .faw-label-wrap {
+      display: inline-flex; align-items: center; gap: 4px; min-width: 0;
+    }
+    .dox-faw-howto {
+      max-width: min(360px, calc(100vw - 32px));
+      padding: 10px 12px;
+      background: var(--dox-elevated, #0E0E10);
+      color: var(--dox-text, #F4F4F5);
+      border: 1px solid var(--dox-line, #2C2C31);
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.4;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    }
+    .dox-faw-howto:popover-open { margin: 0; }
     button, input[type="text"] {
       font: inherit; border-radius: 8px; padding: 8px 10px;
     }
@@ -29,11 +65,6 @@
       border: 1px solid var(--dox-line, #2C2C31); cursor: pointer;
     }
     button:hover { border-color: var(--dox-accent, #8A7C5C); background: var(--dox-accent-hover, rgba(138,124,92,.16)); }
-    input[type="text"] {
-      background: var(--dox-field, #1C1C1F); color: var(--dox-text, #F4F4F5);
-      border: 1px solid var(--dox-line, #2C2C31); min-width: 16em; flex: 1;
-    }
-    input[type="text"]:focus { outline: none; border-color: var(--dox-accent, #8A7C5C); }
     a { color: var(--dox-muted, #8E8E93); }
     a:hover { color: var(--dox-text, #F4F4F5); }
     .hint { color: var(--dox-muted, #8E8E93); font-size: 12px; margin: 0 0 12px; }
@@ -63,42 +94,33 @@
       background: var(--dox-accent, #8A7C5C);
       inset-inline-start: 19px;
     }
-    input[type="radio"] { accent-color: var(--dox-accent, #8A7C5C); }
+    @media (prefers-reduced-motion: reduce) {
+      .dox-switch::after { transition: none; }
+    }
   </style>
   <script src="theme.js"></script>
 </head>
 <body class="dox-settings">
   <div id="main">
-    <h1 id="title"></h1>
+    <div class="dox-settings-head">
+      <span class="dox-settings-logo" role="img" aria-label="DialectsOnX"></span>
+      <h1 id="title"></h1>
+    </div>
     <div class="row">
       <span id="sysLangLabel"></span>
       <button type="button" id="sysLangBtn"></button>
     </div>
-    <div class="row">
-      <span id="defaultLabel"></span>
-      <button type="button" id="defaultBtn"></button>
-    </div>
-    <label class="toggle"><span id="autoLabel"></span><input class="dox-switch" type="checkbox" id="autoTranslate" /></label>
-    <label class="toggle"><span id="fawLabel"></span><input class="dox-switch" type="checkbox" id="fawEnabled" /></label>
-    <label class="toggle"><span id="newsLabel"></span><input class="dox-switch" type="checkbox" id="newsToMsa" /></label>
-    <div class="row">
-      <span id="addresseeLabel"></span>
-      <span>
-        <label><input type="radio" name="addressee" value="masculine" /> <span id="mLabel"></span></label>
-        <label><input type="radio" name="addressee" value="feminine" /> <span id="fLabel"></span></label>
+    <label class="toggle"><span id="autoLabel"></span><input class="dox-switch" type="checkbox" id="autoTranslate" role="switch" /></label>
+    <label class="toggle">
+      <span class="faw-label-wrap">
+        <span id="fawLabel"></span>
+        <button type="button" class="dox-icon-btn" id="fawInfo"></button>
       </span>
-    </div>
-    <label class="toggle"><span id="imeLabel"></span><input class="dox-switch" type="checkbox" id="imeEnabled" /></label>
-    <label class="toggle"><span id="imeRememberLabel"></span><input class="dox-switch" type="checkbox" id="imeRemember" /></label>
-    <h2 id="advLabel"></h2>
-    <div class="row">
-      <span id="urlLabel"></span>
-    </div>
-    <div class="row">
-      <input type="text" id="backendUrl" />
-      <button type="button" id="saveUrl"></button>
-    </div>
-    <p class="hint" id="urlHint"></p>
+      <input class="dox-switch" type="checkbox" id="fawEnabled" role="switch" />
+    </label>
+    <div id="fawHowto" class="dox-faw-howto" hidden></div>
+    <label class="toggle"><span id="newsLabel"></span><input class="dox-switch" type="checkbox" id="newsToMsa" role="switch" /></label>
+    <label class="toggle"><span id="imeLabel"></span><input class="dox-switch" type="checkbox" id="imeEnabled" role="switch" /></label>
     <div class="row">
       <button type="button" id="clearCache"></button>
       <button type="button" id="clearRecents"></button>
