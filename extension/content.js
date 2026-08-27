@@ -81,26 +81,37 @@ function injectDialxStyles() {
   style.textContent = `
     .dialx-control-bar {
       display: flex;
-      align-items: flex-end;
-      gap: 4px;
+      align-items: center;
+      gap: 6px;
       margin-top: 6px;
       font-size: 13px;
       position: relative;
       font-family: var(--dox-font, ${Dox.FONT});
+      min-height: 32px;
     }
     .dialx-translation {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       unicode-bidi: plaintext;
+      color: inherit;
+    }
+    .dialx-translation a.dialx-overlay-link {
+      color: var(--dialx-mention, inherit);
+      text-decoration: none;
+      pointer-events: auto;
+    }
+    .dialx-translation a.dialx-overlay-link:hover {
+      text-decoration: underline;
     }
     .dialx-overlay-showmore {
-      color: var(--dox-muted, #8E8E93);
+      color: var(--dialx-muted, inherit);
+      opacity: 0.75;
       cursor: pointer;
       white-space: nowrap;
       font-weight: 600;
     }
     .dialx-overlay-showmore:hover {
-      color: var(--dox-text, #F4F4F5);
+      opacity: 1;
       text-decoration: underline;
     }
     .dialx-btn,
@@ -130,10 +141,12 @@ function injectDialxStyles() {
     .dialx-btn-main {
       padding: 5px 14px;
       font-size: 14px;
+      min-height: 32px;
     }
     .dialx-btn-selector {
       padding: 2px 9px;
       font-size: 11px;
+      min-height: 28px;
     }
     .dialx-btn:hover,
     .dialx-btn-sm:hover:not(:disabled) {
@@ -147,8 +160,9 @@ function injectDialxStyles() {
     }
     .dialx-logo {
       display: inline-block;
-      height: 30px;
-      width: 82px;
+      height: 32px;
+      width: 32px;
+      aspect-ratio: 1;
       margin-inline-start: 4px;
       flex-shrink: 0;
       pointer-events: none;
@@ -163,6 +177,15 @@ function injectDialxStyles() {
       mask-size: contain;
       mask-mode: luminance;
     }
+    .dialx-status {
+      font-size: 11px;
+      margin-inline-start: 6px;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+    }
+    .dialx-status.is-busy { color: var(--dox-status, #A8B4C0); }
+    .dialx-status.is-error { color: var(--dox-danger, #FF453A); }
   `;
 }
 
@@ -450,7 +473,13 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (changes.fawEnabled) fawEnabled = changes.fawEnabled.newValue !== false;
   if (changes.preferredDialect?.newValue) {
     const next = Dox.migrateDialectId(changes.preferredDialect.newValue);
-    if (isValidDialect(next)) preferredDialect = next;
+    if (isValidDialect(next)) {
+      preferredDialect = next;
+      postStates.forEach((state) => {
+        if (state.manualDialect) state.manualDialect = undefined;
+        state.updateMainButton?.();
+      });
+    }
   }
   if (changes.backendUrl) {
     backendUrl = normalizeBackendUrl(changes.backendUrl.newValue);
@@ -713,8 +742,13 @@ function applyTranslatedOverlay(state, dialect, translated) {
   // copy the resolved text color so it stays readable in light and dark themes.
   trans.className = `${tt.className} dialx-translation`.trim();
   trans.setAttribute("dir", "auto");
-  const ttColor = getComputedStyle(tt).color;
-  if (ttColor) trans.style.color = ttColor;
+  trans.style.removeProperty("color");
+  const mention = liveMentionColor(state);
+  if (mention) trans.style.setProperty("--dialx-mention", mention);
+  else trans.style.removeProperty("--dialx-mention");
+  const muted = liveMutedColor(state);
+  if (muted) trans.style.setProperty("--dialx-muted", muted);
+  else trans.style.removeProperty("--dialx-muted");
 
   // Keep the overlay directly after the (current) text node, and the control
   // bar after the overlay — even if X swapped the text node on a re-render.
@@ -750,10 +784,65 @@ function applyTranslatedOverlay(state, dialect, translated) {
   return true;
 }
 
+function liveMentionColor(state) {
+  const root = state.postElement || state.article;
+  const a =
+    root?.querySelector('a[href^="/"][role="link"]') ||
+    root?.querySelector('a[href*="/status/"]') ||
+    state.article?.querySelector('[data-testid="User-Name"] a') ||
+    state.article?.querySelector('a[href^="/"]');
+  if (!a) return "";
+  const c = getComputedStyle(a).color;
+  return c && c !== "rgba(0, 0, 0, 0)" ? c : "";
+}
+
+function liveMutedColor(state) {
+  const time = state.article?.querySelector("time");
+  if (time) {
+    const c = getComputedStyle(time).color;
+    if (c && c !== "rgba(0, 0, 0, 0)") return c;
+  }
+  return "";
+}
+
+const OVERLAY_LINK_RE =
+  /(?:\u2066)?(@[A-Za-z0-9_]+|#[A-Za-z0-9_]+|(?:https?:\/\/|www\.)[^\s\u2066-\u2069]+)(?:\u2069)?/g;
+
+function appendOverlayNodes(parent, translated) {
+  const str = translated || "";
+  OVERLAY_LINK_RE.lastIndex = 0;
+  let last = 0;
+  let m;
+  while ((m = OVERLAY_LINK_RE.exec(str))) {
+    if (m.index > last) parent.appendChild(document.createTextNode(str.slice(last, m.index)));
+    const raw = m[0];
+    const inner = raw.replace(/[\u2066\u2069]/g, "");
+    const a = document.createElement("a");
+    a.className = "dialx-overlay-link";
+    a.rel = "noopener noreferrer nofollow";
+    a.target = "_blank";
+    if (inner.startsWith("@")) {
+      a.href = "https://x.com/" + inner.slice(1);
+    } else if (inner.startsWith("#")) {
+      a.href = "https://x.com/hashtag/" + encodeURIComponent(inner.slice(1));
+    } else {
+      a.href = inner.startsWith("http") ? inner : "https://" + inner;
+    }
+    a.textContent = raw;
+    a.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+    parent.appendChild(a);
+    last = m.index + m[0].length;
+  }
+  if (last < str.length) parent.appendChild(document.createTextNode(str.slice(last)));
+}
+
 function renderOverlayContent(state, translated) {
   const trans = state.transEl;
   if (!trans) return;
-  trans.textContent = translated;
+  trans.replaceChildren();
+  appendOverlayNodes(trans, translated);
 
   // Offer expansion only while the original is still truncated.
   if (!state.fullyExpanded && findPostShowMore(state)) {
@@ -1313,15 +1402,30 @@ function extractPostText(el) {
     }
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const tag = node.tagName;
+    if (tag === "BR") {
+      parts.push("\n");
+      return;
+    }
     if (tag === "IMG" && node.alt) {
       parts.push(node.alt);
       return;
     }
     if (node.classList?.contains("dialx-overlay-showmore")) return;
+    if (node.classList?.contains("dialx-translation")) return;
     for (const child of node.childNodes) walk(child);
+    if (node !== el && (tag === "DIV" || tag === "P" || tag === "LI" || tag === "BLOCKQUOTE")) {
+      parts.push("\n");
+    }
   };
   walk(el);
-  return stripShowMoreLabel(parts.join("").replace(/\s+/g, " ").trim());
+  return stripShowMoreLabel(
+    parts
+      .join("")
+      .replace(/[ \t\u00a0]+/g, " ")
+      .replace(/ *\n */g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
 }
 
 /** Forget cached translations of the truncated text so the full text is re-fetched. */
@@ -2059,9 +2163,7 @@ function setAsDefault(dialect) {
 
 function resolvePostDialect(state, overrideDialect) {
   if (overrideDialect && isValidDialect(overrideDialect)) return overrideDialect;
-  if (state.manualDialect && isValidDialect(state.manualDialect)) return state.manualDialect;
   if (state.isNews && newsToMsa) return "arabic_msa";
-  if (state.activeDialect && isValidDialect(state.activeDialect)) return state.activeDialect;
   return getAutoTranslateDialect(state);
 }
 
@@ -2119,10 +2221,22 @@ function showBarStatus(state, message) {
   if (!el) {
     el = document.createElement("span");
     el.className = "dialx-status";
-    el.style.cssText = "font-size:11px;color:var(--dox-danger, #FF453A);margin-inline-start:6px;white-space:nowrap;";
     state.bar.appendChild(el);
   }
-  el.textContent = message;
+  const busy = typeof Dox.isTranslatingStatus === "function"
+    ? Dox.isTranslatingStatus(message)
+    : message === Dox.locale.t("status_translating");
+  el.classList.toggle("is-busy", busy);
+  el.classList.toggle("is-error", !busy);
+  if (busy && typeof Dox.fillBusyStatus === "function") {
+    Dox.fillBusyStatus(el, message);
+    el.classList.add("is-busy");
+  } else if (!busy && typeof Dox.fillErrorStatus === "function") {
+    Dox.fillErrorStatus(el, message);
+    el.classList.add("is-error");
+  } else {
+    el.textContent = message;
+  }
 }
 
 function createControlBar(postElement, postId, isNews, existingState = null) {
@@ -2168,7 +2282,7 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
       mainBtn.textContent = Dox.locale.t("lens_view_original");
       return;
     }
-    const d = resolvePostDialect(state);
+    const d = state.activeDialect || resolvePostDialect(state);
     mainBtn.textContent = Dox.locale.chipButtonText(d);
   };
   state.updateMainButton();
@@ -2177,7 +2291,7 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
     e.stopPropagation();
     if (!canOperate()) return;
 
-    if (state.isNews && newsToMsa && isArabicText(state.originalText) && !state.manualDialect) return;
+    if (state.isNews && newsToMsa && isArabicText(state.originalText)) return;
 
     if (!state.showingOriginal) {
       state.showingOriginal = true;
@@ -2220,8 +2334,11 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
       mode: "x",
       selectedId: preferredDialect,
       onPick: (id) => {
-        state.manualDialect = id;
         preferredDialect = id;
+        postStates.forEach((s) => {
+          if (s.manualDialect) s.manualDialect = undefined;
+          s.updateMainButton?.();
+        });
         state.showingOriginal = false;
         translatePostToDialect(postId, id, mainBtn);
       },
@@ -2677,6 +2794,7 @@ Dox.feed = {
 async function bootstrapDialx() {
   if (window.__doxFeedInit) return;
   window.__doxFeedInit = true;
+  if (document.documentElement?.dataset?.doxSkipFeed === "1") return;
   if (!isExtensionContextValid()) {
     shutdownDialx();
     return;

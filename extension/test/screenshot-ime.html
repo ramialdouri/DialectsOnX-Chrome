@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>DialectsOnX IME screenshot</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #111; color: #eee; font-family: sans-serif; }
+    main { padding: 48px 24px; max-width: 640px; }
+    textarea {
+      width: 100%; min-height: 96px; background: #1c1c1f; color: #f4f4f5;
+      border: 1px solid #2c2c31; border-radius: 8px; padding: 12px; font: 16px/1.4 sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p>Focus the field. IME should sit under it.</p>
+    <textarea id="host">Good morning
+Second line</textarea>
+  </main>
+  <script src="chrome-mock.js"></script>
+  <script src="../theme.js"></script>
+  <script src="../dialects.js"></script>
+  <script src="../locale.js"></script>
+  <script src="../prefs.js"></script>
+  <script src="../api.js"></script>
+  <script src="../sheet.js"></script>
+  <script src="../ime.js"></script>
+  <script>
+    (async () => {
+      await Dox.prefs.set({ imeEnabled: true, imeCollapsed: false, extensionEnabled: true });
+      const host = document.getElementById("host");
+      host.focus();
+      setTimeout(() => { document.body.dataset.ready = "ime"; }, 120);
+    })();
+  </script>
+</body>
+</html>

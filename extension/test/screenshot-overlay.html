@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" data-dox-skip-feed="1">
+<head>
+  <meta charset="utf-8" />
+  <title>DialectsOnX overlay light/dark fixture</title>
+  <style>
+    html, body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .row { display: flex; min-height: 100vh; }
+    .col { flex: 1; padding: 24px; }
+    .col.dark { background: #000; color: #e7e9ea; }
+    .col.light { background: #ffffff; color: #0f1419; }
+    article { max-width: 520px; border-radius: 12px; padding: 16px; }
+    .dark article { border: 1px solid #2f3336; }
+    .light article { border: 1px solid #cfd9de; }
+    [data-testid="tweetText"] { font-size: 17px; line-height: 1.4; color: inherit; }
+    .mention { text-decoration: none; }
+    .dark .mention { color: #6b9fff; }
+    .light .mention { color: #1a6fb5; }
+    .dialx-translation { white-space: pre-wrap; overflow-wrap: anywhere; unicode-bidi: plaintext; color: inherit; }
+    .dialx-translation a.dialx-overlay-link { color: var(--dialx-mention, inherit); text-decoration: none; }
+    .dialx-control-bar { display: flex; align-items: center; gap: 6px; margin-top: 8px; min-height: 32px; }
+  </style>
+</head>
+<body>
+  <div class="row">
+    <div class="col dark">
+      <h2>Dark X theme</h2>
+      <article data-testid="tweet" id="darkTweet">
+        <div data-testid="User-Name"><a class="mention" href="/Bot">@Bot</a> · <time datetime="2026-08-27">1h</time></div>
+        <div data-testid="tweetText" id="darkText">
+          Summer Update from Elon Musk<br><br>
+          • Full Self-Driving<br>
+          • mention <a class="mention" href="/Bot">@Bot</a>
+        </div>
+      </article>
+    </div>
+    <div class="col light">
+      <h2>Light X theme</h2>
+      <article data-testid="tweet" id="lightTweet">
+        <div data-testid="User-Name"><a class="mention" href="/Bot">@Bot</a> · <time datetime="2026-08-27">1h</time></div>
+        <div data-testid="tweetText" id="lightText">
+          Summer Update from Elon Musk<br><br>
+          • Full Self-Driving<br>
+          • mention <a class="mention" href="/Bot">@Bot</a>
+        </div>
+      </article>
+    </div>
+  </div>
+  <pre id="out"></pre>
+  <script src="chrome-mock.js"></script>
+  <script src="../theme.js"></script>
+  <script src="../dialects.js"></script>
+  <script src="../locale.js"></script>
+  <script src="../prefs.js"></script>
+  <script src="../api.js"></script>
+  <script src="../sheet.js"></script>
+  <script src="../faw.js"></script>
+  <script src="../content.js"></script>
+  <script>
+    (async () => {
+      await Dox.locale.ready();
+      const translated =
+        "تحديث الصيف من إيلون ماسك\n\n• القيادة الذاتية الكاملة\n• إشارة \u2066@Bot\u2069";
+      function paint(tt) {
+        const extracted = Dox.feed.extractPostText(tt);
+        const trans = document.createElement("div");
+        trans.className = tt.className + " dialx-translation";
+        trans.setAttribute("dir", "auto");
+        tt.after(trans);
+        const state = {
+          postElement: tt,
+          article: tt.closest("article"),
+          transEl: trans,
+          overlayText: translated,
+          fullyExpanded: true,
+        };
+        const mention = tt.querySelector("a") || state.article.querySelector("a");
+        const c = mention && getComputedStyle(mention).color;
+        if (c) trans.style.setProperty("--dialx-mention", c);
+        Dox.feed.refreshOverlay(state);
+        tt.style.display = "none";
+        return {
+          extracted,
+          hasBlank: extracted.includes("\n\n"),
+          hasBullet: extracted.includes("•"),
+          handleHref: trans.querySelector("a.dialx-overlay-link")?.getAttribute("href") || "",
+          color: getComputedStyle(trans).color,
+          inherit: trans.style.color === "",
+        };
+      }
+      const dark = paint(document.getElementById("darkText"));
+      const light = paint(document.getElementById("lightText"));
+      const wrapped = Dox.api.wrapRtlLatinIslands("قال Elon Musk هنا");
+      const bar = document.createElement("div");
+      bar.className = "dialx-control-bar";
+      bar.style.fontFamily = "var(--dox-font)";
+      const busy = document.createElement("span");
+      busy.className = "dialx-status is-busy";
+      Dox.fillBusyStatus(busy, Dox.locale.t("status_translating"));
+      bar.appendChild(busy);
+      document.querySelector(".col.dark article").appendChild(bar);
+      document.getElementById("out").textContent = JSON.stringify({ dark, light, wrapped }, null, 2);
+      document.body.dataset.ready = "overlay";
+    })();
+  </script>
+</body>
+</html>
