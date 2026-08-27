@@ -261,6 +261,7 @@ globalThis.Dox = globalThis.Dox || {};
         border-radius: 12px; padding: 8px 10px; max-width: 240px;
         font-size: 12px; font-family: var(--dox-font, ${Dox.FONT}); cursor: pointer;
       }
+      .dox-hint.is-plain { cursor: default; }
       .dox-sheet-auto {
         display: flex; align-items: center; justify-content: space-between;
         gap: 10px; padding: 4px 8px 10px;
@@ -332,22 +333,32 @@ globalThis.Dox = globalThis.Dox || {};
     hintPopup = null;
   }
 
+  function linksGrokHint(dialectId) {
+    if (dialectId === "kurdish_kurmanji" || dialectId === "zulu_standard") return true;
+    const spoken = Dox.spokenIdOf(dialectId);
+    return dialectId !== Dox.standardDialectFor(spoken);
+  }
+
   function showHint(anchor, dialectId) {
     closeHint();
     const text = Dox.locale.dialectHint(dialectId);
     if (!text) return;
     const pop = document.createElement("div");
     pop.className = "dox-hint";
-    pop.setAttribute("role", "button");
-    pop.tabIndex = 0;
     pop.textContent = text;
-    const go = (e) => {
-      e.stopPropagation();
-      const q = Dox.locale.grokQuery(dialectId);
-      window.open("https://grok.com/?q=" + encodeURIComponent(q), "_blank", "noopener");
-      closeHint();
-    };
-    Dox.bindActivate(pop, go);
+    if (linksGrokHint(dialectId)) {
+      pop.setAttribute("role", "button");
+      pop.tabIndex = 0;
+      const go = (e) => {
+        e.stopPropagation();
+        const q = Dox.locale.grokQuery(dialectId);
+        window.open("https://grok.com/?q=" + encodeURIComponent(q), "_blank", "noopener");
+        closeHint();
+      };
+      Dox.bindActivate(pop, go);
+    } else {
+      pop.classList.add("is-plain");
+    }
     document.documentElement.appendChild(pop);
     const r = anchor.getBoundingClientRect();
     const rtl = Dox.locale.rtl || document.documentElement.getAttribute("dir") === "rtl";
