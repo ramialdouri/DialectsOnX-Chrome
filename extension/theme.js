@@ -130,8 +130,12 @@ globalThis.Dox = globalThis.Dox || {};
         .dox-dots i { animation: none; opacity: 0.7; transform: none; }
         .dox-sheet-chevron { transition: none; }
       }
-      .dox-status-busy { color: var(--dox-status, #A8B4C0); }
-      .dox-status-error { color: var(--dox-danger, #FF453A); }
+      .dox-status-busy,
+      .dialx-status.is-busy,
+      .dialx-status.dox-status-busy { color: var(--dox-status, #A8B4C0); }
+      .dox-status-error,
+      .dialx-status.is-error,
+      .dialx-status.dox-status-error { color: var(--dox-danger, #FF453A); }
       .dox-sheet-scrim :focus-visible,
       .dox-sys :focus-visible,
       .dox-popup :focus-visible,
@@ -209,8 +213,8 @@ globalThis.Dox = globalThis.Dox || {};
 
   Dox.fillBusyStatus = function (el, message) {
     if (!el) return;
-    el.classList.add("dox-status-busy");
-    el.classList.remove("dox-status-error");
+    el.classList.add("dox-status-busy", "is-busy");
+    el.classList.remove("dox-status-error", "is-error");
     el.replaceChildren();
     el.appendChild(document.createTextNode(Dox.stripStatusEllipsis(message)));
     const dots = document.createElement("span");
@@ -222,8 +226,8 @@ globalThis.Dox = globalThis.Dox || {};
 
   Dox.fillErrorStatus = function (el, message) {
     if (!el) return;
-    el.classList.add("dox-status-error");
-    el.classList.remove("dox-status-busy");
+    el.classList.add("dox-status-error", "is-error");
+    el.classList.remove("dox-status-busy", "is-busy");
     el.textContent = message || "";
   };
 

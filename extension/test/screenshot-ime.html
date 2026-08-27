@@ -31,7 +31,13 @@ Second line</textarea>
       await Dox.prefs.set({ imeEnabled: true, imeCollapsed: false, extensionEnabled: true });
       const host = document.getElementById("host");
       host.focus();
-      setTimeout(() => { document.body.dataset.ready = "ime"; }, 120);
+      setTimeout(() => {
+        const status = document.querySelector("#dialx-ime-bar .dox-ime-status");
+        if (status && typeof Dox.fillBusyStatus === "function") {
+          Dox.fillBusyStatus(status, Dox.locale.t("status_translating"));
+        }
+        document.body.dataset.ready = "ime";
+      }, 160);
     })();
   </script>
 </body>

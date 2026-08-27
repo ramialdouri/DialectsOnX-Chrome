@@ -135,8 +135,10 @@ globalThis.Dox = globalThis.Dox || {};
         margin-inline-start: 2px;
         display: inline-flex; align-items: center;
       }
-      #dialx-ime-bar .dox-ime-status.is-busy { color: var(--dox-status, #A8B4C0); }
-      #dialx-ime-bar .dox-ime-status.is-error { color: var(--dox-danger, #FF453A); }
+      #dialx-ime-bar .dox-ime-status.is-busy,
+      #dialx-ime-bar .dox-ime-status.dox-status-busy { color: var(--dox-status, #A8B4C0); }
+      #dialx-ime-bar .dox-ime-status.is-error,
+      #dialx-ime-bar .dox-ime-status.dox-status-error { color: var(--dox-danger, #FF453A); }
       #dialx-ime-bar.dox-ime-drag { cursor: grabbing; }
     `;
     document.documentElement.appendChild(style);
@@ -275,7 +277,7 @@ globalThis.Dox = globalThis.Dox || {};
     if (go && !inflight) go.textContent = t("ime_translate");
     if (close) close.title = t("dox_ime_collapse");
     if (statusEl && !inflight) {
-      statusEl.classList.remove("is-busy", "is-error");
+      statusEl.classList.remove("is-busy", "is-error", "dox-status-busy", "dox-status-error");
       statusEl.textContent = t("dox_ime_idle");
     }
     Dox.locale.applyDir(bar);
@@ -312,13 +314,13 @@ globalThis.Dox = globalThis.Dox || {};
       }
       writeValue(el, result.translation);
       if (statusEl) {
-        statusEl.classList.remove("is-busy", "is-error");
+        statusEl.classList.remove("is-busy", "is-error", "dox-status-busy", "dox-status-error");
         statusEl.textContent = t("dox_status_ready");
       }
     } catch (e) {
       if (e && e.name === "AbortError") {
         if (statusEl) {
-          statusEl.classList.remove("is-busy", "is-error");
+          statusEl.classList.remove("is-busy", "is-error", "dox-status-busy", "dox-status-error");
           statusEl.textContent = t("dox_ime_idle");
         }
         return;

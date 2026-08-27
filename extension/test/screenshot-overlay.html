@@ -91,15 +91,46 @@
       const dark = paint(document.getElementById("darkText"));
       const light = paint(document.getElementById("lightText"));
       const wrapped = Dox.api.wrapRtlLatinIslands("قال Elon Musk هنا");
-      const bar = document.createElement("div");
-      bar.className = "dialx-control-bar";
-      bar.style.fontFamily = "var(--dox-font)";
-      const busy = document.createElement("span");
-      busy.className = "dialx-status is-busy";
-      Dox.fillBusyStatus(busy, Dox.locale.t("status_translating"));
-      bar.appendChild(busy);
-      document.querySelector(".col.dark article").appendChild(bar);
-      document.getElementById("out").textContent = JSON.stringify({ dark, light, wrapped }, null, 2);
+      if (typeof Dox.feed.injectDialxStyles === "function") Dox.feed.injectDialxStyles();
+      function paintBar(parent, kind) {
+        const bar = document.createElement("div");
+        bar.className = "dialx-control-bar";
+        const main = document.createElement("div");
+        main.className = "dialx-btn dialx-btn-main";
+        main.textContent = Dox.locale.t("lens_view_original");
+        const sel = document.createElement("button");
+        sel.type = "button";
+        sel.className = "dialx-btn dialx-btn-selector";
+        sel.textContent = Dox.locale.t("label_dialect_selector");
+        const logo = document.createElement("span");
+        logo.className = "dialx-logo";
+        logo.setAttribute("role", "img");
+        const st = document.createElement("span");
+        st.className = "dialx-status";
+        if (kind === "busy") Dox.fillBusyStatus(st, Dox.locale.t("status_translating"));
+        else Dox.fillErrorStatus(st, Dox.locale.t("dox_translate_failed"));
+        bar.append(main, sel, logo, st);
+        parent.appendChild(bar);
+        const cs = getComputedStyle(st);
+        const logoCs = getComputedStyle(logo);
+        const mainCs = getComputedStyle(main);
+        return {
+          color: cs.color,
+          hasDots: st.querySelectorAll(".dox-dots i").length === 3,
+          classes: st.className,
+          label: st.childNodes[0] && st.childNodes[0].textContent,
+          logoHeight: logoCs.height,
+          mainHeight: mainCs.height,
+          mainMinHeight: mainCs.minHeight,
+        };
+      }
+      const busy = paintBar(document.querySelector(".col.dark article"), "busy");
+      const err = paintBar(document.querySelector(".col.light article"), "error");
+      document.getElementById("out").textContent = JSON.stringify(
+        { dark, light, wrapped, busy, err },
+        null,
+        2
+      );
       document.body.dataset.ready = "overlay";
     })();
   </script>

@@ -184,8 +184,10 @@ function injectDialxStyles() {
       display: inline-flex;
       align-items: center;
     }
-    .dialx-status.is-busy { color: var(--dox-status, #A8B4C0); }
-    .dialx-status.is-error { color: var(--dox-danger, #FF453A); }
+    .dialx-status.is-busy,
+    .dialx-status.dox-status-busy { color: var(--dox-status, #A8B4C0); }
+    .dialx-status.is-error,
+    .dialx-status.dox-status-error { color: var(--dox-danger, #FF453A); }
   `;
 }
 
@@ -2783,6 +2785,7 @@ function initObservers() {
 Dox.feed = {
   extractPostText,
   applyTranslated,
+  injectDialxStyles,
   refreshOverlay(state) {
     if (!state?.transEl || state.overlayText == null) return;
     renderOverlayContent(state, state.overlayText);
