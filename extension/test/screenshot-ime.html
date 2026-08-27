@@ -18,6 +18,7 @@
     <textarea id="host">Good morning
 Second line</textarea>
   </main>
+  <pre id="out" hidden></pre>
   <script src="chrome-mock.js"></script>
   <script src="../theme.js"></script>
   <script src="../dialects.js"></script>
@@ -29,15 +30,24 @@ Second line</textarea>
   <script>
     (async () => {
       await Dox.prefs.set({ imeEnabled: true, imeCollapsed: false, extensionEnabled: true });
+      await Dox.locale.ready();
       const host = document.getElementById("host");
       host.focus();
-      setTimeout(() => {
-        const status = document.querySelector("#dialx-ime-bar .dox-ime-status");
-        if (status && typeof Dox.fillBusyStatus === "function") {
-          Dox.fillBusyStatus(status, Dox.locale.t("status_translating"));
-        }
-        document.body.dataset.ready = "ime";
-      }, 160);
+      await new Promise((r) => setTimeout(r, 120));
+      const status = document.querySelector("#dialx-ime-bar .dox-ime-status");
+      if (status && typeof Dox.fillBusyStatus === "function") {
+        Dox.fillBusyStatus(status, Dox.locale.t("status_translating"));
+      }
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const cs = status ? getComputedStyle(status) : null;
+      document.getElementById("out").textContent = JSON.stringify({
+        hasBar: !!document.getElementById("dialx-ime-bar"),
+        color: cs && cs.color,
+        hasDots: !!(status && status.querySelectorAll(".dox-dots i").length === 3),
+        classes: status && status.className,
+        label: status && status.childNodes[0] && status.childNodes[0].textContent,
+      });
+      document.body.dataset.ready = "ime";
     })();
   </script>
 </body>
