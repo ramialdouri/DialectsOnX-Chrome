@@ -732,6 +732,10 @@
     "dox_default_dialect": "पूर्वनिर्धारित बोली",
     "dox_advanced": "उन्नत",
     "dox_ime_idle": "तयार",
-    "dox_translate_failed": "अनुवाद हुन सकेन"
+    "dox_translate_failed": "अनुवाद हुन सकेन",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }

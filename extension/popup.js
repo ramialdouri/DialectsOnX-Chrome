@@ -2,7 +2,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   await Dox.locale.ready();
   Dox.locale.applyDir(document.documentElement);
   const prefs = await Dox.prefs.get();
-  document.getElementById("ver").textContent = Dox.locale.t("dox_about_line", "0.3.0");
   document.getElementById("onLabel").textContent = prefs.extensionEnabled
     ? Dox.locale.t("dox_on")
     : Dox.locale.t("dox_off");
@@ -14,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       ? Dox.locale.t("dox_on")
       : Dox.locale.t("dox_off");
   });
-  document.getElementById("ime").textContent = Dox.locale.t("dox_ime_show");
+  Dox.fillImeShowLabel(document.getElementById("ime"));
   const settings = document.getElementById("settings");
   settings.replaceChildren(Dox.icon("gear", 16));
   settings.setAttribute("aria-label", Dox.locale.t("home_settings"));

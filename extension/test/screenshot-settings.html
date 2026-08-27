@@ -12,13 +12,17 @@
       font-family: var(--dox-font);
     }
     #main { max-width: 720px; margin-inline: auto; padding: 20px 16px 48px; }
-    .dox-settings-head { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; }
+    .dox-settings-head {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; gap: 10px; margin: 8px 0 24px;
+    }
     .dox-settings-logo {
-      background-color: var(--dox-muted, #8E8E93);
+      background-color: var(--dox-text, #F4F4F5);
       -webkit-mask-image: url("../DialectsOnX-logo.png");
       mask-image: url("../DialectsOnX-logo.png");
+      --dox-logo-cap: 40px;
     }
-    h1 { font-size: 20px; font-weight: 600; margin: 0; line-height: var(--dox-logo-cap, 32px); }
+    h1 { font-size: 24px; font-weight: 700; margin: 0; line-height: 1.2; }
     .row, .toggle {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--dox-line, #2C2C31);
@@ -35,7 +39,6 @@
       background: transparent; color: var(--dox-text, #F4F4F5);
       border: 1px solid var(--dox-line, #2C2C31); cursor: pointer; }
     a { color: var(--dox-muted, #8E8E93); }
-    .hint { color: var(--dox-muted, #8E8E93); font-size: 12px; margin: 0 0 12px; }
     .hidden { display: none !important; }
     .dox-switch {
       appearance: none; -webkit-appearance: none;
@@ -47,8 +50,8 @@
       content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%;
       background: var(--dox-muted, #8E8E93); top: 3px; inset-inline-start: 3px;
     }
-    .dox-switch:checked { background: rgba(138, 124, 92, 0.35); }
-    .dox-switch:checked::after { background: var(--dox-accent, #8A7C5C); inset-inline-start: 19px; }
+    .dox-switch:checked { background: rgba(244, 244, 245, 0.28); }
+    .dox-switch:checked::after { background: var(--dox-text, #F4F4F5); inset-inline-start: 19px; }
   </style>
 </head>
 <body class="dox-settings">
@@ -70,13 +73,30 @@
       <input class="dox-switch" type="checkbox" id="fawEnabled" role="switch" />
     </label>
     <div id="fawHowto" class="dox-faw-howto" hidden></div>
-    <label class="toggle"><span id="newsLabel"></span><input class="dox-switch" type="checkbox" id="newsToMsa" role="switch" /></label>
-    <label class="toggle"><span id="imeLabel"></span><input class="dox-switch" type="checkbox" id="imeEnabled" role="switch" /></label>
+    <label class="toggle">
+      <span class="faw-label-wrap">
+        <span id="newsLabel"></span>
+        <button type="button" class="dox-icon-btn" id="newsInfo"></button>
+      </span>
+      <input class="dox-switch" type="checkbox" id="newsToMsa" role="switch" />
+    </label>
+    <div id="newsHowto" class="dox-faw-howto" hidden></div>
+    <label class="toggle">
+      <span class="faw-label-wrap">
+        <span id="imeLabel"></span>
+        <button type="button" class="dox-icon-btn" id="imeInfo"></button>
+      </span>
+      <input class="dox-switch" type="checkbox" id="imeEnabled" role="switch" />
+    </label>
+    <div id="imeHowto" class="dox-faw-howto" hidden></div>
     <div class="row">
-      <button type="button" id="clearCache"></button>
+      <span class="faw-label-wrap">
+        <button type="button" id="clearCache"></button>
+        <button type="button" class="dox-icon-btn" id="cacheInfo"></button>
+      </span>
       <button type="button" id="clearRecents"></button>
     </div>
-    <p class="hint" id="cacheHint"></p>
+    <div id="cacheHowto" class="dox-faw-howto" hidden></div>
     <p><a id="padLink" href="https://www.dialex-app.com" target="_blank" rel="noopener"></a></p>
     <p id="about"></p>
   </div>

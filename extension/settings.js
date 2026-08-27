@@ -12,10 +12,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("autoLabel").textContent = t("dox_auto_translate");
   document.getElementById("fawLabel").textContent = t("settings_faw");
   document.getElementById("newsLabel").textContent = t("dox_news_to_msa");
-  document.getElementById("imeLabel").textContent = t("dox_ime_enabled");
+  Dox.fillImeShowLabel(document.getElementById("imeLabel"));
   document.getElementById("clearCache").textContent = t("settings_clear_cache");
   document.getElementById("clearRecents").textContent = t("dox_clear_recents");
-  document.getElementById("cacheHint").textContent = t("settings_clear_cache_body");
   document.getElementById("padLink").textContent = t("dox_open_pad");
   document.getElementById("about").textContent = t("dox_about_line", "0.3.0");
   document.getElementById("autoTranslate").checked = prefs.autoTranslate === true;
@@ -30,20 +29,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("sysSearchClear").title = t("cd_language_search_clear");
   Dox.systemLanguage.injectStyles();
 
-  const info = document.getElementById("fawInfo");
-  info.replaceChildren(Dox.icon("info", 16));
-  info.setAttribute("aria-label", t("cd_faw_howto"));
-  info.title = t("cd_faw_howto");
-  const howto = document.getElementById("fawHowto");
-  howto.textContent = t("settings_faw_howto");
-  if (typeof howto.showPopover === "function") {
-    howto.removeAttribute("hidden");
-    howto.setAttribute("popover", "auto");
-    info.setAttribute("popovertarget", "fawHowto");
-    info.setAttribute("aria-haspopup", "dialog");
-  } else {
+  function bindHowto(btnId, popId, howtoKey, labelKey) {
+    const info = document.getElementById(btnId);
+    const howto = document.getElementById(popId);
+    if (!info || !howto) return;
+    const label = t(labelKey || howtoKey);
+    info.replaceChildren(Dox.icon("info", 16));
+    info.setAttribute("aria-label", label);
+    info.title = label;
+    howto.textContent = t(howtoKey);
+    if (typeof howto.showPopover === "function") {
+      howto.removeAttribute("hidden");
+      howto.setAttribute("popover", "auto");
+      info.setAttribute("popovertarget", popId);
+      info.setAttribute("aria-haspopup", "dialog");
+      return;
+    }
     info.setAttribute("aria-expanded", "false");
-    info.setAttribute("aria-controls", "fawHowto");
+    info.setAttribute("aria-controls", popId);
     const closeHowto = () => {
       howto.hidden = true;
       info.setAttribute("aria-expanded", "false");
@@ -62,6 +65,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (e.key === "Escape" && !howto.hidden) closeHowto();
     });
   }
+  bindHowto("fawInfo", "fawHowto", "settings_faw_howto", "cd_faw_howto");
+  bindHowto("newsInfo", "newsHowto", "dox_news_to_msa_howto");
+  bindHowto("imeInfo", "imeHowto", "dox_ime_howto");
+  bindHowto("cacheInfo", "cacheHowto", "dox_clear_cache_howto");
 
   function bindToggle(id, key) {
     const el = document.getElementById(id);

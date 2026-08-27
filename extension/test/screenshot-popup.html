@@ -8,19 +8,32 @@
     body.dox-popup {
       width: 280px;
       box-sizing: border-box;
-      padding: 12px 14px 16px;
+      padding: 10px 14px 12px;
       background: var(--dox-ink, #000000);
       color: var(--dox-text, #F4F4F5);
       font-family: var(--dox-font);
     }
     .dox-popup-head {
+      position: relative;
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      min-height: 28px;
+      margin: 0 0 8px;
     }
-    img.logo { display: block; width: 140px; height: auto; }
-    .dox-popup-head .dox-icon-btn { margin-inline-start: auto; }
-    .ver { color: var(--dox-muted, #8E8E93); font-size: 12px; margin: 4px 0 12px; }
+    .dox-popup-logo {
+      background-color: var(--dox-text, #F4F4F5);
+      -webkit-mask-image: url("../DialectsOnX-logo.png");
+      mask-image: url("../DialectsOnX-logo.png");
+      --dox-logo-cap: 22px;
+    }
+    .dox-popup-head .dox-icon-btn {
+      position: absolute;
+      inset-inline-end: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      margin: 0;
+    }
     .toggle {
       display: flex; align-items: center; justify-content: space-between;
       padding: 8px 0 12px;
@@ -44,9 +57,9 @@
       top: 3px;
       inset-inline-start: 3px;
     }
-    .dox-switch:checked { background: rgba(138, 124, 92, 0.35); }
+    .dox-switch:checked { background: rgba(244, 244, 245, 0.28); }
     .dox-switch:checked::after {
-      background: var(--dox-accent, #8A7C5C);
+      background: var(--dox-text, #F4F4F5);
       inset-inline-start: 19px;
     }
     #ime { width: 100%; box-sizing: border-box; margin-top: 4px; }
@@ -54,10 +67,9 @@
 </head>
 <body class="dox-popup">
   <div class="dox-popup-head">
-    <img class="logo" src="../DialectsOnX-logo.png" alt="DialectsOnX" />
+    <span class="dox-wordmark dox-popup-logo" role="img" aria-label="DialectsOnX"></span>
     <button type="button" class="dox-icon-btn" id="settings"></button>
   </div>
-  <div class="ver" id="ver"></div>
   <div class="toggle">
     <span id="onLabel"></span>
     <input class="dox-switch" type="checkbox" id="enabled" />

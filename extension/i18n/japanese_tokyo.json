@@ -732,6 +732,10 @@
     "dox_default_dialect": "デフォルト方言",
     "dox_advanced": "詳細",
     "dox_ime_idle": "準備完了",
-    "dox_translate_failed": "翻訳できませんでした"
+    "dox_translate_failed": "翻訳できませんでした",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }
