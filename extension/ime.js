@@ -56,6 +56,9 @@ globalThis.Dox = globalThis.Dox || {};
     return Dox.locale.t(k, ...a);
   }
 
+  let freezePlace = false;
+  const AREA_INSET = 56;
+
   function skipField(el) {
     if (!el) return true;
     const type = (el.getAttribute("type") || "").toLowerCase();
@@ -64,7 +67,7 @@ globalThis.Dox = globalThis.Dox || {};
     if (mode === "url" || mode === "email") return true;
     const ac = (el.getAttribute("autocomplete") || "").toLowerCase();
     if (ac.includes("url") || ac.includes("email") || ac.includes("password")) return true;
-    if (el.closest("[data-dox-ime-bar]")) return true;
+    if (el.closest("[data-dox-ime-bar], .dox-sheet-scrim, .dox-sheet")) return true;
     return false;
   }
 
@@ -78,22 +81,49 @@ globalThis.Dox = globalThis.Dox || {};
     return null;
   }
 
+  function editorRoot(el) {
+    if (!el) return null;
+    const box =
+      el.closest('[data-testid^="tweetTextarea"]') ||
+      el.closest('[role="textbox"][contenteditable="true"]') ||
+      el;
+    if (box.getAttribute && box.getAttribute("contenteditable") === "true") return box;
+    return (box.querySelector && box.querySelector('[contenteditable="true"]')) || el;
+  }
+
   function readValue(el) {
-    if (el.isContentEditable) return el.innerText || el.textContent || "";
-    return el.value || "";
+    const field = editorRoot(el) || el;
+    if (field.isContentEditable) return field.innerText || field.textContent || "";
+    return field.value || "";
   }
 
   function writeValue(el, text) {
-    if (el.isContentEditable) {
-      el.innerText = text;
-      el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+    const field = editorRoot(el) || el;
+    if (field.isContentEditable) {
+      field.focus();
+      const sel = window.getSelection();
+      try {
+        const range = document.createRange();
+        range.selectNodeContents(field);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } catch (_) {
+        /* keep going */
+      }
+      const ok = document.execCommand("insertText", false, text);
+      if (!ok) {
+        field.textContent = text;
+        field.dispatchEvent(
+          new InputEvent("input", { bubbles: true, inputType: "insertText", data: text })
+        );
+      }
       return;
     }
-    const proto = el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const proto = field.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
     const desc = Object.getOwnPropertyDescriptor(proto, "value");
-    desc?.set?.call(el, text);
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-    el.dispatchEvent(new Event("change", { bubbles: true }));
+    desc?.set?.call(field, text);
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
   function injectImeStyles() {
@@ -120,7 +150,7 @@ globalThis.Dox = globalThis.Dox || {};
       }
       #dialx-ime-bar .dox-ime-go {
         background: transparent;
-        border-color: var(--dox-accent, #8A7C5C);
+        border-color: var(--dox-accent);
       }
       #dialx-ime-bar .dox-ime-x {
         position: absolute; top: 0; inset-inline-end: 0;
@@ -148,8 +178,42 @@ globalThis.Dox = globalThis.Dox || {};
     return Math.max(min, Math.min(n, max));
   }
 
+  function fieldVisible(el) {
+    if (!el || typeof el.getBoundingClientRect !== "function") return false;
+    const r = el.getBoundingClientRect();
+    return (
+      r.width > 8 &&
+      r.height > 8 &&
+      r.bottom > 0 &&
+      r.right > 0 &&
+      r.top < window.innerHeight &&
+      r.left < window.innerWidth
+    );
+  }
+
+  function visibleHostField() {
+    const focused = focusedInput();
+    if (focused && fieldVisible(focused)) return focused;
+    if (lastField?.isConnected && !skipField(lastField) && fieldVisible(lastField)) return lastField;
+    let best = null;
+    let bestArea = 0;
+    for (const el of document.querySelectorAll(
+      "input:not([type=hidden]), textarea, [contenteditable='true']"
+    )) {
+      if (skipField(el) || !fieldVisible(el)) continue;
+      const r = el.getBoundingClientRect();
+      const area = r.width * r.height;
+      if (area > bestArea) {
+        best = el;
+        bestArea = area;
+      }
+    }
+    return best;
+  }
+
   function placeUnderField(field) {
-    if (!bar) return;
+    if (!bar || freezePlace || dragging) return;
+    if (document.querySelector(".dox-sheet-scrim")) return;
     const el = field || focusedInput();
     const barW = bar.offsetWidth || 360;
     const barH = bar.offsetHeight || 52;
@@ -163,15 +227,39 @@ globalThis.Dox = globalThis.Dox || {};
         y = Math.max(8, r.top - barH - 8);
       }
     } else {
-      x = window.innerWidth - barW - 16;
-      y = window.innerHeight - barH - 16;
+      x = window.innerWidth - barW - AREA_INSET;
+      y = window.innerHeight - barH - AREA_INSET;
     }
     bar.style.left = clamp(x, 8, window.innerWidth - barW - 8) + "px";
     bar.style.top = clamp(y, 8, window.innerHeight - barH - 8) + "px";
   }
 
+  function placeForShow() {
+    freezePlace = false;
+    placeUnderField(visibleHostField());
+  }
+
   async function place() {
     placeUnderField();
+  }
+
+  function restoreBarPlace(snap) {
+    if (!bar || !snap) return;
+    if (snap.left) bar.style.left = snap.left;
+    if (snap.top) bar.style.top = snap.top;
+  }
+
+  function watchSheetClose(snap) {
+    const obs = new MutationObserver(() => {
+      if (!document.querySelector(".dox-sheet-scrim")) {
+        obs.disconnect();
+        restoreBarPlace(snap);
+        requestAnimationFrame(() => {
+          freezePlace = false;
+        });
+      }
+    });
+    obs.observe(document.documentElement, { childList: true, subtree: true });
   }
 
   async function mount() {
@@ -207,12 +295,28 @@ globalThis.Dox = globalThis.Dox || {};
     chip.className = "dox-ime-chip";
     chip.addEventListener("click", (e) => {
       e.stopPropagation();
+      const snap = { left: bar.style.left, top: bar.style.top };
+      freezePlace = true;
+      watchSheetClose(snap);
       Dox.prefs.get().then((p) => {
         Dox.sheet.open({
           mode: "ime",
           selectedId: p.imeDialect,
           onPick: async () => {
+            freezePlace = true;
+            restoreBarPlace(snap);
             await refresh();
+            const host =
+              lastField?.isConnected && !skipField(lastField) ? lastField : focusedInput();
+            if (host) {
+              host.focus();
+              lastField = host;
+            }
+            restoreBarPlace(snap);
+            const goBtn = bar?.querySelector(".dox-ime-go");
+            if (goBtn) await translateFocused(goBtn);
+            restoreBarPlace(snap);
+            freezePlace = false;
           },
         });
       });
@@ -369,7 +473,7 @@ globalThis.Dox = globalThis.Dox || {};
       if (skipField(el)) return;
       if (el.isContentEditable || el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
         lastField = el;
-        if (bar && !dragging) placeUnderField(el);
+        if (bar && !dragging && !freezePlace) placeUnderField(el);
       }
     },
     true
@@ -377,7 +481,10 @@ globalThis.Dox = globalThis.Dox || {};
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg?.type === "dox-ime-show") {
-      Dox.prefs.set({ imeCollapsed: false, imeEnabled: true }).then(mount);
+      Dox.prefs.set({ imeCollapsed: false, imeEnabled: true }).then(async () => {
+        await mount();
+        placeForShow();
+      });
     }
   });
 
@@ -395,4 +502,13 @@ globalThis.Dox = globalThis.Dox || {};
   });
 
   Dox.locale.ready().then(mount);
+
+  Dox.ime = {
+    writeValue,
+    readValue,
+    placeForShow,
+    placeUnderField,
+    skipField,
+    AREA_INSET,
+  };
 })();

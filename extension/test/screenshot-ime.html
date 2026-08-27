@@ -10,6 +10,26 @@
       width: 100%; min-height: 96px; background: #1c1c1f; color: #f4f4f5;
       border: 1px solid #2c2c31; border-radius: 8px; padding: 12px; font: 16px/1.4 sans-serif;
     }
+    #xWrap {
+      position: relative;
+      margin-top: 24px;
+      min-height: 80px;
+      background: #1c1c1f;
+      border: 1px solid #2c2c31;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    #xPlaceholder {
+      position: absolute; inset: 12px;
+      color: #8e8e93; pointer-events: none;
+    }
+    #xWrap.filled #xPlaceholder { display: none; }
+    #xComposer {
+      min-height: 56px;
+      outline: none;
+      color: #f4f4f5;
+      font: 16px/1.4 sans-serif;
+    }
   </style>
 </head>
 <body>
@@ -17,6 +37,10 @@
     <p>Focus the field. IME should sit under it.</p>
     <textarea id="host">Good morning
 Second line</textarea>
+    <div id="xWrap">
+      <div id="xPlaceholder">Post your reply</div>
+      <div id="xComposer" data-testid="tweetTextarea_0" role="textbox" contenteditable="true"></div>
+    </div>
   </main>
   <pre id="out" hidden></pre>
   <script src="chrome-mock.js"></script>
@@ -32,6 +56,9 @@ Second line</textarea>
       await Dox.prefs.set({ imeEnabled: true, imeCollapsed: false, extensionEnabled: true });
       await Dox.locale.ready();
       const host = document.getElementById("host");
+      const composer = document.getElementById("xComposer");
+      const wrap = document.getElementById("xWrap");
+      const placeholder = document.getElementById("xPlaceholder");
       host.focus();
       await new Promise((r) => setTimeout(r, 120));
       const status = document.querySelector("#dialx-ime-bar .dox-ime-status");
@@ -40,12 +67,48 @@ Second line</textarea>
       }
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       const cs = status ? getComputedStyle(status) : null;
+      const bar = document.getElementById("dialx-ime-bar");
+
+      Dox.ime.writeValue(composer, "أه تمام رواق");
+      wrap.classList.toggle("filled", !!(composer.innerText || "").trim());
+      const afterWrite = (composer.innerText || "").trim();
+      const placeholderHidden = getComputedStyle(placeholder).display === "none";
+      composer.focus();
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(composer);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand("delete");
+      const afterDelete = (composer.innerText || "").trim();
+      Dox.ime.writeValue(composer, "أه تمام رواق");
+      wrap.classList.toggle("filled", !!(composer.innerText || "").trim());
+
+      host.blur();
+      host.style.visibility = "hidden";
+      composer.blur();
+      wrap.style.visibility = "hidden";
+      Dox.ime.placeForShow();
+      const areaRect = bar.getBoundingClientRect();
+      const insetRight = Math.round(window.innerWidth - areaRect.right);
+      const insetBottom = Math.round(window.innerHeight - areaRect.bottom);
+      host.style.visibility = "";
+      wrap.style.visibility = "";
+      host.focus();
+      Dox.ime.placeForShow();
+
       document.getElementById("out").textContent = JSON.stringify({
-        hasBar: !!document.getElementById("dialx-ime-bar"),
+        hasBar: !!bar,
         color: cs && cs.color,
         hasDots: !!(status && status.querySelectorAll(".dox-dots span").length === 3),
         classes: status && status.className,
         label: status && status.childNodes[0] && status.childNodes[0].textContent,
+        xWrite: afterWrite,
+        placeholderHidden,
+        deletable: afterWrite.length > 0 && afterDelete.length === 0,
+        areaInset: Dox.ime.AREA_INSET,
+        fallbackRight: insetRight,
+        fallbackBottom: insetBottom,
       });
       document.body.dataset.ready = "ime";
     })();
