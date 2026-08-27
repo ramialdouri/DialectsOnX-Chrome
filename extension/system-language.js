@@ -60,7 +60,7 @@ globalThis.Dox = globalThis.Dox || {};
         border-radius: 8px;
         padding: 0 4px 0 10px;
       }
-      .dox-sys-search:focus-within { border-color: var(--dox-accent, #8A7C5C); }
+      .dox-sys-search:focus-within { border-color: var(--dox-accent); }
       .dox-sys-search-icon {
         color: var(--dox-muted, #8E8E93); flex-shrink: 0;
         width: 16px; height: 16px; display: inline-flex;
@@ -119,7 +119,7 @@ globalThis.Dox = globalThis.Dox || {};
       }
       .sys-check {
         width: 16px; height: 16px; flex-shrink: 0;
-        color: var(--dox-accent, #8A7C5C);
+        color: var(--dox-accent);
         margin-inline-start: 8px;
         display: inline-flex; align-items: center; justify-content: center;
       }

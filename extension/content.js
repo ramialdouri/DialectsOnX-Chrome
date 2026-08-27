@@ -81,14 +81,14 @@ function injectDialxStyles() {
   style.textContent = `
     .dialx-control-bar {
       display: flex;
-      align-items: flex-end;
-      flex-wrap: nowrap;
+      align-items: center;
+      flex-wrap: wrap;
       gap: 6px;
       margin-top: 6px;
       font-size: 13px;
       position: relative;
       font-family: var(--dox-font, ${Dox.FONT});
-      min-height: 32px;
+      min-height: 28px;
       color-scheme: dark;
       color: var(--dox-muted, #8E8E93);
     }
@@ -106,40 +106,29 @@ function injectDialxStyles() {
     .dialx-translation a.dialx-overlay-link:hover {
       text-decoration: underline;
     }
-    .dialx-overlay-showmore {
-      color: var(--dialx-muted, inherit);
-      opacity: 0.75;
-      cursor: pointer;
-      white-space: nowrap;
-      font-weight: 600;
-    }
-    .dialx-overlay-showmore:hover {
-      opacity: 1;
-      text-decoration: underline;
-    }
     .dialx-control-bar .dialx-btn,
     .dialx-control-bar .dialx-btn-sm {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 4px 12px;
+      padding: 3px 10px;
       border-radius: 9999px;
       -webkit-appearance: none;
       appearance: none;
       background-color: #4A4A51;
-      color: var(--dox-muted, #8E8E93);
-      -webkit-text-fill-color: var(--dox-muted, #8E8E93);
+      color: #C7C7CC;
+      -webkit-text-fill-color: #C7C7CC;
       border: 1px solid #4A4A51;
       cursor: pointer;
-      font-weight: 500;
-      font-size: 13px;
+      font-weight: 700;
+      font-size: 12px;
       font-family: inherit;
       line-height: 1.3;
-      height: 32px;
-      min-height: 32px;
+      height: 28px;
+      min-height: 28px;
       margin: 0;
-      align-self: flex-end;
+      align-self: center;
       flex-shrink: 0;
       transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
       box-sizing: border-box;
@@ -150,8 +139,8 @@ function injectDialxStyles() {
       border-radius: 9999px;
     }
     .dialx-btn-main {
-      padding: 5px 14px;
-      font-size: 14px;
+      padding: 3px 12px;
+      font-size: 12px;
     }
     .dialx-btn-selector {
       padding: 2px 9px;
@@ -159,8 +148,8 @@ function injectDialxStyles() {
     }
     .dialx-control-bar .dialx-btn:hover,
     .dialx-control-bar .dialx-btn-sm:hover:not(:disabled) {
-      background-color: var(--dox-accent-hover, rgba(138, 124, 92, 0.16));
-      border-color: var(--dox-accent, #8A7C5C);
+      background-color: var(--dox-accent-hover);
+      border-color: var(--dox-accent);
       color: var(--dox-text, #F4F4F5);
       -webkit-text-fill-color: var(--dox-text, #F4F4F5);
     }
@@ -171,9 +160,12 @@ function injectDialxStyles() {
     .dialx-control-bar .dox-wordmark,
     .dialx-control-bar .dialx-logo {
       display: block;
-      align-self: flex-end;
+      align-self: center;
       flex-shrink: 0;
       margin-bottom: 0;
+      --dox-logo-cap: 22px;
+      height: 22px;
+      width: calc(22px * 903 / 149);
     }
     .dialx-logo {
       margin-inline-start: 4px;
@@ -189,11 +181,13 @@ function injectDialxStyles() {
       padding: 0;
       white-space: nowrap;
       display: inline-flex;
-      align-items: flex-end;
-      align-self: flex-end;
-      height: 32px;
+      align-items: center;
+      align-self: center;
+      height: 28px;
       box-sizing: border-box;
+      order: 2;
     }
+    .dialx-control-bar .dox-wordmark { order: 3; }
     .dialx-status.is-busy,
     .dialx-status.dox-status-busy { color: var(--dox-status, #A8B4C0); }
     .dialx-status.is-error,
@@ -733,9 +727,8 @@ function showOriginalTextNode(tt) {
 
 /**
  * Overlay rendering for truncated posts. X's tweet-text element is left intact
- * (so its native inline "Show more" expansion keeps working) but hidden, and our
- * translated copy is shown right after it. The copy carries a "Show more" that
- * triggers X's real expansion, then re-translates the now-complete text.
+ * (so its native "Show more" expansion keeps working) but hidden. The native
+ * Show more stays visible; we re-translate after it expands the post.
  */
 function applyTranslatedOverlay(state, dialect, translated) {
   const tt = state.postElement;
@@ -773,15 +766,8 @@ function applyTranslatedOverlay(state, dialect, translated) {
     state.overlayText = translated;
   }
 
+  bindNativeShowMoreExpand(state);
   hideOriginalTextNode(tt);
-  // A "Show more" rendered as a SIBLING (outside the text node) would stay
-  // visible; hide it so only our overlay "Show more" shows. (One inside the text
-  // node is already hidden along with it.)
-  const native = findPostShowMore(state);
-  if (native && !tt.contains(native) && !state.fullyExpanded) {
-    native.style.setProperty("display", "none", "important");
-    state.nativeShowMore = native;
-  }
   trans.style.display = "";
 
   requestAnimationFrame(() => {
@@ -799,8 +785,10 @@ function applyTranslatedOverlay(state, dialect, translated) {
 function liveMentionColor(state) {
   const root = state.postElement || state.article;
   const a =
+    root?.querySelector('a[href*="cashtag_click"]') ||
+    root?.querySelector('a[href*="/hashtag/"]') ||
+    state.postElement?.querySelector('a[href^="/"][role="link"]') ||
     root?.querySelector('a[href^="/"][role="link"]') ||
-    root?.querySelector('a[href*="/status/"]') ||
     state.article?.querySelector('[data-testid="User-Name"] a') ||
     state.article?.querySelector('a[href^="/"]');
   if (!a) return "";
@@ -818,7 +806,7 @@ function liveMutedColor(state) {
 }
 
 const OVERLAY_LINK_RE =
-  /(?:\u2066)?(@[A-Za-z0-9_]+|#[A-Za-z0-9_]+|(?:https?:\/\/|www\.)[^\s\u2066-\u2069]+)(?:\u2069)?/g;
+  /(?:\u2066)?(@[A-Za-z0-9_]+|#[A-Za-z0-9_]+|\$(?:[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9]*)*)|(?:https?:\/\/|www\.)[^\s\u2066-\u2069]+)(?:\u2069)?/g;
 
 function appendOverlayNodes(parent, translated) {
   const str = translated || "";
@@ -832,11 +820,12 @@ function appendOverlayNodes(parent, translated) {
     const a = document.createElement("a");
     a.className = "dialx-overlay-link";
     a.rel = "noopener noreferrer nofollow";
-    a.target = "_blank";
     if (inner.startsWith("@")) {
-      a.href = "https://x.com/" + inner.slice(1);
+      a.href = "/" + inner.slice(1);
     } else if (inner.startsWith("#")) {
-      a.href = "https://x.com/hashtag/" + encodeURIComponent(inner.slice(1));
+      a.href = "/hashtag/" + encodeURIComponent(inner.slice(1));
+    } else if (inner.startsWith("$")) {
+      a.href = "/search?q=" + encodeURIComponent(inner) + "&src=cashtag_click";
     } else {
       a.href = inner.startsWith("http") ? inner : "https://" + inner;
     }
@@ -855,33 +844,29 @@ function renderOverlayContent(state, translated) {
   if (!trans) return;
   trans.replaceChildren();
   appendOverlayNodes(trans, translated);
+}
 
-  // Offer expansion only while the original is still truncated.
-  if (!state.fullyExpanded && findPostShowMore(state)) {
-    trans.appendChild(document.createTextNode(" "));
-    const more = document.createElement("span");
-    more.className = "dialx-overlay-showmore";
-    more.setAttribute("role", "button");
-    more.setAttribute("tabindex", "0");
-    more.textContent = Dox.locale.t("dox_show_more");
-    const run = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      expandAndRetranslate(state);
-    };
-    more.addEventListener("click", run);
-    more.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") run(e);
-    });
-    trans.appendChild(more);
+function bindNativeShowMoreExpand(state) {
+  const native = findPostShowMore(state);
+  if (!native || state.fullyExpanded) return;
+  if (native.dataset.doxExpandBound === "1") return;
+  native.dataset.doxExpandBound = "1";
+  native.style.removeProperty("display");
+  const tt = state.postElement;
+  if (tt && tt.contains(native) && state.transEl) {
+    state.transEl.after(native);
   }
+  native.addEventListener("click", () => {
+    if (state.expanding || state.fullyExpanded) return;
+    expandAndRetranslate(state, true);
+  });
 }
 
 /**
- * Triggered by OUR overlay "Show more": reveal X's real full text via its native
- * control, then translate the complete text and swap it back into the overlay.
+ * Triggered by X's native Show more: wait for the full text, then translate it
+ * and swap it into the overlay.
  */
-async function expandAndRetranslate(state) {
+async function expandAndRetranslate(state, alreadyClicked = false) {
   if (!canOperate()) return;
   let tt = state.postElement;
   if (!tt?.isConnected) return;
@@ -905,7 +890,7 @@ async function expandAndRetranslate(state) {
     if (state.transEl) state.transEl.style.display = "none";
 
     const before = (tt.textContent || "").length;
-    nativeShowMore.click();
+    if (!alreadyClicked) nativeShowMore.click();
 
     const grewNode = await new Promise((resolve) => {
       const start = performance.now();
@@ -1508,10 +1493,9 @@ function extractPostText(el) {
       parts.push(node.alt);
       return;
     }
-    if (node.classList?.contains("dialx-overlay-showmore")) return;
     if (node.classList?.contains("dialx-translation")) return;
     for (const child of node.childNodes) walk(child);
-    if (node !== el && (tag === "DIV" || tag === "P" || tag === "LI" || tag === "BLOCKQUOTE")) {
+    if (node !== el && (tag === "P" || tag === "LI" || tag === "BLOCKQUOTE")) {
       parts.push("\n");
     }
   };
@@ -1544,10 +1528,10 @@ function invalidatePostStatusCache(state) {
  * translation overlay has been injected, the bar belongs after the overlay.
  */
 function getControlBarAnchor(tweetTextEl, article) {
-  const overlay = tweetTextEl.nextElementSibling;
-  if (overlay && overlay.classList?.contains("dialx-translation")) return overlay;
   const showMore = findShowMoreElement(article, tweetTextEl);
   if (showMore && !tweetTextEl.contains(showMore)) return showMore;
+  const overlay = tweetTextEl.nextElementSibling;
+  if (overlay && overlay.classList?.contains("dialx-translation")) return overlay;
   return tweetTextEl;
 }
 
@@ -2318,7 +2302,9 @@ function showBarStatus(state, message) {
   if (!el) {
     el = document.createElement("span");
     el.className = "dialx-status";
-    state.bar.appendChild(el);
+    const logo = state.bar.querySelector(".dox-wordmark, .dialx-logo");
+    if (logo) state.bar.insertBefore(el, logo);
+    else state.bar.appendChild(el);
   }
   const busy = typeof Dox.isTranslatingStatus === "function"
     ? Dox.isTranslatingStatus(message)

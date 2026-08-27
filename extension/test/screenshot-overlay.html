@@ -18,7 +18,7 @@
     .light .mention { color: #1a6fb5; }
     .dialx-translation { white-space: pre-wrap; overflow-wrap: anywhere; unicode-bidi: plaintext; color: inherit; }
     .dialx-translation a.dialx-overlay-link { color: var(--dialx-mention, inherit); text-decoration: none; }
-    .dialx-control-bar { display: flex; align-items: flex-end; gap: 6px; margin-top: 8px; min-height: 32px; }
+    .dialx-control-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 28px; }
   </style>
 </head>
 <body>
@@ -31,6 +31,7 @@
           Summer Update from Elon Musk<br><br>
           • Full Self-Driving<br>
           • mention <a class="mention" href="/Bot">@Bot</a>
+          • <a class="mention" href="/search?q=%24NVDA&src=cashtag_click">$NVDA</a> cash $20
         </div>
       </article>
     </div>
@@ -42,6 +43,7 @@
           Summer Update from Elon Musk<br><br>
           • Full Self-Driving<br>
           • mention <a class="mention" href="/Bot">@Bot</a>
+          • <a class="mention" href="/search?q=%24NVDA&src=cashtag_click">$NVDA</a> cash $20
         </div>
       </article>
     </div>
@@ -60,7 +62,7 @@
     (async () => {
       await Dox.locale.ready();
       const translated =
-        "تحديث الصيف من إيلون ماسك\n\n• القيادة الذاتية الكاملة\n• إشارة \u2066@Bot\u2069";
+        "تحديث الصيف من إيلون ماسك\n\n• القيادة الذاتية الكاملة\n• إشارة \u2066@Bot\u2069 $NVDA $20";
       function paint(tt) {
         const extracted = Dox.feed.extractPostText(tt);
         const trans = document.createElement("div");
@@ -79,11 +81,21 @@
         if (c) trans.style.setProperty("--dialx-mention", c);
         Dox.feed.refreshOverlay(state);
         tt.style.display = "none";
+        const links = [...trans.querySelectorAll("a.dialx-overlay-link")];
+        const byText = (needle) => links.find((a) => (a.textContent || "").includes(needle));
+        const handle = byText("@Bot");
+        const cashtag = byText("$NVDA");
+        const cashLink = byText("$20");
         return {
           extracted,
           hasBlank: extracted.includes("\n\n"),
           hasBullet: extracted.includes("•"),
-          handleHref: trans.querySelector("a.dialx-overlay-link")?.getAttribute("href") || "",
+          handleHref: handle?.getAttribute("href") || "",
+          handleTarget: handle?.getAttribute("target") || "",
+          cashtagHref: cashtag?.getAttribute("href") || "",
+          cashtagTarget: cashtag?.getAttribute("target") || "",
+          cashLinked: !!cashLink,
+          overlayHasCash: (trans.textContent || "").includes("$20"),
           color: getComputedStyle(trans).color,
           inherit: trans.style.color === "",
         };
@@ -109,7 +121,7 @@
         st.className = "dialx-status";
         if (kind === "busy") Dox.fillBusyStatus(st, Dox.locale.t("status_translating"));
         else Dox.fillErrorStatus(st, Dox.locale.t("dox_translate_failed"));
-        bar.append(main, sel, logo, st);
+        bar.append(main, sel, st, logo);
         parent.appendChild(bar);
         const cs = getComputedStyle(st);
         const logoCs = getComputedStyle(logo);

@@ -67,11 +67,11 @@ globalThis.Dox = globalThis.Dox || {};
     const style = document.createElement("style");
     style.id = "dox-faw-styles";
     style.textContent = `
-      .dox-faw-hi { background: var(--dox-faw-hi, rgba(138, 124, 92, 0.22)); border-radius: 3px; }
+      .dox-faw-hi { background: var(--dox-faw-hi, var(--dox-faw-hi)); border-radius: 3px; }
       .dox-faw-chip {
         position: fixed; z-index: 2147482500;
         background: var(--dox-elevated, #0E0E10); color: var(--dox-text, #F4F4F5);
-        border: 1px solid var(--dox-accent, #8A7C5C); border-radius: 999px;
+        border: 1px solid var(--dox-accent); border-radius: 999px;
         font: 600 12px var(--dox-font, ${Dox.FONT}); padding: 3px 10px; cursor: pointer;
       }
       .dox-faw-dlg {
@@ -92,10 +92,10 @@ globalThis.Dox = globalThis.Dox || {};
         background: var(--dox-field, #1C1C1F); border: 1px solid var(--dox-line, #2C2C31);
         color: var(--dox-text, #F4F4F5);
       }
-      .dox-faw-card input:focus { outline: none; border-color: var(--dox-accent, #8A7C5C); }
+      .dox-faw-card input:focus { outline: none; border-color: var(--dox-accent); }
       .dox-faw-save {
         background: transparent; color: var(--dox-text, #F4F4F5);
-        border: 1px solid var(--dox-accent, #8A7C5C); font-weight: 700; cursor: pointer;
+        border: 1px solid var(--dox-accent); font-weight: 700; cursor: pointer;
       }
       .dox-faw-skip {
         background: transparent; border: 1px solid var(--dox-line, #2C2C31);

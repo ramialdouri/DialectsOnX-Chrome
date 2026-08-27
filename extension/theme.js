@@ -1,4 +1,4 @@
-/* DialectsOnX chrome theme: quiet cool-dark, muted brass, bundled Quicksand. */
+  /* DialectsOnX chrome theme: quiet cool-dark, bundled Quicksand. */
 globalThis.Dox = globalThis.Dox || {};
 
 (function () {
@@ -14,7 +14,7 @@ globalThis.Dox = globalThis.Dox || {};
     line: "#2C2C31",
     text: "#F4F4F5",
     muted: "#8E8E93",
-    accent: "#8A7C5C",
+    accent: "#C7C7CC",
     onAccent: "#0E0E10",
     danger: "#FF453A",
     status: "#A8B4C0",
@@ -95,14 +95,14 @@ globalThis.Dox = globalThis.Dox || {};
         --dox-line: #2C2C31;
         --dox-text: #F4F4F5;
         --dox-muted: #8E8E93;
-        --dox-accent: #8A7C5C;
+        --dox-accent: #C7C7CC;
         --dox-on-accent: #0E0E10;
         --dox-danger: #FF453A;
         --dox-status: #A8B4C0;
         --dox-font: ${FONT};
-        --dox-focus: rgba(138, 124, 92, 0.45);
-        --dox-accent-hover: rgba(138, 124, 92, 0.16);
-        --dox-faw-hi: rgba(138, 124, 92, 0.22);
+        --dox-focus: rgba(244, 244, 245, 0.35);
+        --dox-accent-hover: rgba(244, 244, 245, 0.12);
+        --dox-faw-hi: rgba(244, 244, 245, 0.16);
         --dox-logo-cap: 32px;
       }
       html, body.dox-settings, body.dox-popup, .dox-sheet, #dialx-ime-bar, .dox-faw-dlg, .dialx-control-bar {
@@ -186,6 +186,19 @@ globalThis.Dox = globalThis.Dox || {};
         cursor: pointer;
       }
       .dox-outline-btn:hover { background: var(--dox-accent-hover); }
+      .dox-dialex-wordmark {
+        display: inline-block;
+        height: 1em;
+        width: auto;
+        vertical-align: -0.12em;
+      }
+      .dox-ime-show-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35em;
+        font: inherit;
+        color: inherit;
+      }
     `;
   }
 
@@ -262,6 +275,35 @@ globalThis.Dox = globalThis.Dox || {};
     } catch (_) {
       return /…|...$/.test(String(message || "")) && /translat|ترجم|翻訳|번역/i.test(String(message || ""));
     }
+  };
+
+  Dox.dialexWordmark = function (heightPx) {
+    const img = document.createElement("img");
+    img.className = "dox-dialex-wordmark";
+    img.alt = "Dialex";
+    img.width = 72;
+    img.height = heightPx || 14;
+    try {
+      if (typeof chrome !== "undefined" && chrome.runtime?.getURL) {
+        img.src = chrome.runtime.getURL("Dialex-wordmark.svg");
+      } else {
+        const path = String((typeof location !== "undefined" && location.pathname) || "");
+        img.src = path.includes("/test/") ? "../Dialex-wordmark.svg" : "Dialex-wordmark.svg";
+      }
+    } catch (_) {
+      img.src = "Dialex-wordmark.svg";
+    }
+    return img;
+  };
+
+  Dox.fillImeShowLabel = function (el) {
+    if (!el) return;
+    const t = Dox.locale.t;
+    el.replaceChildren();
+    const wrap = document.createElement("span");
+    wrap.className = "dox-ime-show-label";
+    wrap.append(t("dox_ime_show_lead"), " ", Dox.dialexWordmark(14), " ", t("dox_ime"));
+    el.appendChild(wrap);
   };
 
   Dox.openSettings = function () {
