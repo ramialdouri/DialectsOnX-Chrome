@@ -1,7 +1,7 @@
 {
   "dialect_id": "mongolian_ulaanbaatar",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "Буцах",
     "cd_app_logo": "Dialex лого",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "Флоренц",
     "dialect_italian_italy_prompt": "Стандарт Итали (Тоскана)",
     "dialect_italian_lombard": "Ломбардын бүсийн",
-    "dialect_italian_lombard_desc": "Милан",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "Ломбардын бүсийн Итали",
     "dialect_italian_piedmontese": "Пьемонтын бүсийн",
     "dialect_italian_piedmontese_desc": "Турин",

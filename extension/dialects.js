@@ -122,7 +122,7 @@ Dox.CATALOG = {
     "german_luxembourg": "Luxembourg",
     "german_south_tyrol": "South Tyrol",
     "italian_italy": "Standard Italian",
-    "italian_lombard": "Lombard Regional",
+    "italian_lombard": "Lombardy Regional",
     "italian_piedmontese": "Piedmont Regional",
     "italian_veneto": "Venetian Regional",
     "italian_emilian": "Emilian Regional",
@@ -353,7 +353,7 @@ Dox.CATALOG = {
     "german_swiss": "Zürich - Bern - Basel",
     "german_bavarian": "Munich - Nuremberg",
     "italian_italy": "Florence",
-    "italian_lombard": "Milan",
+    "italian_lombard": "Milan - Monza - Como",
     "italian_piedmontese": "Turin",
     "italian_veneto": "Venice - Verona - Padua",
     "italian_emilian": "Bologna - Parma - Modena",
@@ -1991,8 +1991,8 @@ Dox.CATALOG = {
             },
             {
               "id": "italian_lombard",
-              "chip": "Lombard Regional",
-              "hint": "Milan",
+              "chip": "Lombardy Regional",
+              "hint": "Milan - Monza - Como",
               "hidden": false
             },
             {

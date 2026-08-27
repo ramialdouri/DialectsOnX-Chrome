@@ -1,7 +1,7 @@
 {
   "dialect_id": "greek_athens",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "Πίσω",
     "cd_app_logo": "Λογότυπο Dialex",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "Φλωρεντία",
     "dialect_italian_italy_prompt": "Πρότυπα Ιταλικά (Τοσκάνη)",
     "dialect_italian_lombard": "Περιφερειακά Λομβαρδίας",
-    "dialect_italian_lombard_desc": "Μιλάνο",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "Περιφερειακά Ιταλικά Λομβαρδίας",
     "dialect_italian_piedmontese": "Περιφερειακά Πιεμόντε",
     "dialect_italian_piedmontese_desc": "Τορίνο",
