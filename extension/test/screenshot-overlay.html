@@ -103,7 +103,7 @@
         sel.className = "dialx-btn dialx-btn-selector";
         sel.textContent = Dox.locale.t("label_dialect_selector");
         const logo = document.createElement("span");
-        logo.className = "dialx-logo";
+        logo.className = "dox-wordmark dialx-logo";
         logo.setAttribute("role", "img");
         const st = document.createElement("span");
         st.className = "dialx-status";
@@ -114,14 +114,21 @@
         const cs = getComputedStyle(st);
         const logoCs = getComputedStyle(logo);
         const mainCs = getComputedStyle(main);
+        const selCs = getComputedStyle(sel);
+        const periods = [...st.querySelectorAll(".dox-dots span")].map((n) => n.textContent);
         return {
           color: cs.color,
-          hasDots: st.querySelectorAll(".dox-dots i").length === 3,
+          hasDots: periods.length === 3 && periods.every((p) => p === "."),
           classes: st.className,
           label: st.childNodes[0] && st.childNodes[0].textContent,
           logoHeight: logoCs.height,
+          logoWidth: logoCs.width,
           mainHeight: mainCs.height,
           mainMinHeight: mainCs.minHeight,
+          mainBg: mainCs.backgroundColor,
+          mainColor: mainCs.color,
+          selBg: selCs.backgroundColor,
+          selColor: selCs.color,
         };
       }
       const busy = paintBar(document.querySelector(".col.dark article"), "busy");

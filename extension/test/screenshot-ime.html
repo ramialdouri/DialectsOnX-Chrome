@@ -43,7 +43,7 @@ Second line</textarea>
       document.getElementById("out").textContent = JSON.stringify({
         hasBar: !!document.getElementById("dialx-ime-bar"),
         color: cs && cs.color,
-        hasDots: !!(status && status.querySelectorAll(".dox-dots i").length === 3),
+        hasDots: !!(status && status.querySelectorAll(".dox-dots span").length === 3),
         classes: status && status.className,
         label: status && status.childNodes[0] && status.childNodes[0].textContent,
       });

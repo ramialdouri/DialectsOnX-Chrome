@@ -14,15 +14,11 @@
     #main { max-width: 720px; margin-inline: auto; padding: 20px 16px 48px; }
     .dox-settings-head { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; }
     .dox-settings-logo {
-      display: inline-block; height: 32px; width: 32px; flex-shrink: 0;
       background-color: var(--dox-muted, #8E8E93);
       -webkit-mask-image: url("../DialectsOnX-logo.png");
       mask-image: url("../DialectsOnX-logo.png");
-      -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-      -webkit-mask-position: center; mask-position: center;
-      -webkit-mask-size: contain; mask-size: contain; mask-mode: luminance;
     }
-    h1 { font-size: 20px; font-weight: 600; margin: 0; }
+    h1 { font-size: 20px; font-weight: 600; margin: 0; line-height: var(--dox-logo-cap, 32px); }
     .row, .toggle {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--dox-line, #2C2C31);
@@ -58,7 +54,7 @@
 <body class="dox-settings">
   <div id="main">
     <div class="dox-settings-head">
-      <span class="dox-settings-logo" role="img" aria-label="DialectsOnX"></span>
+      <span class="dox-wordmark dox-settings-logo" role="img" aria-label="DialectsOnX"></span>
       <h1 id="title"></h1>
     </div>
     <div class="row">

@@ -19,22 +19,11 @@
       margin: 0 0 16px;
     }
     .dox-settings-logo {
-      display: inline-block;
-      height: 32px;
-      width: 32px;
-      flex-shrink: 0;
       background-color: var(--dox-muted, #8E8E93);
       -webkit-mask-image: url("DialectsOnX-logo.png");
       mask-image: url("DialectsOnX-logo.png");
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
-      -webkit-mask-position: center;
-      mask-position: center;
-      -webkit-mask-size: contain;
-      mask-size: contain;
-      mask-mode: luminance;
     }
-    h1 { font-size: 20px; font-weight: 600; margin: 0; }
+    h1 { font-size: 20px; font-weight: 600; margin: 0; line-height: var(--dox-logo-cap, 32px); }
     h2 { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
       color: var(--dox-muted, #8E8E93); margin: 20px 0 8px; }
     .row, .toggle {
@@ -103,7 +92,7 @@
 <body class="dox-settings">
   <div id="main">
     <div class="dox-settings-head">
-      <span class="dox-settings-logo" role="img" aria-label="DialectsOnX"></span>
+      <span class="dox-wordmark dox-settings-logo" role="img" aria-label="DialectsOnX"></span>
       <h1 id="title"></h1>
     </div>
     <div class="row">

@@ -82,12 +82,15 @@ function injectDialxStyles() {
     .dialx-control-bar {
       display: flex;
       align-items: center;
+      flex-wrap: nowrap;
       gap: 6px;
       margin-top: 6px;
       font-size: 13px;
       position: relative;
       font-family: var(--dox-font, ${Dox.FONT});
       min-height: 32px;
+      color-scheme: dark;
+      color: var(--dox-muted, #8E8E93);
     }
     .dialx-translation {
       white-space: pre-wrap;
@@ -114,23 +117,26 @@ function injectDialxStyles() {
       opacity: 1;
       text-decoration: underline;
     }
-    .dialx-btn,
-    .dialx-btn-sm {
+    .dialx-control-bar .dialx-btn,
+    .dialx-control-bar .dialx-btn-sm {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
       padding: 4px 12px;
       border-radius: 9999px;
-      background: var(--dox-field, #1C1C1F);
+      -webkit-appearance: none;
+      appearance: none;
+      background-color: var(--dox-line, #2C2C31);
       color: var(--dox-muted, #8E8E93);
+      -webkit-text-fill-color: var(--dox-muted, #8E8E93);
       border: 1px solid var(--dox-line, #2C2C31);
       cursor: pointer;
       font-weight: 500;
       font-size: 13px;
       font-family: inherit;
       line-height: 1.3;
-      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
       box-sizing: border-box;
     }
     .dialx-btn-sm {
@@ -148,34 +154,22 @@ function injectDialxStyles() {
       font-size: 11px;
       min-height: 28px;
     }
-    .dialx-btn:hover,
-    .dialx-btn-sm:hover:not(:disabled) {
-      background: var(--dox-accent-hover, rgba(138, 124, 92, 0.16));
+    .dialx-control-bar .dialx-btn:hover,
+    .dialx-control-bar .dialx-btn-sm:hover:not(:disabled) {
+      background-color: var(--dox-accent-hover, rgba(138, 124, 92, 0.16));
       border-color: var(--dox-accent, #8A7C5C);
       color: var(--dox-text, #F4F4F5);
+      -webkit-text-fill-color: var(--dox-text, #F4F4F5);
     }
     .dialx-btn-sm:disabled {
       opacity: 0.55;
       cursor: default;
     }
     .dialx-logo {
-      display: inline-block;
-      height: 32px;
-      width: 32px;
-      aspect-ratio: 1;
       margin-inline-start: 4px;
-      flex-shrink: 0;
-      pointer-events: none;
       background-color: var(--dox-muted, #8E8E93);
       -webkit-mask-image: url("${logoUrl}");
       mask-image: url("${logoUrl}");
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
-      -webkit-mask-position: center;
-      mask-position: center;
-      -webkit-mask-size: contain;
-      mask-size: contain;
-      mask-mode: luminance;
     }
     .dialx-status {
       font-size: 11px;
@@ -2348,7 +2342,7 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
   };
 
   const logo = document.createElement("span");
-  logo.className = "dialx-logo";
+  logo.className = "dox-wordmark dialx-logo";
   logo.setAttribute("aria-label", "DialectsOnX");
   logo.setAttribute("role", "img");
 
