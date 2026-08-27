@@ -127,10 +127,10 @@ function injectDialxStyles() {
       border-radius: 9999px;
       -webkit-appearance: none;
       appearance: none;
-      background-color: var(--dox-line, #2C2C31);
+      background-color: #4A4A51;
       color: var(--dox-muted, #8E8E93);
       -webkit-text-fill-color: var(--dox-muted, #8E8E93);
-      border: 1px solid var(--dox-line, #2C2C31);
+      border: 1px solid #4A4A51;
       cursor: pointer;
       font-weight: 500;
       font-size: 13px;

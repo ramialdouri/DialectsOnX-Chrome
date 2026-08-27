@@ -87,7 +87,7 @@ def test_feed_contract() -> None:
     _assert("dox-wordmark" in content, "feed logo uses wordmark crop")
     _assert("color-scheme: dark" in content, "control bar stays dark chrome")
     _assert("-webkit-appearance: none" in content, "kill UA button paint")
-    _assert("background-color: var(--dox-line, #2C2C31)" in content, "buttons stay DialectsOnX gray")
+    _assert("background-color: #4A4A51" in content, "buttons stay DialectsOnX gray")
     _assert("dox-open-settings" in (EXT / "background.js").read_text(encoding="utf-8"), "SW opens options")
     _assert("dox-open-settings" in theme, "content gear messages SW")
     _assert("openOptionsPage" in (EXT / "background.js").read_text(encoding="utf-8"), "openOptionsPage in SW")

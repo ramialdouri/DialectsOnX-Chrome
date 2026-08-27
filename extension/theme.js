@@ -138,6 +138,7 @@ globalThis.Dox = globalThis.Dox || {};
         width: calc(var(--dox-logo-cap, 32px) * 903 / 149);
         flex-shrink: 0;
         pointer-events: none;
+        overflow: hidden;
         -webkit-mask-repeat: no-repeat;
         mask-repeat: no-repeat;
         -webkit-mask-size: calc(var(--dox-logo-cap, 32px) * 1024 / 149);
