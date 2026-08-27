@@ -717,7 +717,7 @@
     "dox_on": "开",
     "dox_off": "关",
     "dox_auto_translate": "自动翻译",
-    "dox_news_to_msa": "新闻 → MSA",
+    "dox_news_to_msa": "新闻 → Standard Language",
     "dox_backend_url": "后端网址",
     "dox_ime_remember": "记住 IME 位置",
     "dox_ime_enabled": "显示 IME 栏",

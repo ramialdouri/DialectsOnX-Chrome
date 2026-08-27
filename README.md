@@ -7,7 +7,7 @@ Chrome extension that translates X posts into Dialex dialects and adds a floatin
 - **293 dialects** from Dialex (`PROMPT_VERSION` 4.2.32), picked with the Dialex catalog sheet
 - **Always overlay** X post text (never replaces tweet `innerHTML`); emoji-safe extract via `<img alt>`
 - **Auto-translate off** for new users; the main control starts on **Original** and translates that post on tap
-- News / official (gray verified badge) still targets MSA when News → MSA is on
+- News / official (gray verified badge) targets that language's Standard chip when News → Standard Language is on (Arabic → MSA). Cluster rows and other national standards (Mexican, Brazilian) stay on the user's dialect
 - **System Language**: 58 Dialex packs for extension chrome (independent of destination dialect)
 - **IME** on all sites: dialect chip, Translate (`client_source=ime`), microphone STT
 - **Fix A Word** on translated overlays posts into the shared Pad pool (`client_source=dialectsonx`)

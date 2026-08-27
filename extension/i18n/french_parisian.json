@@ -717,7 +717,7 @@
     "dox_on": "Activé",
     "dox_off": "Désactivé",
     "dox_auto_translate": "Traduction auto",
-    "dox_news_to_msa": "Actu → MSA",
+    "dox_news_to_msa": "Actu → Standard Language",
     "dox_backend_url": "URL du backend",
     "dox_ime_remember": "Mémoriser la position de l'IME",
     "dox_ime_enabled": "Afficher la barre IME",

@@ -18,7 +18,7 @@
     .light .mention { color: #1a6fb5; }
     .dialx-translation { white-space: pre-wrap; overflow-wrap: anywhere; unicode-bidi: plaintext; color: inherit; }
     .dialx-translation a.dialx-overlay-link { color: var(--dialx-mention, inherit); text-decoration: none; }
-    .dialx-control-bar { display: flex; align-items: center; gap: 6px; margin-top: 8px; min-height: 32px; }
+    .dialx-control-bar { display: flex; align-items: flex-end; gap: 6px; margin-top: 8px; min-height: 32px; }
   </style>
 </head>
 <body>
@@ -116,6 +116,12 @@
         const mainCs = getComputedStyle(main);
         const selCs = getComputedStyle(sel);
         const periods = [...st.querySelectorAll(".dox-dots span")].map((n) => n.textContent);
+        const box = (el) => {
+          const r = el.getBoundingClientRect();
+          return { bottom: r.bottom, top: r.top, height: r.height };
+        };
+        const boxes = { main: box(main), sel: box(sel), logo: box(logo), status: box(st) };
+        const bottoms = [boxes.main.bottom, boxes.sel.bottom, boxes.logo.bottom, boxes.status.bottom];
         return {
           color: cs.color,
           hasDots: periods.length === 3 && periods.every((p) => p === "."),
@@ -125,16 +131,57 @@
           logoWidth: logoCs.width,
           mainHeight: mainCs.height,
           mainMinHeight: mainCs.minHeight,
+          selHeight: selCs.height,
           mainBg: mainCs.backgroundColor,
           mainColor: mainCs.color,
           selBg: selCs.backgroundColor,
           selColor: selCs.color,
+          alignItems: getComputedStyle(bar).alignItems,
+          boxes,
+          bottomSpread: Math.max(...bottoms) - Math.min(...bottoms),
         };
       }
       const busy = paintBar(document.querySelector(".col.dark article"), "busy");
       const err = paintBar(document.querySelector(".col.light article"), "error");
+      const nt = (id) => Dox.feed.newsTargetDialect(id);
+      const news = {
+        egyptian: nt("arabic_egyptian"),
+        msa: nt("arabic_msa"),
+        mexican: nt("spanish_mexican"),
+        madrid: nt("spanish_madrid"),
+        castilian: nt("spanish_castilian"),
+        carioca: nt("portuguese_carioca"),
+        lisbon: nt("portuguese_lisbon"),
+        porto: nt("portuguese_porto"),
+        cantonese: nt("cantonese_hongkong"),
+        mandarin: nt("mandarin_mainland"),
+        afrikaans: nt("afrikaans_cape_town"),
+        flemish: nt("dutch_flemish"),
+        bengali: nt("bengali_standard"),
+        hindi: nt("hindi_delhi"),
+        cebuano: nt("filipino_cebuano"),
+        tagalog: nt("filipino_tagalog"),
+        sorani: nt("kurdish_sorani"),
+        dari: nt("persian_dari"),
+        turoyo: nt("aramaic_turoyo"),
+        kansai: nt("japanese_kansai"),
+        australian: nt("english_australian"),
+        quebec: nt("french_quebecois"),
+        bags: {
+          chinese: Dox.feed.isLanguageBagSpoken("chinese"),
+          dutch: Dox.feed.isLanguageBagSpoken("dutch"),
+          indian: Dox.feed.isLanguageBagSpoken("indian"),
+          filipino: Dox.feed.isLanguageBagSpoken("filipino"),
+          kurdish: Dox.feed.isLanguageBagSpoken("kurdish"),
+          persian: Dox.feed.isLanguageBagSpoken("persian"),
+          aramaic: Dox.feed.isLanguageBagSpoken("aramaic"),
+          arabic: Dox.feed.isLanguageBagSpoken("arabic"),
+          spanish: Dox.feed.isLanguageBagSpoken("spanish"),
+          japanese: Dox.feed.isLanguageBagSpoken("japanese"),
+        },
+      };
       document.getElementById("out").textContent = JSON.stringify(
-        { dark, light, wrapped, busy, err },
+        { dark, light, wrapped, busy, err, news },
         null,
         2
       );

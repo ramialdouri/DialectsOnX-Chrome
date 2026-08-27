@@ -717,7 +717,7 @@
     "dox_on": "オン",
     "dox_off": "オフ",
     "dox_auto_translate": "自動翻訳",
-    "dox_news_to_msa": "ニュース → MSA",
+    "dox_news_to_msa": "ニュース → Standard Language",
     "dox_backend_url": "バックエンドURL",
     "dox_ime_remember": "IME位置を記憶",
     "dox_ime_enabled": "IMEバーを表示",

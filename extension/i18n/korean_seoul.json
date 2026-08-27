@@ -717,7 +717,7 @@
     "dox_on": "켜짐",
     "dox_off": "꺼짐",
     "dox_auto_translate": "자동 번역",
-    "dox_news_to_msa": "뉴스 → MSA",
+    "dox_news_to_msa": "뉴스 → Standard Language",
     "dox_backend_url": "백엔드 URL",
     "dox_ime_remember": "IME 위치 기억",
     "dox_ime_enabled": "IME 바 표시",

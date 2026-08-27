@@ -81,7 +81,7 @@ function injectDialxStyles() {
   style.textContent = `
     .dialx-control-bar {
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       flex-wrap: nowrap;
       gap: 6px;
       margin-top: 6px;
@@ -136,6 +136,11 @@ function injectDialxStyles() {
       font-size: 13px;
       font-family: inherit;
       line-height: 1.3;
+      height: 32px;
+      min-height: 32px;
+      margin: 0;
+      align-self: flex-end;
+      flex-shrink: 0;
       transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
       box-sizing: border-box;
     }
@@ -147,12 +152,10 @@ function injectDialxStyles() {
     .dialx-btn-main {
       padding: 5px 14px;
       font-size: 14px;
-      min-height: 32px;
     }
     .dialx-btn-selector {
       padding: 2px 9px;
       font-size: 11px;
-      min-height: 28px;
     }
     .dialx-control-bar .dialx-btn:hover,
     .dialx-control-bar .dialx-btn-sm:hover:not(:disabled) {
@@ -165,6 +168,13 @@ function injectDialxStyles() {
       opacity: 0.55;
       cursor: default;
     }
+    .dialx-control-bar .dox-wordmark,
+    .dialx-control-bar .dialx-logo {
+      display: block;
+      align-self: flex-end;
+      flex-shrink: 0;
+      margin-bottom: 0;
+    }
     .dialx-logo {
       margin-inline-start: 4px;
       background-color: var(--dox-muted, #8E8E93);
@@ -173,10 +183,16 @@ function injectDialxStyles() {
     }
     .dialx-status {
       font-size: 11px;
+      line-height: 1;
       margin-inline-start: 6px;
+      margin-bottom: 0;
+      padding: 0;
       white-space: nowrap;
       display: inline-flex;
-      align-items: center;
+      align-items: flex-end;
+      align-self: flex-end;
+      height: 32px;
+      box-sizing: border-box;
     }
     .dialx-status.is-busy,
     .dialx-status.dox-status-busy { color: var(--dox-status, #A8B4C0); }
@@ -1277,7 +1293,7 @@ function isBreakingNewsPost(article, text, handle) {
 function isNewsOrOfficialPost(article, text) {
   if (hasNewsSocialContext(article)) return true;
 
-  // Gray/silver (government/official) verified accounts always default to MSA.
+  // Gray/silver (government/official) verified accounts count as news.
   // Gold/business accounts are intentionally NOT treated as official.
   if (getVerifiedBadgeType(article) === "gray") return true;
 
@@ -1307,9 +1323,95 @@ function isNewsOrOfficialPost(article, text) {
   return false;
 }
 
-function getAutoTranslateDialect(state) {
-  if (state.isNews && newsToMsa) return "arabic_msa";
+function preferredOrDefault() {
   return isValidDialect(preferredDialect) ? preferredDialect : DEFAULT_DIALECT;
+}
+
+function dialectsForSpoken(spokenId) {
+  const spokenOf = Dox.CATALOG.spokenOf || {};
+  const out = [];
+  for (const id of Object.keys(spokenOf)) {
+    if (spokenOf[id] === spokenId) out.push(id);
+  }
+  return out;
+}
+
+/** Dutch / Chinese / Indian Cluster: one picker row, several real languages. */
+function isClusterSpoken(spokenId) {
+  const label = ((Dox.CATALOG.spokenLanguages || {})[spokenId] || {}).label || "";
+  if (/\bcluster\b/i.test(label)) return true;
+  const stems = new Set(dialectsForSpoken(spokenId).map((id) => String(id).split("_")[0]));
+  return stems.size > 1;
+}
+
+/**
+ * Picker rows that bag distinct languages, so there is no shared news standard.
+ * Cluster labels + mixed dialect-id stems cover Dutch / Chinese / Indian.
+ * Filipino, Kurdish, Persian, and Aramaic use one prefix but still group
+ * separate languages (Tagalog vs Cebuano, Kurmanji vs Sorani, Farsi vs Dari).
+ */
+function isLanguageBagSpoken(spokenId) {
+  if (!spokenId) return false;
+  if (isClusterSpoken(spokenId)) return true;
+  return (
+    spokenId === "filipino" ||
+    spokenId === "kurdish" ||
+    spokenId === "persian" ||
+    spokenId === "aramaic"
+  );
+}
+
+function localeRegion(tag) {
+  const parts = String(tag || "").toLowerCase().split("-").filter(Boolean);
+  const last = parts[parts.length - 1];
+  if (last && last.length === 2 && last !== parts[0]) return last;
+  return "";
+}
+
+/** Mexican vs Castilian, Brazilian vs Lisbon: several national standards. */
+function isPluricentricSpoken(spokenId) {
+  const locales = Dox.CATALOG.osLocaleToDialect || {};
+  const spokenOf = Dox.CATALOG.spokenOf || {};
+  const regions = new Set();
+  for (const tag of Object.keys(locales)) {
+    if (spokenOf[locales[tag]] !== spokenId) continue;
+    const region = localeRegion(tag);
+    if (region) regions.add(region);
+  }
+  return regions.size > 1;
+}
+
+/**
+ * News destination when the toggle is on. Arabic dialects share MSA as the
+ * news/formal register. Cluster/language bags keep the user's chip. Other
+ * national standards (Mexican, Carioca, Québécois, Australian) stay put.
+ * Mono-centric regional chips (Kansai, Busan) still go to that language's
+ * Standard chip.
+ */
+function newsTargetDialect(preferredId) {
+  const preferred = isValidDialect(preferredId) ? preferredId : DEFAULT_DIALECT;
+  const spoken = Dox.spokenIdOf(preferred);
+  if (!spoken || isLanguageBagSpoken(spoken)) return preferred;
+  const mapped = Dox.CATALOG.standardDialect && Dox.CATALOG.standardDialect[spoken];
+  if (!mapped || !isValidDialect(mapped)) return preferred;
+  if (preferred === mapped) return mapped;
+  if (spoken === "arabic") return mapped;
+  if (isPluricentricSpoken(spoken)) return preferred;
+  return mapped;
+}
+
+function newsLockedAsArabicMsa(state) {
+  return Boolean(
+    state?.isNews &&
+    newsToMsa &&
+    isArabicText(state.originalText) &&
+    newsTargetDialect(preferredDialect) === "arabic_msa"
+  );
+}
+
+function getAutoTranslateDialect(state) {
+  if (state.isNews && newsToMsa) return newsTargetDialect(preferredDialect);
+  return preferredOrDefault();
 }
 
 function findShowMoreElement(article, tweetTextEl) {
@@ -2159,7 +2261,6 @@ function setAsDefault(dialect) {
 
 function resolvePostDialect(state, overrideDialect) {
   if (overrideDialect && isValidDialect(overrideDialect)) return overrideDialect;
-  if (state.isNews && newsToMsa) return "arabic_msa";
   return getAutoTranslateDialect(state);
 }
 
@@ -2287,7 +2388,7 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
     e.stopPropagation();
     if (!canOperate()) return;
 
-    if (state.isNews && newsToMsa && isArabicText(state.originalText)) return;
+    if (newsLockedAsArabicMsa(state)) return;
 
     if (!state.showingOriginal) {
       state.showingOriginal = true;
@@ -2434,9 +2535,8 @@ async function maybeAutoTranslate(postId) {
 
   if (!ensurePostControlBar(state, state.article)) return;
 
-  // News/official/gray-badge posts always target MSA. If such a post is
-  // already in Arabic script, show it as-is and never request a translation.
-  if (state.isNews && isArabicText(state.originalText)) {
+  // Arabic news is already in the MSA register when that is the news target.
+  if (newsLockedAsArabicMsa(state)) {
     state.autoTranslated = true;
     state.activeDialect = "arabic_msa";
     state.appliedHtml = state.postElement.innerHTML;
@@ -2445,7 +2545,6 @@ async function maybeAutoTranslate(postId) {
     return;
   }
 
-  // News/official → MSA; everyone else → the preferred dialect.
   const dialect = getAutoTranslateDialect(state);
 
   if (applyTranslated(state, dialect)) {
@@ -2780,6 +2879,10 @@ Dox.feed = {
   extractPostText,
   applyTranslated,
   injectDialxStyles,
+  newsTargetDialect,
+  isLanguageBagSpoken,
+  isClusterSpoken,
+  isPluricentricSpoken,
   refreshOverlay(state) {
     if (!state?.transEl || state.overlayText == null) return;
     renderOverlayContent(state, state.overlayText);
