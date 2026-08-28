@@ -15,7 +15,7 @@ Chrome MV3 client for Dialex. Product source of truth is Dialex-Android (`PROMPT
 - Gray/official verified badge → that language's Standard chip when News → Standard Language is on (Arabic dialects → MSA). Cluster / language-bag rows and other national standards (Mexican, Brazilian) keep the user's dialect. Gold/business badges are not official.
 - Dialect Selector opens the Dialex sheet (not 16 radios). Sheet pick sets default dialect and retranslates **that** post. IME sheet pick is IME-only.
 - System Language is independent of destination dialect. No English fallback for `dox_*` keys when the pack is not English.
-- FAW is the Pad system: `client_source=dialectsonx` is identity only. IME cannot POST `/faw`.
+- FAW is the Pad system: `client_source=dialectsonx` is identity only. IME cannot POST `/faw`. Pad and DialectsOnX share promoted overlays automatically on the Dialex backend. Chatterbox FAW is a different admin page and does not auto-copy.
 - Fonts: system UI stack only. No `@font-face` Dialex Latin.
 
 ## Local Dialex
