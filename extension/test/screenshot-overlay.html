@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" data-dox-skip-feed="1">
+<head>
+  <meta charset="utf-8" />
+  <title>DialectsOnX overlay light/dark fixture</title>
+  <style>
+    html, body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .row { display: flex; min-height: 100vh; }
+    .col { flex: 1; padding: 24px; }
+    .col.dark { background: #000; color: #e7e9ea; }
+    .col.light { background: #ffffff; color: #0f1419; }
+    article { max-width: 520px; border-radius: 12px; padding: 16px; }
+    .dark article { border: 1px solid #2f3336; }
+    .light article { border: 1px solid #cfd9de; }
+    [data-testid="tweetText"] { font-size: 17px; line-height: 1.4; color: inherit; }
+    .mention { text-decoration: none; }
+    .dark .mention { color: #6b9fff; }
+    .light .mention { color: #1a6fb5; }
+    .dialx-translation { white-space: pre-wrap; overflow-wrap: anywhere; unicode-bidi: plaintext; color: inherit; }
+    .dialx-translation a.dialx-overlay-link { color: var(--dialx-mention, inherit); text-decoration: none; }
+    .dialx-control-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 28px; }
+  </style>
+</head>
+<body>
+  <div class="row">
+    <div class="col dark">
+      <h2>Dark X theme</h2>
+      <article data-testid="tweet" id="darkTweet">
+        <div data-testid="User-Name"><a class="mention" href="/Bot">@Bot</a> · <time datetime="2026-08-27">1h</time></div>
+        <div data-testid="tweetText" id="darkText">
+          Summer Update from Elon Musk<br><br>
+          • Full Self-Driving<br>
+          • mention <a class="mention" href="/Bot">@Bot</a>
+          • <a class="mention" href="/search?q=%24NVDA&src=cashtag_click">$NVDA</a> cash $20
+        </div>
+      </article>
+    </div>
+    <div class="col light">
+      <h2>Light X theme</h2>
+      <article data-testid="tweet" id="lightTweet">
+        <div data-testid="User-Name"><a class="mention" href="/Bot">@Bot</a> · <time datetime="2026-08-27">1h</time></div>
+        <div data-testid="tweetText" id="lightText">
+          Summer Update from Elon Musk<br><br>
+          • Full Self-Driving<br>
+          • mention <a class="mention" href="/Bot">@Bot</a>
+          • <a class="mention" href="/search?q=%24NVDA&src=cashtag_click">$NVDA</a> cash $20
+        </div>
+      </article>
+    </div>
+  </div>
+  <pre id="out"></pre>
+  <script src="chrome-mock.js"></script>
+  <script src="../theme.js"></script>
+  <script src="../dialects.js"></script>
+  <script src="../locale.js"></script>
+  <script src="../prefs.js"></script>
+  <script src="../api.js"></script>
+  <script src="../sheet.js"></script>
+  <script src="../faw.js"></script>
+  <script src="../content.js"></script>
+  <script>
+    (async () => {
+      await Dox.locale.ready();
+      const translated =
+        "تحديث الصيف من إيلون ماسك\n\n• القيادة الذاتية الكاملة\n• إشارة \u2066@Bot\u2069 $NVDA $20";
+      function paint(tt) {
+        const extracted = Dox.feed.extractPostText(tt);
+        const trans = document.createElement("div");
+        trans.className = tt.className + " dialx-translation";
+        trans.setAttribute("dir", "auto");
+        tt.after(trans);
+        const state = {
+          postElement: tt,
+          article: tt.closest("article"),
+          transEl: trans,
+          overlayText: translated,
+          fullyExpanded: true,
+        };
+        const mention = tt.querySelector("a") || state.article.querySelector("a");
+        const c = mention && getComputedStyle(mention).color;
+        if (c) trans.style.setProperty("--dialx-mention", c);
+        Dox.feed.refreshOverlay(state);
+        tt.style.display = "none";
+        const links = [...trans.querySelectorAll("a.dialx-overlay-link")];
+        const byText = (needle) => links.find((a) => (a.textContent || "").includes(needle));
+        const handle = byText("@Bot");
+        const cashtag = byText("$NVDA");
+        const cashLink = byText("$20");
+        return {
+          extracted,
+          hasBlank: extracted.includes("\n\n"),
+          hasBullet: extracted.includes("•"),
+          handleHref: handle?.getAttribute("href") || "",
+          handleTarget: handle?.getAttribute("target") || "",
+          cashtagHref: cashtag?.getAttribute("href") || "",
+          cashtagTarget: cashtag?.getAttribute("target") || "",
+          cashLinked: !!cashLink,
+          overlayHasCash: (trans.textContent || "").includes("$20"),
+          color: getComputedStyle(trans).color,
+          inherit: trans.style.color === "",
+        };
+      }
+      const dark = paint(document.getElementById("darkText"));
+      const light = paint(document.getElementById("lightText"));
+      const wrapped = Dox.api.wrapRtlLatinIslands("قال Elon Musk هنا");
+      if (typeof Dox.feed.injectDialxStyles === "function") Dox.feed.injectDialxStyles();
+      function paintBar(parent, kind) {
+        const bar = document.createElement("div");
+        bar.className = "dialx-control-bar";
+        const main = document.createElement("div");
+        main.className = "dialx-btn dialx-btn-main";
+        main.textContent = Dox.locale.t("lens_view_original");
+        const sel = document.createElement("button");
+        sel.type = "button";
+        sel.className = "dialx-btn dialx-btn-selector";
+        sel.textContent = Dox.locale.t("label_dialect_selector");
+        const logo = document.createElement("span");
+        logo.className = "dox-wordmark dialx-logo";
+        logo.setAttribute("role", "img");
+        const st = document.createElement("span");
+        st.className = "dialx-status";
+        if (kind === "busy") Dox.fillBusyStatus(st, Dox.locale.t("status_translating"));
+        else Dox.fillErrorStatus(st, Dox.locale.t("dox_translate_failed"));
+        bar.append(main, sel, st, logo);
+        parent.appendChild(bar);
+        const cs = getComputedStyle(st);
+        const logoCs = getComputedStyle(logo);
+        const mainCs = getComputedStyle(main);
+        const selCs = getComputedStyle(sel);
+        const periods = [...st.querySelectorAll(".dox-dots span")].map((n) => n.textContent);
+        const box = (el) => {
+          const r = el.getBoundingClientRect();
+          return { bottom: r.bottom, top: r.top, height: r.height };
+        };
+        const boxes = { main: box(main), sel: box(sel), logo: box(logo), status: box(st) };
+        const bottoms = [boxes.main.bottom, boxes.sel.bottom, boxes.logo.bottom, boxes.status.bottom];
+        return {
+          color: cs.color,
+          hasDots: periods.length === 3 && periods.every((p) => p === "."),
+          classes: st.className,
+          label: st.childNodes[0] && st.childNodes[0].textContent,
+          logoHeight: logoCs.height,
+          logoWidth: logoCs.width,
+          mainHeight: mainCs.height,
+          mainMinHeight: mainCs.minHeight,
+          selHeight: selCs.height,
+          mainBg: mainCs.backgroundColor,
+          mainColor: mainCs.color,
+          selBg: selCs.backgroundColor,
+          selColor: selCs.color,
+          alignItems: getComputedStyle(bar).alignItems,
+          boxes,
+          bottomSpread: Math.max(...bottoms) - Math.min(...bottoms),
+        };
+      }
+      const busy = paintBar(document.querySelector(".col.dark article"), "busy");
+      const err = paintBar(document.querySelector(".col.light article"), "error");
+      const nt = (id) => Dox.feed.newsTargetDialect(id);
+      const news = {
+        egyptian: nt("arabic_egyptian"),
+        msa: nt("arabic_msa"),
+        mexican: nt("spanish_mexican"),
+        madrid: nt("spanish_madrid"),
+        castilian: nt("spanish_castilian"),
+        carioca: nt("portuguese_carioca"),
+        lisbon: nt("portuguese_lisbon"),
+        porto: nt("portuguese_porto"),
+        cantonese: nt("cantonese_hongkong"),
+        mandarin: nt("mandarin_mainland"),
+        afrikaans: nt("afrikaans_cape_town"),
+        flemish: nt("dutch_flemish"),
+        bengali: nt("bengali_standard"),
+        hindi: nt("hindi_delhi"),
+        cebuano: nt("filipino_cebuano"),
+        tagalog: nt("filipino_tagalog"),
+        sorani: nt("kurdish_sorani"),
+        dari: nt("persian_dari"),
+        turoyo: nt("aramaic_turoyo"),
+        kansai: nt("japanese_kansai"),
+        australian: nt("english_australian"),
+        quebec: nt("french_quebecois"),
+        bags: {
+          chinese: Dox.feed.isLanguageBagSpoken("chinese"),
+          dutch: Dox.feed.isLanguageBagSpoken("dutch"),
+          indian: Dox.feed.isLanguageBagSpoken("indian"),
+          filipino: Dox.feed.isLanguageBagSpoken("filipino"),
+          kurdish: Dox.feed.isLanguageBagSpoken("kurdish"),
+          persian: Dox.feed.isLanguageBagSpoken("persian"),
+          aramaic: Dox.feed.isLanguageBagSpoken("aramaic"),
+          arabic: Dox.feed.isLanguageBagSpoken("arabic"),
+          spanish: Dox.feed.isLanguageBagSpoken("spanish"),
+          japanese: Dox.feed.isLanguageBagSpoken("japanese"),
+        },
+      };
+      document.getElementById("out").textContent = JSON.stringify(
+        { dark, light, wrapped, busy, err, news },
+        null,
+        2
+      );
+      document.body.dataset.ready = "overlay";
+    })();
+  </script>
+</body>
+</html>

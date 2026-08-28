@@ -36,7 +36,8 @@
       ok(!!document.querySelector(".dox-sheet-quick"), "favorites/recents row");
       ok(!document.querySelector(".dox-gold-badge"), "no gold group badges");
       ok(!!document.querySelector(".dox-sheet-group"), "typographic group headers");
-      ok(!!document.querySelector(".dox-sheet-settings"), "muted settings gear in top row");
+      ok(!!document.querySelector(".dox-sheet-settings"), "settings gear in sheet chrome");
+      ok(!!document.querySelector(".dox-sheet-auto input.dox-switch"), "sheet auto switch");
       ok(!!document.querySelector(".dox-sheet-close"), "close in top row");
       ok(!document.querySelector("button.dox-sheet-quick-chip"), "favorite chips are not nested buttons");
       ok(!document.querySelector('.dox-sheet-lang-row[data-spoken-id="english"] .dox-gold-badge'), "English has no group pill");

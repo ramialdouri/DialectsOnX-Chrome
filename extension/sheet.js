@@ -88,10 +88,10 @@ globalThis.Dox = globalThis.Dox || {};
         padding: 6px 10px; font: 600 12px var(--dox-font, ${Dox.FONT});
         cursor: pointer; white-space: nowrap;
       }
-      .dox-sheet-quick-chip.selected { border-color: var(--dox-accent, #8A7C5C); }
+      .dox-sheet-quick-chip.selected { border-color: var(--dox-accent); }
       .dox-sheet-quick-chip .dox-sheet-star {
         width: 28px; height: 28px; margin: -6px;
-        opacity: 1; color: var(--dox-accent, #8A7C5C);
+        opacity: 1; color: var(--dox-accent);
       }
       .dox-sheet-split {
         flex: 1; min-height: 0;
@@ -155,7 +155,7 @@ globalThis.Dox = globalThis.Dox || {};
         font: 600 13px var(--dox-font, ${Dox.FONT}); outline: none;
       }
       .dox-sheet-search input::placeholder { color: var(--dox-muted, #8E8E93); }
-      .dox-sheet-search:focus-within { border-color: var(--dox-accent, #8A7C5C); }
+      .dox-sheet-search:focus-within { border-color: var(--dox-accent); }
       .dox-sheet-search-icon {
         color: var(--dox-muted, #8E8E93); flex-shrink: 0;
         width: 16px; height: 16px; display: inline-flex;
@@ -252,14 +252,39 @@ globalThis.Dox = globalThis.Dox || {};
         width: 16px; height: 16px; display: block;
       }
       .dox-sheet-star { opacity: .35; color: var(--dox-muted, #8E8E93); }
-      .dox-sheet-star.on { opacity: 1; color: var(--dox-accent, #8A7C5C); }
-      .dox-sheet-check { color: var(--dox-accent, #8A7C5C); cursor: default; margin: 0; width: 16px; height: 16px; }
+      .dox-sheet-star.on { opacity: 1; color: var(--dox-accent); }
+      .dox-sheet-check { color: var(--dox-accent); cursor: default; margin: 0; width: 16px; height: 16px; }
       .dox-hint {
         position: absolute; z-index: 2147483001;
         background: var(--dox-elevated, #0E0E10); color: var(--dox-text, #F4F4F5);
-        border: 1px solid var(--dox-accent, #8A7C5C);
+        border: 1px solid var(--dox-accent);
         border-radius: 12px; padding: 8px 10px; max-width: 240px;
         font-size: 12px; font-family: var(--dox-font, ${Dox.FONT}); cursor: pointer;
+      }
+      .dox-hint.is-plain { cursor: default; }
+      .dox-sheet-auto {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; padding: 4px 8px 10px;
+        font: 600 13px var(--dox-font, ${Dox.FONT});
+        color: var(--dox-text, #F4F4F5);
+      }
+      .dox-sheet-auto .dox-switch {
+        appearance: none; -webkit-appearance: none;
+        width: 40px; height: 24px; margin: 0;
+        background: var(--dox-line, #2C2C31);
+        border-radius: 999px; position: relative; cursor: pointer; border: 0; flex-shrink: 0;
+      }
+      .dox-sheet-auto .dox-switch::after {
+        content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%;
+        background: var(--dox-muted, #8E8E93); top: 3px; inset-inline-start: 3px;
+        transition: inset-inline-start .15s ease, background .15s ease;
+      }
+      .dox-sheet-auto .dox-switch:checked { background: rgba(244, 244, 245, 0.28); }
+      .dox-sheet-auto .dox-switch:checked::after {
+        background: var(--dox-text, #F4F4F5); inset-inline-start: 19px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .dox-sheet-auto .dox-switch::after { transition: none; }
       }
     `;
   }
@@ -308,22 +333,32 @@ globalThis.Dox = globalThis.Dox || {};
     hintPopup = null;
   }
 
+  function linksGrokHint(dialectId) {
+    if (dialectId === "kurdish_kurmanji" || dialectId === "zulu_standard") return true;
+    const spoken = Dox.spokenIdOf(dialectId);
+    return dialectId !== Dox.standardDialectFor(spoken);
+  }
+
   function showHint(anchor, dialectId) {
     closeHint();
     const text = Dox.locale.dialectHint(dialectId);
     if (!text) return;
     const pop = document.createElement("div");
     pop.className = "dox-hint";
-    pop.setAttribute("role", "button");
-    pop.tabIndex = 0;
     pop.textContent = text;
-    const go = (e) => {
-      e.stopPropagation();
-      const q = Dox.locale.grokQuery(dialectId);
-      window.open("https://grok.com/?q=" + encodeURIComponent(q), "_blank", "noopener");
-      closeHint();
-    };
-    Dox.bindActivate(pop, go);
+    if (linksGrokHint(dialectId)) {
+      pop.setAttribute("role", "button");
+      pop.tabIndex = 0;
+      const go = (e) => {
+        e.stopPropagation();
+        const q = Dox.locale.grokQuery(dialectId);
+        window.open("https://grok.com/?q=" + encodeURIComponent(q), "_blank", "noopener");
+        closeHint();
+      };
+      Dox.bindActivate(pop, go);
+    } else {
+      pop.classList.add("is-plain");
+    }
     document.documentElement.appendChild(pop);
     const r = anchor.getBoundingClientRect();
     const rtl = Dox.locale.rtl || document.documentElement.getAttribute("dir") === "rtl";
@@ -740,6 +775,9 @@ globalThis.Dox = globalThis.Dox || {};
     host.className = "dox-sheet-scrim";
     const sheet = document.createElement("div");
     sheet.className = "dox-sheet";
+    sheet.setAttribute("role", "dialog");
+    sheet.setAttribute("aria-modal", "true");
+    sheet.setAttribute("aria-label", t("label_dialect_selector"));
     Dox.locale.applyDir(sheet);
     applyColumnMins(sheet);
 
@@ -800,7 +838,26 @@ globalThis.Dox = globalThis.Dox || {};
     searchRow.appendChild(searchBox);
     const langList = document.createElement("div");
     langList.className = "dox-sheet-lang-list";
-    langPanel.append(searchRow, langList);
+    if (mode !== "ime") {
+      const autoRow = document.createElement("label");
+      autoRow.className = "dox-sheet-auto";
+      const autoLabel = document.createElement("span");
+      autoLabel.textContent = t("dox_auto_translate");
+      const autoInput = document.createElement("input");
+      autoInput.type = "checkbox";
+      autoInput.className = "dox-switch";
+      autoInput.setAttribute("role", "switch");
+      autoInput.checked = prefs.autoTranslate === true;
+      autoInput.setAttribute("aria-checked", autoInput.checked ? "true" : "false");
+      autoInput.addEventListener("change", async () => {
+        autoInput.setAttribute("aria-checked", autoInput.checked ? "true" : "false");
+        await Dox.prefs.set({ autoTranslate: autoInput.checked });
+      });
+      autoRow.append(autoLabel, autoInput);
+      langPanel.append(searchRow, autoRow, langList);
+    } else {
+      langPanel.append(searchRow, langList);
+    }
 
     const dialectPanel = document.createElement("div");
     dialectPanel.className = "dox-sheet-dialect-panel";

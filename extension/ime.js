@@ -56,6 +56,9 @@ globalThis.Dox = globalThis.Dox || {};
     return Dox.locale.t(k, ...a);
   }
 
+  let freezePlace = false;
+  const AREA_INSET = 56;
+
   function skipField(el) {
     if (!el) return true;
     const type = (el.getAttribute("type") || "").toLowerCase();
@@ -64,7 +67,7 @@ globalThis.Dox = globalThis.Dox || {};
     if (mode === "url" || mode === "email") return true;
     const ac = (el.getAttribute("autocomplete") || "").toLowerCase();
     if (ac.includes("url") || ac.includes("email") || ac.includes("password")) return true;
-    if (el.closest("[data-dox-ime-bar]")) return true;
+    if (el.closest("[data-dox-ime-bar], .dox-sheet-scrim, .dox-sheet")) return true;
     return false;
   }
 
@@ -78,22 +81,49 @@ globalThis.Dox = globalThis.Dox || {};
     return null;
   }
 
+  function editorRoot(el) {
+    if (!el) return null;
+    const box =
+      el.closest('[data-testid^="tweetTextarea"]') ||
+      el.closest('[role="textbox"][contenteditable="true"]') ||
+      el;
+    if (box.getAttribute && box.getAttribute("contenteditable") === "true") return box;
+    return (box.querySelector && box.querySelector('[contenteditable="true"]')) || el;
+  }
+
   function readValue(el) {
-    if (el.isContentEditable) return el.innerText || el.textContent || "";
-    return el.value || "";
+    const field = editorRoot(el) || el;
+    if (field.isContentEditable) return field.innerText || field.textContent || "";
+    return field.value || "";
   }
 
   function writeValue(el, text) {
-    if (el.isContentEditable) {
-      el.textContent = text;
-      el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+    const field = editorRoot(el) || el;
+    if (field.isContentEditable) {
+      field.focus();
+      const sel = window.getSelection();
+      try {
+        const range = document.createRange();
+        range.selectNodeContents(field);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } catch (_) {
+        /* keep going */
+      }
+      const ok = document.execCommand("insertText", false, text);
+      if (!ok) {
+        field.textContent = text;
+        field.dispatchEvent(
+          new InputEvent("input", { bubbles: true, inputType: "insertText", data: text })
+        );
+      }
       return;
     }
-    const proto = el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const proto = field.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
     const desc = Object.getOwnPropertyDescriptor(proto, "value");
-    desc?.set?.call(el, text);
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-    el.dispatchEvent(new Event("change", { bubbles: true }));
+    desc?.set?.call(field, text);
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
   function injectImeStyles() {
@@ -120,11 +150,11 @@ globalThis.Dox = globalThis.Dox || {};
       }
       #dialx-ime-bar .dox-ime-go {
         background: transparent;
-        border-color: var(--dox-accent, #8A7C5C);
+        border-color: var(--dox-accent);
       }
       #dialx-ime-bar .dox-ime-x {
-        position: absolute; top: 4px; inset-inline-end: 4px;
-        width: 28px; height: 28px;
+        position: absolute; top: 0; inset-inline-end: 0;
+        width: 44px; height: 44px;
         background: transparent; border: 0; color: var(--dox-muted, #8E8E93);
         padding: 0;
         display: inline-flex; align-items: center; justify-content: center;
@@ -133,18 +163,103 @@ globalThis.Dox = globalThis.Dox || {};
       #dialx-ime-bar .dox-ime-status {
         color: var(--dox-muted, #8E8E93); font-size: 11px; min-width: 4em;
         margin-inline-start: 2px;
+        display: inline-flex; align-items: center;
       }
+      #dialx-ime-bar .dox-ime-status.is-busy,
+      #dialx-ime-bar .dox-ime-status.dox-status-busy { color: var(--dox-status, #A8B4C0); }
+      #dialx-ime-bar .dox-ime-status.is-error,
+      #dialx-ime-bar .dox-ime-status.dox-status-error { color: var(--dox-danger, #FF453A); }
       #dialx-ime-bar.dox-ime-drag { cursor: grabbing; }
     `;
     document.documentElement.appendChild(style);
   }
 
-  async function place(prefs) {
-    const pos = await Dox.prefs.getImePosition();
-    const x = prefs.imeRememberPosition && pos.imeX != null ? pos.imeX : window.innerWidth - 420;
-    const y = prefs.imeRememberPosition && pos.imeY != null ? pos.imeY : window.innerHeight - 80;
-    bar.style.left = Math.max(8, Math.min(x, window.innerWidth - 80)) + "px";
-    bar.style.top = Math.max(8, Math.min(y, window.innerHeight - 40)) + "px";
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(n, max));
+  }
+
+  function fieldVisible(el) {
+    if (!el || typeof el.getBoundingClientRect !== "function") return false;
+    const r = el.getBoundingClientRect();
+    return (
+      r.width > 8 &&
+      r.height > 8 &&
+      r.bottom > 0 &&
+      r.right > 0 &&
+      r.top < window.innerHeight &&
+      r.left < window.innerWidth
+    );
+  }
+
+  function visibleHostField() {
+    const focused = focusedInput();
+    if (focused && fieldVisible(focused)) return focused;
+    if (lastField?.isConnected && !skipField(lastField) && fieldVisible(lastField)) return lastField;
+    let best = null;
+    let bestArea = 0;
+    for (const el of document.querySelectorAll(
+      "input:not([type=hidden]), textarea, [contenteditable='true']"
+    )) {
+      if (skipField(el) || !fieldVisible(el)) continue;
+      const r = el.getBoundingClientRect();
+      const area = r.width * r.height;
+      if (area > bestArea) {
+        best = el;
+        bestArea = area;
+      }
+    }
+    return best;
+  }
+
+  function placeUnderField(field) {
+    if (!bar || freezePlace || dragging) return;
+    if (document.querySelector(".dox-sheet-scrim")) return;
+    const el = field || focusedInput();
+    const barW = bar.offsetWidth || 360;
+    const barH = bar.offsetHeight || 52;
+    let x;
+    let y;
+    if (el && typeof el.getBoundingClientRect === "function") {
+      const r = el.getBoundingClientRect();
+      x = r.left;
+      y = r.bottom + 8;
+      if (y + barH > window.innerHeight - 8) {
+        y = Math.max(8, r.top - barH - 8);
+      }
+    } else {
+      x = window.innerWidth - barW - AREA_INSET;
+      y = window.innerHeight - barH - AREA_INSET;
+    }
+    bar.style.left = clamp(x, 8, window.innerWidth - barW - 8) + "px";
+    bar.style.top = clamp(y, 8, window.innerHeight - barH - 8) + "px";
+  }
+
+  function placeForShow() {
+    freezePlace = false;
+    placeUnderField(visibleHostField());
+  }
+
+  async function place() {
+    placeUnderField();
+  }
+
+  function restoreBarPlace(snap) {
+    if (!bar || !snap) return;
+    if (snap.left) bar.style.left = snap.left;
+    if (snap.top) bar.style.top = snap.top;
+  }
+
+  function watchSheetClose(snap) {
+    const obs = new MutationObserver(() => {
+      if (!document.querySelector(".dox-sheet-scrim")) {
+        obs.disconnect();
+        restoreBarPlace(snap);
+        requestAnimationFrame(() => {
+          freezePlace = false;
+        });
+      }
+    });
+    obs.observe(document.documentElement, { childList: true, subtree: true });
   }
 
   async function mount() {
@@ -180,12 +295,28 @@ globalThis.Dox = globalThis.Dox || {};
     chip.className = "dox-ime-chip";
     chip.addEventListener("click", (e) => {
       e.stopPropagation();
+      const snap = { left: bar.style.left, top: bar.style.top };
+      freezePlace = true;
+      watchSheetClose(snap);
       Dox.prefs.get().then((p) => {
         Dox.sheet.open({
           mode: "ime",
           selectedId: p.imeDialect,
           onPick: async () => {
+            freezePlace = true;
+            restoreBarPlace(snap);
             await refresh();
+            const host =
+              lastField?.isConnected && !skipField(lastField) ? lastField : focusedInput();
+            if (host) {
+              host.focus();
+              lastField = host;
+            }
+            restoreBarPlace(snap);
+            const goBtn = bar?.querySelector(".dox-ime-go");
+            if (goBtn) await translateFocused(goBtn);
+            restoreBarPlace(snap);
+            freezePlace = false;
           },
         });
       });
@@ -228,17 +359,13 @@ globalThis.Dox = globalThis.Dox || {};
       bar.style.left = e.clientX - dragDx + "px";
       bar.style.top = e.clientY - dragDy + "px";
     });
-    bar.addEventListener("pointerup", async () => {
+    bar.addEventListener("pointerup", () => {
       if (!dragging) return;
       dragging = false;
       bar.classList.remove("dox-ime-drag");
-      const next = await Dox.prefs.get();
-      if (next.imeRememberPosition) {
-        await Dox.prefs.setImePosition(parseInt(bar.style.left, 10), parseInt(bar.style.top, 10));
-      }
     });
     document.documentElement.appendChild(bar);
-    await place(prefs);
+    await place();
     await refresh();
   }
 
@@ -253,7 +380,10 @@ globalThis.Dox = globalThis.Dox || {};
     if (mic && !inflight) mic.textContent = t("ime_mic");
     if (go && !inflight) go.textContent = t("ime_translate");
     if (close) close.title = t("dox_ime_collapse");
-    if (statusEl) statusEl.textContent = t("dox_ime_idle");
+    if (statusEl && !inflight) {
+      statusEl.classList.remove("is-busy", "is-error", "dox-status-busy", "dox-status-error");
+      statusEl.textContent = t("dox_ime_idle");
+    }
     Dox.locale.applyDir(bar);
   }
 
@@ -271,7 +401,10 @@ globalThis.Dox = globalThis.Dox || {};
     const prefs = await Dox.prefs.get();
     inflight = new AbortController();
     go.textContent = t("ime_translate_cancel");
-    if (statusEl) statusEl.textContent = t("status_translating");
+    if (statusEl) {
+      if (typeof Dox.fillBusyStatus === "function") Dox.fillBusyStatus(statusEl, t("status_translating"));
+      else statusEl.textContent = t("status_translating");
+    }
     try {
       const result = await Dox.api.translate({
         text,
@@ -284,15 +417,23 @@ globalThis.Dox = globalThis.Dox || {};
         return;
       }
       writeValue(el, result.translation);
-      if (statusEl) statusEl.textContent = t("dox_status_ready");
+      if (statusEl) {
+        statusEl.classList.remove("is-busy", "is-error", "dox-status-busy", "dox-status-error");
+        statusEl.textContent = t("dox_status_ready");
+      }
     } catch (e) {
       if (e && e.name === "AbortError") {
-        if (statusEl) statusEl.textContent = t("dox_ime_idle");
+        if (statusEl) {
+          statusEl.classList.remove("is-busy", "is-error", "dox-status-busy", "dox-status-error");
+          statusEl.textContent = t("dox_ime_idle");
+        }
         return;
       }
       if (statusEl) {
-        statusEl.textContent =
+        const msg =
           e && e.code === "rate_limited" ? t("dox_rate_limited") : t("dox_translate_failed");
+        if (typeof Dox.fillErrorStatus === "function") Dox.fillErrorStatus(statusEl, msg);
+        else statusEl.textContent = msg;
       }
     } finally {
       inflight = null;
@@ -332,6 +473,7 @@ globalThis.Dox = globalThis.Dox || {};
       if (skipField(el)) return;
       if (el.isContentEditable || el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
         lastField = el;
+        if (bar && !dragging && !freezePlace) placeUnderField(el);
       }
     },
     true
@@ -339,7 +481,10 @@ globalThis.Dox = globalThis.Dox || {};
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg?.type === "dox-ime-show") {
-      Dox.prefs.set({ imeCollapsed: false, imeEnabled: true }).then(mount);
+      Dox.prefs.set({ imeCollapsed: false, imeEnabled: true }).then(async () => {
+        await mount();
+        placeForShow();
+      });
     }
   });
 
@@ -357,4 +502,13 @@ globalThis.Dox = globalThis.Dox || {};
   });
 
   Dox.locale.ready().then(mount);
+
+  Dox.ime = {
+    writeValue,
+    readValue,
+    placeForShow,
+    placeUnderField,
+    skipField,
+    AREA_INSET,
+  };
 })();

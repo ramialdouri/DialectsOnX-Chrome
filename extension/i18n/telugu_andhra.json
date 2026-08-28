@@ -1,7 +1,7 @@
 {
   "dialect_id": "telugu_andhra",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "వెనుకకు",
     "cd_app_logo": "Dialex లోగో",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "ఫ్లోరెన్స్",
     "dialect_italian_italy_prompt": "ప్రామాణిక ఇటాలియన్ (టస్కనీ)",
     "dialect_italian_lombard": "లొంబార్డ్ ప్రాంతీయ",
-    "dialect_italian_lombard_desc": "మిలన్",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "లొంబార్డ్ ప్రాంతీయ ఇటాలియన్",
     "dialect_italian_piedmontese": "పీడ్‌మాంట్ ప్రాంతీయ",
     "dialect_italian_piedmontese_desc": "టురిన్",
@@ -717,7 +717,7 @@
     "dox_on": "ఆన్",
     "dox_off": "ఆఫ్",
     "dox_auto_translate": "ఆటో అనువాదం",
-    "dox_news_to_msa": "వార్తలు → MSA",
+    "dox_news_to_msa": "వార్తలు → Standard Language",
     "dox_backend_url": "బ్యాకెండ్ URL",
     "dox_ime_remember": "IME స్థానం గుర్తుంచుకో",
     "dox_ime_enabled": "IME పట్టీ చూపించు",
@@ -732,6 +732,10 @@
     "dox_default_dialect": "డిఫాల్ట్ మాండలికం",
     "dox_advanced": "అధునాతనం",
     "dox_ime_idle": "సిద్ధం",
-    "dox_translate_failed": "అనువదించలేకపోయాం"
+    "dox_translate_failed": "అనువదించలేకపోయాం",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }

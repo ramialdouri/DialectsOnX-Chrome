@@ -1,7 +1,7 @@
 {
   "dialect_id": "dutch_netherlands",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "Terug",
     "cd_app_logo": "Dialex-logo",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "Florence",
     "dialect_italian_italy_prompt": "Standaarditaliaans (Toscane)",
     "dialect_italian_lombard": "Regionaal Lombardisch",
-    "dialect_italian_lombard_desc": "Milaan",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "Regionaal Lombardisch-Italiaans",
     "dialect_italian_piedmontese": "Regionaal Piëmontees",
     "dialect_italian_piedmontese_desc": "Turijn",
@@ -717,7 +717,7 @@
     "dox_on": "Aan",
     "dox_off": "Uit",
     "dox_auto_translate": "Auto-vertalen",
-    "dox_news_to_msa": "Nieuws → MSA",
+    "dox_news_to_msa": "Nieuws → Standard Language",
     "dox_backend_url": "Backend-URL",
     "dox_ime_remember": "IME-positie onthouden",
     "dox_ime_enabled": "IME-balk tonen",
@@ -732,6 +732,10 @@
     "dox_default_dialect": "Standaarddialect",
     "dox_advanced": "Geavanceerd",
     "dox_ime_idle": "Klaar",
-    "dox_translate_failed": "Vertalen mislukt"
+    "dox_translate_failed": "Vertalen mislukt",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }

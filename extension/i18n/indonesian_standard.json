@@ -1,7 +1,7 @@
 {
   "dialect_id": "indonesian_standard",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "Kembali",
     "cd_app_logo": "Logo Dialex",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "Firenze",
     "dialect_italian_italy_prompt": "Bahasa Italia Standar (Toskana)",
     "dialect_italian_lombard": "Regional Lombardia",
-    "dialect_italian_lombard_desc": "Milan",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "Bahasa Italia Regional Lombardia",
     "dialect_italian_piedmontese": "Regional Piemonte",
     "dialect_italian_piedmontese_desc": "Torino",
@@ -717,7 +717,7 @@
     "dox_on": "Aktif",
     "dox_off": "Nonaktif",
     "dox_auto_translate": "Terjemahan otomatis",
-    "dox_news_to_msa": "Berita → MSA",
+    "dox_news_to_msa": "Berita → Standard Language",
     "dox_backend_url": "URL backend",
     "dox_ime_remember": "Ingat posisi IME",
     "dox_ime_enabled": "Tampilkan bilah IME",
@@ -732,6 +732,10 @@
     "dox_default_dialect": "Dialek default",
     "dox_advanced": "Lanjutan",
     "dox_ime_idle": "Siap",
-    "dox_translate_failed": "Gagal menerjemahkan"
+    "dox_translate_failed": "Gagal menerjemahkan",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }

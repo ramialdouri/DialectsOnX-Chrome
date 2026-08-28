@@ -1,7 +1,7 @@
 {
   "dialect_id": "mandarin_mainland",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "返回",
     "cd_app_logo": "Dialex 图标",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "佛罗伦萨",
     "dialect_italian_italy_prompt": "标准意大利语（托斯卡纳）",
     "dialect_italian_lombard": "伦巴第地区意大利语",
-    "dialect_italian_lombard_desc": "米兰",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "伦巴第地区意大利语",
     "dialect_italian_piedmontese": "皮埃蒙特地区意大利语",
     "dialect_italian_piedmontese_desc": "都灵",
@@ -717,7 +717,7 @@
     "dox_on": "开",
     "dox_off": "关",
     "dox_auto_translate": "自动翻译",
-    "dox_news_to_msa": "新闻 → MSA",
+    "dox_news_to_msa": "新闻 → Standard Language",
     "dox_backend_url": "后端网址",
     "dox_ime_remember": "记住 IME 位置",
     "dox_ime_enabled": "显示 IME 栏",
@@ -732,6 +732,10 @@
     "dox_default_dialect": "默认方言",
     "dox_advanced": "高级",
     "dox_ime_idle": "就绪",
-    "dox_translate_failed": "无法翻译"
+    "dox_translate_failed": "无法翻译",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }

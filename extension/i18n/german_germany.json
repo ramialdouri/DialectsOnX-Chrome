@@ -1,7 +1,7 @@
 {
   "dialect_id": "german_germany",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "Zurück",
     "cd_app_logo": "Dialex-Logo",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "Florenz",
     "dialect_italian_italy_prompt": "Standarditalienisch (Toskana)",
     "dialect_italian_lombard": "Lombardisches Regionalitalienisch",
-    "dialect_italian_lombard_desc": "Mailand",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "Lombardisches Regionalitalienisch",
     "dialect_italian_piedmontese": "Piemontesisches Regionalitalienisch",
     "dialect_italian_piedmontese_desc": "Turin",
@@ -717,7 +717,7 @@
     "dox_on": "An",
     "dox_off": "Aus",
     "dox_auto_translate": "Auto-übersetzen",
-    "dox_news_to_msa": "News → MSA",
+    "dox_news_to_msa": "News → Standard Language",
     "dox_backend_url": "Backend-URL",
     "dox_ime_remember": "IME-Position merken",
     "dox_ime_enabled": "IME-Leiste zeigen",
@@ -732,6 +732,10 @@
     "dox_default_dialect": "Standarddialekt",
     "dox_advanced": "Erweitert",
     "dox_ime_idle": "Bereit",
-    "dox_translate_failed": "Übersetzung fehlgeschlagen"
+    "dox_translate_failed": "Übersetzung fehlgeschlagen",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }

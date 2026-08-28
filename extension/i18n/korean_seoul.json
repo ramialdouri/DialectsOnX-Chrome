@@ -1,7 +1,7 @@
 {
   "dialect_id": "korean_seoul",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "뒤로",
     "cd_app_logo": "Dialex 로고",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "피렌체",
     "dialect_italian_italy_prompt": "표준 이탈리아어(토스카나)",
     "dialect_italian_lombard": "룸바르디아 지역어",
-    "dialect_italian_lombard_desc": "밀라노",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "룸바르디아 지역 이탈리아어",
     "dialect_italian_piedmontese": "피에몬테 지역어",
     "dialect_italian_piedmontese_desc": "토리노",
@@ -717,7 +717,7 @@
     "dox_on": "켜짐",
     "dox_off": "꺼짐",
     "dox_auto_translate": "자동 번역",
-    "dox_news_to_msa": "뉴스 → MSA",
+    "dox_news_to_msa": "뉴스 → Standard Language",
     "dox_backend_url": "백엔드 URL",
     "dox_ime_remember": "IME 위치 기억",
     "dox_ime_enabled": "IME 바 표시",
@@ -732,6 +732,10 @@
     "dox_default_dialect": "기본 방언",
     "dox_advanced": "고급",
     "dox_ime_idle": "준비됨",
-    "dox_translate_failed": "번역하지 못했습니다"
+    "dox_translate_failed": "번역하지 못했습니다",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }

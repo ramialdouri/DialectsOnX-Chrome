@@ -1,7 +1,7 @@
 {
   "dialect_id": "vietnamese_hanoi",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "Quay lại",
     "cd_app_logo": "Biểu trưng Dialex",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "Florence",
     "dialect_italian_italy_prompt": "Tiếng Ý chuẩn (Tuscany)",
     "dialect_italian_lombard": "Vùng Lombardia",
-    "dialect_italian_lombard_desc": "Milano",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "Tiếng Ý vùng Lombardia",
     "dialect_italian_piedmontese": "Vùng Piemonte",
     "dialect_italian_piedmontese_desc": "Torino",
@@ -717,7 +717,7 @@
     "dox_on": "Bật",
     "dox_off": "Tắt",
     "dox_auto_translate": "Tự dịch",
-    "dox_news_to_msa": "Tin → MSA",
+    "dox_news_to_msa": "Tin → Standard Language",
     "dox_backend_url": "URL backend",
     "dox_ime_remember": "Nhớ vị trí IME",
     "dox_ime_enabled": "Hiện thanh IME",
@@ -732,6 +732,10 @@
     "dox_default_dialect": "Phương ngữ mặc định",
     "dox_advanced": "Nâng cao",
     "dox_ime_idle": "Sẵn sàng",
-    "dox_translate_failed": "Không dịch được"
+    "dox_translate_failed": "Không dịch được",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }

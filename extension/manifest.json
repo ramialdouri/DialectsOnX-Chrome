@@ -55,7 +55,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["DialectsOnX-logo.png", "i18n/*.json", "fonts/*.woff2"],
+      "resources": ["DialectsOnX-logo.png", "Dialex-wordmark.svg", "i18n/*.json", "fonts/*.woff2"],
       "matches": ["http://*/*", "https://*/*"]
     }
   ]

@@ -21,7 +21,7 @@ def _assert(cond: bool, msg: str) -> None:
 
 def test_catalog_and_packs() -> None:
     dialects_js = (EXT / "dialects.js").read_text(encoding="utf-8")
-    _assert("PROMPT_VERSION 4.2.32" in dialects_js, "stamp prompt version")
+    _assert("PROMPT_VERSION 4.2.33" in dialects_js, "stamp prompt version")
     _assert("@font-face" not in dialects_js.lower(), "no font-face in catalog")
     packs = sorted((EXT / "i18n").glob("*.json"))
     _assert(len(packs) == 58, f"packs {len(packs)}")
@@ -39,6 +39,9 @@ def test_catalog_and_packs() -> None:
             )
             _assert("DialectsOnX" in strings["dox_about_line"], pack["dialect_id"])
             _assert("Dialex" in strings["dox_open_pad"] and "Pad" in strings["dox_open_pad"], pack["dialect_id"])
+        news = strings["dox_news_to_msa"]
+        _assert("Standard Language" in news, f"{pack['dialect_id']} news label {news}")
+        _assert("MSA" not in news, f"{pack['dialect_id']} still says MSA: {news}")
         ids.append(pack["dialect_id"])
         delta_for(pack["dialect_id"])
     pb = json.loads((EXT / "i18n" / "punjabi_indian.json").read_text(encoding="utf-8"))
@@ -54,6 +57,17 @@ def test_catalog_and_packs() -> None:
     _assert("arabic_syrian_hama" in catalog_ids, "hama in catalog")
     _assert('"english_aave": "AAE"' in dialects_js or '"english_aave":"AAE"' in dialects_js.replace(" ", ""), dialects_js[dialects_js.find("english_aave"):dialects_js.find("english_aave")+80])
     _assert("arabic_uae_pidgin" in dialects_js and "EPA" in dialects_js, "EPA hint")
+    _assert('"italian_lombard": "Lombardy Regional"' in dialects_js, "lombardy chip")
+    _assert('"italian_lombard": "Milan - Monza - Como"' in dialects_js, "lombardy city belt")
+    for path in packs:
+        pack = json.loads(path.read_text(encoding="utf-8"))
+        desc = pack["strings"].get("dialect_italian_lombard_desc")
+        _assert(desc == "Milan - Monza - Como", f"{path.name} lombardy hint {desc}")
+        prompt = pack["strings"].get("dialect_italian_lombard_prompt")
+        _assert(prompt, f"{path.name} missing lombard prompt")
+        if pack["dialect_id"] == "english_american":
+            _assert(pack["strings"]["dialect_italian_lombard"] == "Lombardy Regional", "en lombardy chip")
+            _assert(prompt == "Lombard Regional Italian", prompt)
     _assert('"egypt": "arabic_egyptian"' in dialects_js, "legacy egypt")
     _assert('"msa": "arabic_msa"' in dialects_js, "legacy msa")
     _assert('"syria": "arabic_syrian_damascus"' in dialects_js, "legacy syria")
@@ -68,14 +82,53 @@ def test_feed_contract() -> None:
     _assert("showingOriginal: !autoTranslateEnabled" in content, "Original first")
     _assert("Dox.sheet.open" in content, "sheet not radios")
     _assert(".dialx-panel" not in content, "v0.1 radio panel css gone")
-    _assert("height: 30px" in content, "logo height matches Original")
-    _assert("align-items: flex-end" in content, "shared baseline")
+    theme = (EXT / "theme.js").read_text(encoding="utf-8")
+    _assert("min-height: 28px" in content, "Original button height")
+    _assert("align-items: center" in content, "control bar centers action row")
+    _assert("height: 28px" in content, "chips match 28px bar")
+    _assert("color: #C7C7CC" in content, "lighter chip text")
+    _assert("font-weight: 700" in content, "bold Original and selector")
+    _assert("newsTargetDialect" in content, "news uses shared standard chip")
+    _assert("isLanguageBagSpoken" in content, "cluster/language bags skip news standard")
+    _assert("isPluricentricSpoken" in content, "Mexican/Brazilian keep preferred")
+    _assert('if (state.isNews && newsToMsa) return "arabic_msa"' not in content, "news is not hard-coded MSA")
+    _assert(DELTA_EN["dox_news_to_msa"] == "News → Standard Language", DELTA_EN["dox_news_to_msa"])
+    _assert(DELTA_EN["dox_news_to_msa_howto"] == "Official news posts: translated to the standard variety", "news howto")
+    _assert(DELTA_EN["dox_ime_howto"] == "Floating translation bar on any website", "ime howto")
+    _assert(DELTA_EN["dox_clear_cache_howto"] == "Deletes translation history and word fixes", "cache howto")
+    _assert(DELTA_EN["dox_ime_show_lead"] == "Show", "ime show lead")
+    _assert("tag === \"BR\"" in content or "tag === 'BR'" in content, "extract BR newlines")
+    _assert("appendOverlayNodes" in content, "overlay handle links")
+    _assert("dialx-overlay-link" in content, "overlay link class")
+    _assert("cashtag_click" in content, "cashtag search href")
+    _assert('a.target = "_blank"' not in content, "overlay links stay same-tab")
+    _assert("bindNativeShowMoreExpand" in content, "native Show more expand")
+    _assert("dialx-overlay-showmore" not in content, "no overlay Show more")
+    _assert("tag === \"DIV\"" not in content, "inline DIV wrappers do not invent lines")
+    _assert("color: inherit" in content, "overlay inherits X text color")
+    _assert("trans.style.color" not in content, "no snapshot color on overlay")
+    _assert("liveMentionColor" in content, "mention color from live X link")
+    _assert("Dox.fillBusyStatus" in content, "translating dots")
+    _assert("--dox-status" in content, "busy status token")
+    _assert('el.classList.add("dox-status-busy", "is-busy")' in theme, "busy adds is-busy")
+    _assert('el.classList.add("dox-status-error", "is-error")' in theme, "error adds is-error")
+    _assert('d.textContent = "."' in theme, "busy dots are period glyphs")
+    _assert(".dox-dots span" in theme and "prefers-reduced-motion" in theme, "dots respect reduced motion")
+    _assert("--dox-logo-cap" in theme and "903 / 149" in theme, "wordmark crop matches cap height")
+    _assert("dox-wordmark" in content, "feed logo uses wordmark crop")
+    _assert("color-scheme: dark" in content, "control bar stays dark chrome")
+    _assert("-webkit-appearance: none" in content, "kill UA button paint")
+    _assert("background-color: #4A4A51" in content, "buttons stay DialectsOnX gray")
+    _assert("dox-open-settings" in (EXT / "background.js").read_text(encoding="utf-8"), "SW opens options")
+    _assert("dox-open-settings" in theme, "content gear messages SW")
+    _assert("openOptionsPage" in (EXT / "background.js").read_text(encoding="utf-8"), "openOptionsPage in SW")
     manifest = json.loads((EXT / "manifest.json").read_text(encoding="utf-8"))
     _assert(manifest["version"] == "0.3.0", manifest["version"])
     _assert("offscreen" in manifest["permissions"], "stt offscreen")
     ime = (EXT / "ime.js").read_text(encoding="utf-8")
     _assert('clientSource: "ime"' in ime, "ime source")
     _assert("password" in ime, "skip password")
+    _assert("#dialx-ime-bar .dox-ime-status.dox-status-busy" in ime, "IME busy beats muted")
     faw = (EXT / "faw.js").read_text(encoding="utf-8")
     _assert("client_source" not in faw or "dialectsonx" in (EXT / "api.js").read_text(), "faw dox")
     api = (EXT / "api.js").read_text(encoding="utf-8")
@@ -83,18 +136,30 @@ def test_feed_contract() -> None:
     prefs = (EXT / "prefs.js").read_text(encoding="utf-8")
     _assert("autoTranslate: false" in prefs, "default auto off")
     _assert("arabic_msa" in prefs, "default dialect")
+    _assert("getUILanguage" in prefs, "system language from Chrome UI")
+    _assert("osLanguageTag" in prefs, "OS/Chrome language helper")
+    _assert("approvedSystemDialect" in prefs, "approved pack gate")
+    _assert("navigator.language" in prefs, "navigator fallback")
+    background = (EXT / "background.js").read_text(encoding="utf-8")
+    _assert('importScripts("dialects.js", "prefs.js")' in background, "SW loads catalog+prefs")
+    _assert("onInstalled" in background, "seed system language on install")
+    mock = (EXT / "test" / "chrome-mock.js").read_text(encoding="utf-8")
+    _assert("getUILanguage" in mock, "fixture Chrome UI language")
     locale = (EXT / "locale.js").read_text(encoding="utf-8")
     _assert("deltaKeys.has(key)" in locale, "no english fallback for delta")
     _assert("@font-face" not in locale, "no latin font")
-    theme = (EXT / "theme.js").read_text(encoding="utf-8")
     _assert("@font-face" in theme and "Quicksand" in theme, "bundled Quicksand")
     _assert("quicksand-500.woff2" in theme and "quicksand-700.woff2" in theme, "woff2 weights")
-    _assert("#8A7C5C" in theme, "muted brass accent")
+    _assert("#8A7C5C" not in theme, "no champagne accent")
+    _assert("--dox-accent: #C7C7CC" in theme, "cool accent")
+    _assert("fillImeShowLabel" in theme, "Show Dialex IME label")
+    _assert("Dialex-wordmark.svg" in theme, "Dialex wordmark helper")
+    _assert((EXT / "Dialex-wordmark.svg").exists(), "Dialex wordmark asset")
     _assert((EXT / "fonts" / "quicksand-500.woff2").exists(), "500 woff2")
     _assert((EXT / "fonts" / "quicksand-600.woff2").exists(), "600 woff2")
     _assert((EXT / "fonts" / "quicksand-700.woff2").exists(), "700 woff2")
     _assert((EXT / "fonts" / "OFL.txt").exists(), "Quicksand OFL")
-    banned = ("#E0B83A", "#C4B48A", "#FFDEC7", "#4C4540", "#1d9bf0", "rgb(29, 155, 240)")
+    banned = ("#E0B83A", "#C4B48A", "#FFDEC7", "#4C4540", "#1d9bf0", "rgb(29, 155, 240)", "#8A7C5C")
     ui_files = [
         "theme.js",
         "sheet.js",
@@ -123,7 +188,11 @@ def test_feed_contract() -> None:
     _assert("dox-sheet-dialect-panel" in sheet, "right dialect panel")
     _assert("dox-sheet-cols" not in sheet, "old all-dialect table gone")
     _assert("standardDialectFor" in sheet, "language click uses prestige dialect")
+    _assert("linksGrokHint" in sheet, "prestige i-icons skip Grok")
+    _assert("kurdish_kurmanji" in sheet and "zulu_standard" in sheet, "language-bag Grok exceptions")
+    _assert("is-plain" in sheet, "plain prestige hint class")
     _assert("browseSpokenId" in sheet, "browse spoken language")
+    _assert("dox-sheet-auto" in sheet, "sheet auto-translate")
     _assert("dox-sheet-settings" in sheet, "settings gear in sheet chrome")
     _assert("dox-gold-badge" not in sheet, "no glazed gold badges")
     _assert('wrap.setAttribute("role", "button")' in sheet, "favorite chips are not nested buttons")
@@ -134,6 +203,11 @@ def test_feed_contract() -> None:
     popup_html = (EXT / "popup.html").read_text(encoding="utf-8")
     _assert("dox-popup-head" in popup_html and 'id="settings"' in popup_html, "popup settings in top row")
     _assert("dox-icon-btn" in popup_html, "muted settings icon")
+    _assert('id="ver"' not in popup_html, "popup drops version line")
+    _assert("dox-popup-logo" in popup_html and "dox-wordmark" in popup_html, "popup centered wordmark")
+    popup_js = (EXT / "popup.js").read_text(encoding="utf-8")
+    _assert("fillImeShowLabel" in popup_js, "popup Show Dialex IME")
+    _assert('getElementById("ver")' not in popup_js, "popup js drops version")
     _assert((EXT / "test" / "screenshot-popup.html").exists(), "popup screenshot page")
     _assert((EXT / "test" / "screenshot-settings.html").exists(), "settings screenshot page")
     sys_js = (EXT / "system-language.js").read_text(encoding="utf-8")
@@ -145,12 +219,36 @@ def test_feed_contract() -> None:
     settings_html = (EXT / "settings.html").read_text(encoding="utf-8")
     _assert("system-language.js" in settings_html, "settings loads sys list")
     _assert("dox-sys-card" in settings_html, "settings sys card markup")
+    _assert("dox-settings-logo" in settings_html, "settings header logo")
+    _assert("dox-wordmark" in settings_html, "settings logo uses wordmark crop")
+    _assert("fawInfo" in settings_html and "fawInfo" in settings_js, "FAW howto i-icon")
+    _assert("newsInfo" in settings_html and "newsInfo" in settings_js, "News howto i-icon")
+    _assert("imeInfo" in settings_html and "imeInfo" in settings_js, "IME howto i-icon")
+    _assert("cacheInfo" in settings_html and "cacheInfo" in settings_js, "Cache howto i-icon")
+    _assert("cacheHint" not in settings_html and "cacheHint" not in settings_js, "no cache body copy")
+    _assert("settings_clear_cache_body" not in settings_js, "settings drops cache body key")
+    _assert("fillImeShowLabel" in settings_js, "settings Show Dialex IME")
+    _assert("background-color: var(--dox-text" in settings_html, "settings wordmark solid white")
+    _assert("defaultBtn" not in settings_html and "defaultBtn" not in settings_js, "no default dialect row")
+    _assert("addressee" not in settings_html and "addressee" not in settings_js, "no addressee row")
+    _assert("backendUrl" not in settings_html and "backendUrl" not in settings_js, "no backend URL row")
+    _assert("imeRemember" not in settings_html and "imeRemember" not in settings_js, "no remember IME row")
+    _assert("addressee:" not in api, "omit addressee from translate payload")
+    _assert("wrapRtlLatinIslands" in api, "client LRI merge")
+    _assert("$[A-Za-z]" in api and r"$\\d+" in api, "client ticker vs cash islands")
     locale = (EXT / "locale.js").read_text(encoding="utf-8")
     _assert("function endonym" in locale, "endonym helper")
     _assert("LANG_ABBREV" in locale, "system language abbrev search")
     _assert("Dox.bindActivate" in content, "Original / dialect keyboard")
     _assert("margin-inline-start" in content, "RTL feed logo/status")
-    _assert("setImePosition" in ime, "ime position local")
+    _assert("placeUnderField" in ime, "IME under focused field")
+    _assert("placeForShow" in ime, "popup Show IME placement")
+    _assert("AREA_INSET" in ime, "lower-right area inset")
+    _assert("dox-sheet-scrim" in ime, "sheet fields are not host fields")
+    _assert("insertText" in ime, "X composer write uses insertText")
+    _assert("freezePlace" in ime, "sheet open does not move IME bar")
+    _assert("setImePosition" not in ime, "IME does not persist coords")
+    _assert("setImePosition" in prefs, "ime position helper remains in prefs")
     _assert("window.top !== window" in ime, "ime top frame")
     _assert("STT_CODES" in ime, "stt bcp47")
     _assert("lastField" in ime, "ime remembers focused field")
@@ -160,10 +258,74 @@ def test_feed_contract() -> None:
     _assert("prefix" in faw, "personal overlay per dialect")
 
 
+def test_overlay_cashtags() -> None:
+    content = (EXT / "content.js").read_text(encoding="utf-8")
+    m = re.search(r"const OVERLAY_LINK_RE =\s*/(.+)/g;", content)
+    _assert(m, "OVERLAY_LINK_RE literal")
+    overlay_re = re.compile(m.group(1))
+    text = "see $NVDA and $BRK.B and $20 and $1,000 @Bot #tag"
+    found = [mm.group(0) for mm in overlay_re.finditer(text)]
+    _assert("$NVDA" in found, found)
+    _assert("$BRK.B" in found, found)
+    _assert("@Bot" in found, found)
+    _assert("#tag" in found, found)
+    _assert("$20" not in found, found)
+    _assert("$1,000" not in found, found)
+    href = "/search?q=" + "%24NVDA" + "&src=cashtag_click"
+    _assert("cashtag_click" in content and "encodeURIComponent(inner)" in content, href)
+
+
+def test_os_locale_maps_to_standard() -> None:
+    dialects = (EXT / "dialects.js").read_text(encoding="utf-8")
+    _assert('"es-mx": "spanish_mexican"' in dialects, "Mexican OS locale maps")
+    _assert('"en-gb": "english_american"' in dialects, "British OS locale maps")
+    _assert('"spanish": "spanish_castilian"' in dialects, "Spanish prestige is Castilian")
+    _assert("return Dox.standardDialectFor(spoken)" in dialects, "OS locale collapses to prestige")
+    import shutil
+    import subprocess
+
+    node = shutil.which("node")
+    if node:
+        dialects_path = json.dumps(str(EXT / "dialects.js"))
+        script = (
+            "const fs=require('fs');const vm=require('vm');"
+            "const ctx={};ctx.globalThis=ctx;"
+            f"vm.runInNewContext(fs.readFileSync({dialects_path},'utf8'),ctx);"
+            "const d=ctx.Dox;"
+            "const out=["
+            "d.dialectFromOsLocale('es-MX'),"
+            "d.dialectFromOsLocale('en-GB'),"
+            "d.dialectFromOsLocale('en-US'),"
+            "d.dialectFromOsLocale('xx-YY')"
+            "];"
+            "process.stdout.write(out.join(','));"
+        )
+        proc = subprocess.run(
+            [node, "-e", script],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        got = proc.stdout.strip().split(",")
+        _assert(
+            got == ["spanish_castilian", "english_american", "english_american", "english_american"],
+            got,
+        )
+
+
 def test_extract_emoji() -> None:
     html = (EXT / "test" / "tweet-fixture.html").read_text(encoding="utf-8")
     _assert("alt=\"🔥\"" in html, "fixture emoji img")
     _assert("Show more" in html, "fixture show more")
+    _assert("<br>" in html and "• bullet" in html, "fixture keeps line breaks")
+    overlay = (EXT / "test" / "screenshot-overlay.html").read_text(encoding="utf-8")
+    _assert("$NVDA" in overlay and "$20" in overlay, "overlay fixture has ticker and cash")
+    _assert("cashtag_click" in overlay, "overlay fixture cashtag href")
+    _assert("align-items: center" in overlay, "overlay fixture bar centers")
+    ime_html = (EXT / "test" / "screenshot-ime.html").read_text(encoding="utf-8")
+    _assert("tweetTextarea_0" in ime_html and "contenteditable" in ime_html, "X-like composer fixture")
+    _assert("Post your reply" in ime_html, "X placeholder fixture")
+    _assert("writeValue" in ime_html and "delete" in ime_html, "composer write is deletable")
     demo = (EXT / "test" / "demo.html").read_text(encoding="utf-8")
     _assert("primaryColumn" in demo, "demo feed column")
     _assert("chrome-mock.js" in demo, "demo chrome stub")
@@ -215,6 +377,8 @@ def test_faw_neighbor() -> None:
 def main() -> None:
     test_catalog_and_packs()
     test_feed_contract()
+    test_overlay_cashtags()
+    test_os_locale_maps_to_standard()
     test_extract_emoji()
     test_faw_neighbor()
     print("chrome 0.3 structural tests ok")

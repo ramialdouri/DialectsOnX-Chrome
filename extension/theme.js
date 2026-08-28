@@ -1,4 +1,4 @@
-/* DialectsOnX chrome theme: quiet cool-dark, muted brass, bundled Quicksand. */
+  /* DialectsOnX chrome theme: quiet cool-dark, bundled Quicksand. */
 globalThis.Dox = globalThis.Dox || {};
 
 (function () {
@@ -14,9 +14,10 @@ globalThis.Dox = globalThis.Dox || {};
     line: "#2C2C31",
     text: "#F4F4F5",
     muted: "#8E8E93",
-    accent: "#8A7C5C",
+    accent: "#C7C7CC",
     onAccent: "#0E0E10",
     danger: "#FF453A",
+    status: "#A8B4C0",
     font: FONT,
   };
   Dox.FONT = FONT;
@@ -94,14 +95,66 @@ globalThis.Dox = globalThis.Dox || {};
         --dox-line: #2C2C31;
         --dox-text: #F4F4F5;
         --dox-muted: #8E8E93;
-        --dox-accent: #8A7C5C;
+        --dox-accent: #C7C7CC;
         --dox-on-accent: #0E0E10;
         --dox-danger: #FF453A;
+        --dox-status: #A8B4C0;
         --dox-font: ${FONT};
-        --dox-focus: rgba(138, 124, 92, 0.45);
-        --dox-accent-hover: rgba(138, 124, 92, 0.16);
-        --dox-faw-hi: rgba(138, 124, 92, 0.22);
+        --dox-focus: rgba(244, 244, 245, 0.35);
+        --dox-accent-hover: rgba(244, 244, 245, 0.12);
+        --dox-faw-hi: rgba(244, 244, 245, 0.16);
+        --dox-logo-cap: 32px;
       }
+      html, body.dox-settings, body.dox-popup, .dox-sheet, #dialx-ime-bar, .dox-faw-dlg, .dialx-control-bar {
+        color-scheme: dark;
+      }
+      .dox-dots {
+        display: inline;
+        font: inherit;
+        letter-spacing: inherit;
+      }
+      .dox-dots span {
+        display: inline;
+        font: inherit;
+        font-style: normal;
+        font-weight: inherit;
+        line-height: inherit;
+        animation: dox-dot 1s ease-in-out infinite;
+      }
+      .dox-dots span:nth-child(2) { animation-delay: .15s; }
+      .dox-dots span:nth-child(3) { animation-delay: .3s; }
+      @keyframes dox-dot {
+        0%, 80%, 100% { opacity: 0.2; }
+        40% { opacity: 1; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .dox-dots span { animation: none; opacity: 1; }
+        .dox-sheet-chevron { transition: none; }
+      }
+      /* Wordmark ink in DialectsOnX-logo.png is 903×149 at (64,426) of 1024. */
+      .dox-wordmark {
+        display: inline-block;
+        height: var(--dox-logo-cap, 32px);
+        width: calc(var(--dox-logo-cap, 32px) * 903 / 149);
+        flex-shrink: 0;
+        pointer-events: none;
+        overflow: hidden;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-size: calc(var(--dox-logo-cap, 32px) * 1024 / 149);
+        mask-size: calc(var(--dox-logo-cap, 32px) * 1024 / 149);
+        -webkit-mask-position: calc(var(--dox-logo-cap, 32px) * -64 / 149)
+          calc(var(--dox-logo-cap, 32px) * -426 / 149);
+        mask-position: calc(var(--dox-logo-cap, 32px) * -64 / 149)
+          calc(var(--dox-logo-cap, 32px) * -426 / 149);
+        mask-mode: luminance;
+      }
+      .dox-status-busy,
+      .dialx-status.is-busy,
+      .dialx-status.dox-status-busy { color: var(--dox-status, #A8B4C0); }
+      .dox-status-error,
+      .dialx-status.is-error,
+      .dialx-status.dox-status-error { color: var(--dox-danger, #FF453A); }
       .dox-sheet-scrim :focus-visible,
       .dox-sys :focus-visible,
       .dox-popup :focus-visible,
@@ -133,6 +186,19 @@ globalThis.Dox = globalThis.Dox || {};
         cursor: pointer;
       }
       .dox-outline-btn:hover { background: var(--dox-accent-hover); }
+      .dox-dialex-wordmark {
+        display: inline-block;
+        height: 1em;
+        width: auto;
+        vertical-align: -0.12em;
+      }
+      .dox-ime-show-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35em;
+        font: inherit;
+        color: inherit;
+      }
     `;
   }
 
@@ -173,8 +239,86 @@ globalThis.Dox = globalThis.Dox || {};
     });
   };
 
+  Dox.stripStatusEllipsis = function (message) {
+    return String(message || "").replace(/[.…⋯]+$/u, "").trimEnd();
+  };
+
+  Dox.fillBusyStatus = function (el, message) {
+    if (!el) return;
+    el.classList.add("dox-status-busy", "is-busy");
+    el.classList.remove("dox-status-error", "is-error");
+    el.replaceChildren();
+    el.setAttribute("aria-label", String(message || ""));
+    el.appendChild(document.createTextNode(Dox.stripStatusEllipsis(message)));
+    const dots = document.createElement("span");
+    dots.className = "dox-dots";
+    dots.setAttribute("aria-hidden", "true");
+    for (let i = 0; i < 3; i += 1) {
+      const d = document.createElement("span");
+      d.textContent = ".";
+      dots.appendChild(d);
+    }
+    el.appendChild(dots);
+  };
+
+  Dox.fillErrorStatus = function (el, message) {
+    if (!el) return;
+    el.classList.add("dox-status-error", "is-error");
+    el.classList.remove("dox-status-busy", "is-busy");
+    el.removeAttribute("aria-label");
+    el.textContent = message || "";
+  };
+
+  Dox.isTranslatingStatus = function (message) {
+    try {
+      return message === Dox.locale.t("status_translating");
+    } catch (_) {
+      return /…|...$/.test(String(message || "")) && /translat|ترجم|翻訳|번역/i.test(String(message || ""));
+    }
+  };
+
+  Dox.dialexWordmark = function (heightPx) {
+    const img = document.createElement("img");
+    img.className = "dox-dialex-wordmark";
+    img.alt = "Dialex";
+    img.width = 72;
+    img.height = heightPx || 14;
+    try {
+      if (typeof chrome !== "undefined" && chrome.runtime?.getURL) {
+        img.src = chrome.runtime.getURL("Dialex-wordmark.svg");
+      } else {
+        const path = String((typeof location !== "undefined" && location.pathname) || "");
+        img.src = path.includes("/test/") ? "../Dialex-wordmark.svg" : "Dialex-wordmark.svg";
+      }
+    } catch (_) {
+      img.src = "Dialex-wordmark.svg";
+    }
+    return img;
+  };
+
+  Dox.fillImeShowLabel = function (el) {
+    if (!el) return;
+    const t = Dox.locale.t;
+    el.replaceChildren();
+    const wrap = document.createElement("span");
+    wrap.className = "dox-ime-show-label";
+    wrap.append(t("dox_ime_show_lead"), " ", Dox.dialexWordmark(14), " ", t("dox_ime"));
+    el.appendChild(wrap);
+  };
+
   Dox.openSettings = function () {
     try {
+      const extPage =
+        typeof location !== "undefined" && location.protocol === "chrome-extension:";
+      if (
+        !extPage &&
+        typeof chrome !== "undefined" &&
+        chrome.runtime?.sendMessage &&
+        chrome.runtime.id
+      ) {
+        chrome.runtime.sendMessage({ type: "dox-open-settings" });
+        return;
+      }
       if (typeof chrome !== "undefined" && chrome.runtime?.openOptionsPage) {
         chrome.runtime.openOptionsPage();
         return;

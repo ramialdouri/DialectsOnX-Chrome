@@ -1,7 +1,7 @@
 {
   "dialect_id": "aramaic_assyrian",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "ܕܥܘܪ",
     "cd_app_logo": "ܢܝܫܐ ܕDialex",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "ܦܠܘܪܢܣ",
     "dialect_italian_italy_prompt": "ܐܝܛܠܝܐ ܩܢܘܢܝܐ (ܛܘܣܟܐܢܐ)",
     "dialect_italian_lombard": "ܠܘܡܒܪܕܝܐ ܐܩܠܝܡܝܐ",
-    "dialect_italian_lombard_desc": "ܡܝܠܢ",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "ܐܝܛܠܝܐ ܐܩܠܝܡܝܐ ܕܠܘܡܒܪܕܝܐ",
     "dialect_italian_piedmontese": "ܦܝܕܡܘܢܛܝܐ ܐܩܠܝܡܝܐ",
     "dialect_italian_piedmontese_desc": "ܛܘܪܝܢ",
@@ -717,7 +717,7 @@
     "dox_on": "ܦܬܝܚ",
     "dox_off": "ܕܥܝܟ",
     "dox_auto_translate": "ܬܪܓܡ ܐܘܛܘ",
-    "dox_news_to_msa": "ܛܒ̈ܐ → MSA",
+    "dox_news_to_msa": "ܛܒ̈ܐ → Standard Language",
     "dox_backend_url": "URL ܕܒܟܢܕ",
     "dox_ime_remember": "ܕܟܪ ܕܘܟܬ IME",
     "dox_ime_enabled": "ܚܘܝ ܣܪܛ IME",
@@ -732,6 +732,10 @@
     "dox_default_dialect": "ܠܥܙܐ ܕܫܪܪ",
     "dox_advanced": "ܡܬܩܕܡ",
     "dox_ime_idle": "ܥܬܝܕ",
-    "dox_translate_failed": "ܠܐ ܡܨܝܐ ܠܡܬܪܓܡܘ"
+    "dox_translate_failed": "ܠܐ ܡܨܝܐ ܠܡܬܪܓܡܘ",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }

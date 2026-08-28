@@ -1,7 +1,7 @@
 {
   "dialect_id": "tamil_chennai",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "பின்செல்",
     "cd_app_logo": "Dialex லோகோ",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "புளோரன்ஸ்",
     "dialect_italian_italy_prompt": "Standard Italian (Tuscany)",
     "dialect_italian_lombard": "லொம்பார்ட் வட்டார வழக்கு",
-    "dialect_italian_lombard_desc": "மிலன்",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "Lombard Regional Italian",
     "dialect_italian_piedmontese": "பைட்மாண்ட் வட்டார வழக்கு",
     "dialect_italian_piedmontese_desc": "டுரின்",
@@ -717,7 +717,7 @@
     "dox_on": "இயக்கு",
     "dox_off": "அணை",
     "dox_auto_translate": "தானியங்கி மொழிபெயர்ப்பு",
-    "dox_news_to_msa": "செய்தி → MSA",
+    "dox_news_to_msa": "செய்தி → Standard Language",
     "dox_backend_url": "பின்புல URL",
     "dox_ime_remember": "IME இடத்தை நினைவில் கொள்",
     "dox_ime_enabled": "IME பட்டியைக் காட்டு",
@@ -732,6 +732,10 @@
     "dox_default_dialect": "இயல்பு பேச்சுவழக்கு",
     "dox_advanced": "மேம்பட்டவை",
     "dox_ime_idle": "தயார்",
-    "dox_translate_failed": "மொழிபெயர்க்க முடியவில்லை"
+    "dox_translate_failed": "மொழிபெயர்க்க முடியவில்லை",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }

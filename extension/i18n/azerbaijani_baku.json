@@ -1,7 +1,7 @@
 {
   "dialect_id": "azerbaijani_baku",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "Geri",
     "cd_app_logo": "Dialex loqosu",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "Florensiya",
     "dialect_italian_italy_prompt": "Standart italyanca (Toskana)",
     "dialect_italian_lombard": "Regional Lombard",
-    "dialect_italian_lombard_desc": "Milan",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "Regional Lombard italyancası",
     "dialect_italian_piedmontese": "Regional Pyemont",
     "dialect_italian_piedmontese_desc": "Turin",
@@ -717,7 +717,7 @@
     "dox_on": "Açıq",
     "dox_off": "Bağlı",
     "dox_auto_translate": "Avto tərcümə",
-    "dox_news_to_msa": "Xəbər → MSA",
+    "dox_news_to_msa": "Xəbər → Standard Language",
     "dox_backend_url": "Backend URL",
     "dox_ime_remember": "IME yerini yadda saxla",
     "dox_ime_enabled": "IME zolağını göstər",
@@ -732,6 +732,10 @@
     "dox_default_dialect": "Susmaya görə dialekt",
     "dox_advanced": "Əlavə",
     "dox_ime_idle": "Hazır",
-    "dox_translate_failed": "Tərcümə olunmadı"
+    "dox_translate_failed": "Tərcümə olunmadı",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }

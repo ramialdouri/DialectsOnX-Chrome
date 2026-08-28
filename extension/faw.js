@@ -67,11 +67,11 @@ globalThis.Dox = globalThis.Dox || {};
     const style = document.createElement("style");
     style.id = "dox-faw-styles";
     style.textContent = `
-      .dox-faw-hi { background: var(--dox-faw-hi, rgba(138, 124, 92, 0.22)); border-radius: 3px; }
+      .dox-faw-hi { background: var(--dox-faw-hi, var(--dox-faw-hi)); border-radius: 3px; }
       .dox-faw-chip {
         position: fixed; z-index: 2147482500;
         background: var(--dox-elevated, #0E0E10); color: var(--dox-text, #F4F4F5);
-        border: 1px solid var(--dox-accent, #8A7C5C); border-radius: 999px;
+        border: 1px solid var(--dox-accent); border-radius: 999px;
         font: 600 12px var(--dox-font, ${Dox.FONT}); padding: 3px 10px; cursor: pointer;
       }
       .dox-faw-dlg {
@@ -81,9 +81,9 @@ globalThis.Dox = globalThis.Dox || {};
       }
       .dox-faw-card {
         background: var(--dox-elevated, #0E0E10); color: var(--dox-text, #F4F4F5);
-        border: 1px solid var(--dox-line, #2C2C31);
-        border-radius: 12px; padding: 16px; width: min(360px, calc(100vw - 24px));
-        display: flex; flex-direction: column; gap: 8px;
+        border: 1px solid var(--dox-line, #2C2C31); border-radius: 12px;
+        padding: 16px; width: min(420px, calc(100vw - 32px));
+        display: flex; flex-direction: column; gap: 10px;
       }
       .dox-faw-card input, .dox-faw-card button {
         font: inherit; border-radius: 8px; padding: 8px 10px;
@@ -92,10 +92,10 @@ globalThis.Dox = globalThis.Dox || {};
         background: var(--dox-field, #1C1C1F); border: 1px solid var(--dox-line, #2C2C31);
         color: var(--dox-text, #F4F4F5);
       }
-      .dox-faw-card input:focus { outline: none; border-color: var(--dox-accent, #8A7C5C); }
+      .dox-faw-card input:focus { outline: none; border-color: var(--dox-accent); }
       .dox-faw-save {
         background: transparent; color: var(--dox-text, #F4F4F5);
-        border: 1px solid var(--dox-accent, #8A7C5C); font-weight: 700; cursor: pointer;
+        border: 1px solid var(--dox-accent); font-weight: 700; cursor: pointer;
       }
       .dox-faw-skip {
         background: transparent; border: 1px solid var(--dox-line, #2C2C31);
@@ -164,6 +164,8 @@ globalThis.Dox = globalThis.Dox || {};
     const needsPhonetic = Dox.spokenIdOf(dialectId) !== "english";
     const dlg = document.createElement("div");
     dlg.className = "dox-faw-dlg";
+    dlg.setAttribute("role", "dialog");
+    dlg.setAttribute("aria-modal", "true");
     Dox.locale.applyDir(dlg);
     const card = document.createElement("div");
     card.className = "dox-faw-card";
@@ -188,6 +190,19 @@ globalThis.Dox = globalThis.Dox || {};
     };
     const onEsc = (e) => {
       if (e.key === "Escape") close();
+      if (e.key === "Tab") {
+        const list = [...card.querySelectorAll("button, input, [href], [tabindex]:not([tabindex='-1'])")];
+        if (!list.length) return;
+        const first = list[0];
+        const last = list[list.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     skip.addEventListener("click", close);
     dlg.addEventListener("click", (e) => {

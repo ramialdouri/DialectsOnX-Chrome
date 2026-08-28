@@ -1,5 +1,16 @@
 /* MV3 service worker: offscreen STT + IME restore broadcast. */
+importScripts("dialects.js", "prefs.js");
+
+chrome.runtime.onInstalled.addListener(() => {
+  Dox.prefs.get();
+});
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type === "dox-open-settings") {
+    chrome.runtime.openOptionsPage();
+    sendResponse({ ok: true });
+    return true;
+  }
   if (msg?.type === "dox-ime-show") {
     chrome.tabs.query({}, (tabs) => {
       for (const tab of tabs) {

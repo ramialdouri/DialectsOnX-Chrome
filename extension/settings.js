@@ -9,32 +9,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("sysLangBtn").textContent = Dox.locale.languageLabel(
     prefs.systemLanguageId || Dox.spokenIdOf(prefs.systemDialectId)
   );
-  document.getElementById("defaultLabel").textContent = t("dox_default_dialect");
-  document.getElementById("defaultBtn").textContent = Dox.locale.chipButtonText(prefs.preferredDialect);
   document.getElementById("autoLabel").textContent = t("dox_auto_translate");
   document.getElementById("fawLabel").textContent = t("settings_faw");
   document.getElementById("newsLabel").textContent = t("dox_news_to_msa");
-  document.getElementById("addresseeLabel").textContent = t("dox_addressee");
-  document.getElementById("mLabel").textContent = t("addressee_masculine");
-  document.getElementById("fLabel").textContent = t("addressee_feminine");
-  document.getElementById("imeLabel").textContent = t("dox_ime_enabled");
-  document.getElementById("imeRememberLabel").textContent = t("dox_ime_remember");
-  document.getElementById("advLabel").textContent = t("dox_advanced");
-  document.getElementById("urlLabel").textContent = t("dox_backend_url");
-  document.getElementById("saveUrl").textContent = t("about_ok");
-  document.getElementById("backendUrl").value = prefs.backendUrl;
-  document.getElementById("urlHint").textContent = Dox.CLOUD_RUN;
+  Dox.fillImeShowLabel(document.getElementById("imeLabel"));
   document.getElementById("clearCache").textContent = t("settings_clear_cache");
   document.getElementById("clearRecents").textContent = t("dox_clear_recents");
-  document.getElementById("cacheHint").textContent = t("settings_clear_cache_body");
   document.getElementById("padLink").textContent = t("dox_open_pad");
   document.getElementById("about").textContent = t("dox_about_line", "0.3.0");
   document.getElementById("autoTranslate").checked = prefs.autoTranslate === true;
   document.getElementById("fawEnabled").checked = prefs.fawEnabled !== false;
   document.getElementById("newsToMsa").checked = prefs.newsToMsa !== false;
   document.getElementById("imeEnabled").checked = prefs.imeEnabled !== false;
-  document.getElementById("imeRemember").checked = prefs.imeRememberPosition !== false;
-  document.querySelector(`input[name="addressee"][value="${prefs.addressee}"]`).checked = true;
 
   document.getElementById("sysTitle").textContent = t("system_language_title");
   document.getElementById("sysSearch").placeholder = t("system_language_search_hint");
@@ -43,43 +29,59 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("sysSearchClear").title = t("cd_language_search_clear");
   Dox.systemLanguage.injectStyles();
 
-  function bindToggle(id, key, extra) {
-    document.getElementById(id).addEventListener("change", async (e) => {
-      await Dox.prefs.set({ [key]: e.target.checked, ...(extra ? extra(e.target.checked) : {}) });
+  function bindHowto(btnId, popId, howtoKey, labelKey) {
+    const info = document.getElementById(btnId);
+    const howto = document.getElementById(popId);
+    if (!info || !howto) return;
+    const label = t(labelKey || howtoKey);
+    info.replaceChildren(Dox.icon("info", 16));
+    info.setAttribute("aria-label", label);
+    info.title = label;
+    howto.textContent = t(howtoKey);
+    if (typeof howto.showPopover === "function") {
+      howto.removeAttribute("hidden");
+      howto.setAttribute("popover", "auto");
+      info.setAttribute("popovertarget", popId);
+      info.setAttribute("aria-haspopup", "dialog");
+      return;
+    }
+    info.setAttribute("aria-expanded", "false");
+    info.setAttribute("aria-controls", popId);
+    const closeHowto = () => {
+      howto.hidden = true;
+      info.setAttribute("aria-expanded", "false");
+    };
+    info.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const open = howto.hidden;
+      howto.hidden = !open;
+      info.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    document.addEventListener("pointerdown", (e) => {
+      if (!howto.hidden && e.target !== info && !howto.contains(e.target)) closeHowto();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !howto.hidden) closeHowto();
+    });
+  }
+  bindHowto("fawInfo", "fawHowto", "settings_faw_howto", "cd_faw_howto");
+  bindHowto("newsInfo", "newsHowto", "dox_news_to_msa_howto");
+  bindHowto("imeInfo", "imeHowto", "dox_ime_howto");
+  bindHowto("cacheInfo", "cacheHowto", "dox_clear_cache_howto");
+
+  function bindToggle(id, key) {
+    const el = document.getElementById(id);
+    el.setAttribute("aria-checked", el.checked ? "true" : "false");
+    el.addEventListener("change", async (e) => {
+      e.target.setAttribute("aria-checked", e.target.checked ? "true" : "false");
+      await Dox.prefs.set({ [key]: e.target.checked });
     });
   }
   bindToggle("autoTranslate", "autoTranslate");
   bindToggle("fawEnabled", "fawEnabled");
   bindToggle("newsToMsa", "newsToMsa");
   bindToggle("imeEnabled", "imeEnabled");
-  bindToggle("imeRemember", "imeRememberPosition");
-
-  document.querySelectorAll('input[name="addressee"]').forEach((el) => {
-    el.addEventListener("change", async () => {
-      if (el.checked) await Dox.prefs.set({ addressee: el.value });
-    });
-  });
-
-  document.getElementById("defaultBtn").addEventListener("click", () => {
-    Dox.sheet.open({
-      mode: "default",
-      selectedId: prefs.preferredDialect,
-      onPick: (id) => {
-        document.getElementById("defaultBtn").textContent = Dox.locale.chipButtonText(id);
-      },
-    });
-  });
-
-  document.getElementById("saveUrl").addEventListener("click", async () => {
-    const url = Dox.prefs.normalizeBackendUrl(document.getElementById("backendUrl").value);
-    try {
-      new URL(url);
-    } catch {
-      return;
-    }
-    await Dox.prefs.set({ backendUrl: url });
-    document.getElementById("backendUrl").value = url;
-  });
 
   document.getElementById("clearCache").addEventListener("click", async () => {
     if (typeof Dox.faw?.clearPersonal === "function") await Dox.faw.clearPersonal();

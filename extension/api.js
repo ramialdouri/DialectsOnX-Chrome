@@ -98,6 +98,106 @@ globalThis.Dox = globalThis.Dox || {};
     }
   }
 
+  const LRI = "\u2066";
+  const PDI = "\u2069";
+  const ISOLATE_OPEN = new Set(["\u2066", "\u2067", "\u2068"]);
+  const RTL_RE =
+    /[\u0590-\u05FF\u0600-\u06FF\u0700-\u074F\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+  const URL_BODY = "[A-Za-z0-9._~:/?#\\[\\]@!$&'()*+,;=%\\-]+";
+  const ISLAND_RE = new RegExp(
+    "(https?://" +
+      URL_BODY +
+      "|www\\." +
+      URL_BODY +
+      "|(?:x\\.com|t\\.co|youtu\\.be)/" +
+      URL_BODY +
+      ")" +
+      "|(\\$[A-Za-z][A-Za-z0-9]*(?:\\.[A-Za-z][A-Za-z0-9]*)*|\\$\\d+(?:,\\d{3})*(?:\\.\\d+)?)" +
+      "|(@[A-Za-z0-9_]+)" +
+      "|(#[A-Za-z0-9_]+)" +
+      "|([A-Za-z][A-Za-z0-9'’_\\-]*(?:[ \\t]+[A-Za-z][A-Za-z0-9'’_\\-]*)*(?:\\.[A-Za-z][A-Za-z0-9'’_\\-]*)*)",
+    "gi"
+  );
+  const LATIN_WORD_INNER_RE = new RegExp(
+    "^[A-Za-z][A-Za-z0-9'’_\\-]*(?:[ \\t]+[A-Za-z][A-Za-z0-9'’_\\-]*)*(?:\\.[A-Za-z][A-Za-z0-9'’_\\-]*)*$",
+    "i"
+  );
+  const ADJACENT_LRI_RE =
+    /\u2066([^\u2066\u2069]*)\u2069([ \t]+)\u2066([^\u2066\u2069]*)\u2069/g;
+  const URL_TRAIL_PUNCT = new Set(".,;:!?".split(""));
+  const URL_TRAIL_BRACKETS = new Set(")]}".split(""));
+
+  function containsRtlScript(text) {
+    return Boolean(text) && RTL_RE.test(text);
+  }
+
+  function isolateDepths(text) {
+    const depths = new Array(text.length).fill(0);
+    let depth = 0;
+    for (let i = 0; i < text.length; i++) {
+      depths[i] = depth;
+      const ch = text[i];
+      if (ISOLATE_OPEN.has(ch)) depth += 1;
+      else if (ch === PDI && depth) depth -= 1;
+    }
+    return depths;
+  }
+
+  function trimUrl(url) {
+    let s = url;
+    while (s && URL_TRAIL_PUNCT.has(s[s.length - 1])) s = s.slice(0, -1);
+    while (s && URL_TRAIL_BRACKETS.has(s[s.length - 1])) {
+      if (s[s.length - 1] === ")" && (s.split("(").length - 1) >= (s.split(")").length - 1)) break;
+      s = s.slice(0, -1);
+    }
+    return s;
+  }
+
+  function isLatinWordIsland(inner) {
+    return Boolean(inner) && LATIN_WORD_INNER_RE.test(inner);
+  }
+
+  function mergeAdjacentLatinWordIslands(text) {
+    let out = text;
+    let prev = null;
+    while (out !== prev) {
+      prev = out;
+      ADJACENT_LRI_RE.lastIndex = 0;
+      out = out.replace(ADJACENT_LRI_RE, (all, left, gap, right) => {
+        if (isLatinWordIsland(left) && isLatinWordIsland(right)) {
+          return LRI + left + gap + right + PDI;
+        }
+        return all;
+      });
+    }
+    return out;
+  }
+
+  function wrapRtlLatinIslands(text) {
+    if (!text || !containsRtlScript(text)) return text;
+    const depths = isolateDepths(text);
+    const spans = [];
+    ISLAND_RE.lastIndex = 0;
+    let m;
+    while ((m = ISLAND_RE.exec(text))) {
+      let start = m.index;
+      let end = start + m[0].length;
+      if (m[1]) end = start + trimUrl(text.slice(start, end)).length;
+      if (start >= end) continue;
+      if (depths[start] > 0) continue;
+      if (start > 0 && text[start - 1] === LRI && end < text.length && text[end] === PDI) {
+        continue;
+      }
+      spans.push([start, end]);
+    }
+    let out = text;
+    for (let i = spans.length - 1; i >= 0; i--) {
+      const [start, end] = spans[i];
+      out = out.slice(0, start) + LRI + out.slice(start, end) + PDI + out.slice(end);
+    }
+    return mergeAdjacentLatinWordIslands(out);
+  }
+
   async function fawFingerprint(dialectId) {
     const id = Dox.migrateDialectId(dialectId);
     const body = await request(
@@ -111,11 +211,9 @@ globalThis.Dox = globalThis.Dox || {};
     text,
     targetDialect,
     clientSource,
-    addressee,
     signal,
     fingerprint,
   }) {
-    const prefs = await Dox.prefs.get();
     const dialect = Dox.migrateDialectId(targetDialect);
     const fp = fingerprint || (await fawFingerprint(dialect));
     const body = await request("/translate", {
@@ -126,14 +224,13 @@ globalThis.Dox = globalThis.Dox || {};
         target_dialect: dialect,
         source_language: "auto",
         client_source: clientSource,
-        addressee: addressee || prefs.addressee || "masculine",
         formality: "auto",
         speaker_gender: "unknown",
         previous_turn: "",
       },
     });
     return {
-      translation: body.translation,
+      translation: wrapRtlLatinIslands(body.translation || ""),
       transliteration: body.transliteration || "",
       cached: Boolean(body.cached),
       fawOverlay: body.faw_overlay || fp,
@@ -174,6 +271,7 @@ globalThis.Dox = globalThis.Dox || {};
   Dox.api = {
     deviceId,
     translate,
+    wrapRtlLatinIslands,
     fawFingerprint,
     submitFaw,
     deleteFaw,

@@ -1,7 +1,7 @@
 {
   "dialect_id": "czech_prague",
   "status": "approved",
-  "inventory_hash": "dcb78a62dcc38da781a8761be1b1707af90b5185a9de280494761242525e5e48",
+  "inventory_hash": "8420c11f8c3ac3e0044c9dd63063460cbef1f21789d0ac8f9bbe3d8c3ebb0bb1",
   "strings": {
     "action_back": "Zpět",
     "cd_app_logo": "Logo Dialex",
@@ -395,7 +395,7 @@
     "dialect_italian_italy_desc": "Florencie",
     "dialect_italian_italy_prompt": "Standardní italština (Toskánsko)",
     "dialect_italian_lombard": "Lombardská regionální",
-    "dialect_italian_lombard_desc": "Milán",
+    "dialect_italian_lombard_desc": "Milan - Monza - Como",
     "dialect_italian_lombard_prompt": "Lombardská regionální italština",
     "dialect_italian_piedmontese": "Piemontská regionální",
     "dialect_italian_piedmontese_desc": "Turín",
@@ -717,7 +717,7 @@
     "dox_on": "Zapnuto",
     "dox_off": "Vypnuto",
     "dox_auto_translate": "Auto-překlad",
-    "dox_news_to_msa": "Zprávy → MSA",
+    "dox_news_to_msa": "Zprávy → Standard Language",
     "dox_backend_url": "URL backendu",
     "dox_ime_remember": "Zapamatovat polohu IME",
     "dox_ime_enabled": "Zobrazit lištu IME",
@@ -732,6 +732,10 @@
     "dox_default_dialect": "Výchozí dialekt",
     "dox_advanced": "Pokročilé",
     "dox_ime_idle": "Připraveno",
-    "dox_translate_failed": "Nepodařilo se přeložit"
+    "dox_translate_failed": "Nepodařilo se přeložit",
+    "dox_news_to_msa_howto": "Official news posts: translated to the standard variety",
+    "dox_ime_howto": "Floating translation bar on any website",
+    "dox_clear_cache_howto": "Deletes translation history and word fixes",
+    "dox_ime_show_lead": "Show"
   }
 }

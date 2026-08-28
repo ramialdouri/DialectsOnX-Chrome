@@ -81,45 +81,56 @@ function injectDialxStyles() {
   style.textContent = `
     .dialx-control-bar {
       display: flex;
-      align-items: flex-end;
-      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
       margin-top: 6px;
       font-size: 13px;
       position: relative;
       font-family: var(--dox-font, ${Dox.FONT});
+      min-height: 28px;
+      color-scheme: dark;
+      color: var(--dox-muted, #8E8E93);
     }
     .dialx-translation {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       unicode-bidi: plaintext;
+      color: inherit;
     }
-    .dialx-overlay-showmore {
-      color: var(--dox-muted, #8E8E93);
-      cursor: pointer;
-      white-space: nowrap;
-      font-weight: 600;
+    .dialx-translation a.dialx-overlay-link {
+      color: var(--dialx-mention, inherit);
+      text-decoration: none;
+      pointer-events: auto;
     }
-    .dialx-overlay-showmore:hover {
-      color: var(--dox-text, #F4F4F5);
+    .dialx-translation a.dialx-overlay-link:hover {
       text-decoration: underline;
     }
-    .dialx-btn,
-    .dialx-btn-sm {
+    .dialx-control-bar .dialx-btn,
+    .dialx-control-bar .dialx-btn-sm {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 4px 12px;
+      padding: 3px 10px;
       border-radius: 9999px;
-      background: var(--dox-field, #1C1C1F);
-      color: var(--dox-muted, #8E8E93);
-      border: 1px solid var(--dox-line, #2C2C31);
+      -webkit-appearance: none;
+      appearance: none;
+      background-color: #4A4A51;
+      color: #C7C7CC;
+      -webkit-text-fill-color: #C7C7CC;
+      border: 1px solid #4A4A51;
       cursor: pointer;
-      font-weight: 500;
-      font-size: 13px;
+      font-weight: 700;
+      font-size: 12px;
       font-family: inherit;
       line-height: 1.3;
-      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      height: 28px;
+      min-height: 28px;
+      margin: 0;
+      align-self: center;
+      flex-shrink: 0;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
       box-sizing: border-box;
     }
     .dialx-btn-sm {
@@ -128,41 +139,59 @@ function injectDialxStyles() {
       border-radius: 9999px;
     }
     .dialx-btn-main {
-      padding: 5px 14px;
-      font-size: 14px;
+      padding: 3px 12px;
+      font-size: 12px;
     }
     .dialx-btn-selector {
       padding: 2px 9px;
       font-size: 11px;
     }
-    .dialx-btn:hover,
-    .dialx-btn-sm:hover:not(:disabled) {
-      background: var(--dox-accent-hover, rgba(138, 124, 92, 0.16));
-      border-color: var(--dox-accent, #8A7C5C);
+    .dialx-control-bar .dialx-btn:hover,
+    .dialx-control-bar .dialx-btn-sm:hover:not(:disabled) {
+      background-color: var(--dox-accent-hover);
+      border-color: var(--dox-accent);
       color: var(--dox-text, #F4F4F5);
+      -webkit-text-fill-color: var(--dox-text, #F4F4F5);
     }
     .dialx-btn-sm:disabled {
       opacity: 0.55;
       cursor: default;
     }
-    .dialx-logo {
-      display: inline-block;
-      height: 30px;
-      width: 82px;
-      margin-inline-start: 4px;
+    .dialx-control-bar .dox-wordmark,
+    .dialx-control-bar .dialx-logo {
+      display: block;
+      align-self: center;
       flex-shrink: 0;
-      pointer-events: none;
+      margin-bottom: 0;
+      --dox-logo-cap: 22px;
+      height: 22px;
+      width: calc(22px * 903 / 149);
+    }
+    .dialx-logo {
+      margin-inline-start: 4px;
       background-color: var(--dox-muted, #8E8E93);
       -webkit-mask-image: url("${logoUrl}");
       mask-image: url("${logoUrl}");
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
-      -webkit-mask-position: center;
-      mask-position: center;
-      -webkit-mask-size: contain;
-      mask-size: contain;
-      mask-mode: luminance;
     }
+    .dialx-status {
+      font-size: 11px;
+      line-height: 1;
+      margin-inline-start: 6px;
+      margin-bottom: 0;
+      padding: 0;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      align-self: center;
+      height: 28px;
+      box-sizing: border-box;
+      order: 2;
+    }
+    .dialx-control-bar .dox-wordmark { order: 3; }
+    .dialx-status.is-busy,
+    .dialx-status.dox-status-busy { color: var(--dox-status, #A8B4C0); }
+    .dialx-status.is-error,
+    .dialx-status.dox-status-error { color: var(--dox-danger, #FF453A); }
   `;
 }
 
@@ -450,7 +479,13 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (changes.fawEnabled) fawEnabled = changes.fawEnabled.newValue !== false;
   if (changes.preferredDialect?.newValue) {
     const next = Dox.migrateDialectId(changes.preferredDialect.newValue);
-    if (isValidDialect(next)) preferredDialect = next;
+    if (isValidDialect(next)) {
+      preferredDialect = next;
+      postStates.forEach((state) => {
+        if (state.manualDialect) state.manualDialect = undefined;
+        state.updateMainButton?.();
+      });
+    }
   }
   if (changes.backendUrl) {
     backendUrl = normalizeBackendUrl(changes.backendUrl.newValue);
@@ -692,9 +727,8 @@ function showOriginalTextNode(tt) {
 
 /**
  * Overlay rendering for truncated posts. X's tweet-text element is left intact
- * (so its native inline "Show more" expansion keeps working) but hidden, and our
- * translated copy is shown right after it. The copy carries a "Show more" that
- * triggers X's real expansion, then re-translates the now-complete text.
+ * (so its native "Show more" expansion keeps working) but hidden. The native
+ * Show more stays visible; we re-translate after it expands the post.
  */
 function applyTranslatedOverlay(state, dialect, translated) {
   const tt = state.postElement;
@@ -713,8 +747,13 @@ function applyTranslatedOverlay(state, dialect, translated) {
   // copy the resolved text color so it stays readable in light and dark themes.
   trans.className = `${tt.className} dialx-translation`.trim();
   trans.setAttribute("dir", "auto");
-  const ttColor = getComputedStyle(tt).color;
-  if (ttColor) trans.style.color = ttColor;
+  trans.style.removeProperty("color");
+  const mention = liveMentionColor(state);
+  if (mention) trans.style.setProperty("--dialx-mention", mention);
+  else trans.style.removeProperty("--dialx-mention");
+  const muted = liveMutedColor(state);
+  if (muted) trans.style.setProperty("--dialx-muted", muted);
+  else trans.style.removeProperty("--dialx-muted");
 
   // Keep the overlay directly after the (current) text node, and the control
   // bar after the overlay — even if X swapped the text node on a re-render.
@@ -727,15 +766,8 @@ function applyTranslatedOverlay(state, dialect, translated) {
     state.overlayText = translated;
   }
 
+  bindNativeShowMoreExpand(state);
   hideOriginalTextNode(tt);
-  // A "Show more" rendered as a SIBLING (outside the text node) would stay
-  // visible; hide it so only our overlay "Show more" shows. (One inside the text
-  // node is already hidden along with it.)
-  const native = findPostShowMore(state);
-  if (native && !tt.contains(native) && !state.fullyExpanded) {
-    native.style.setProperty("display", "none", "important");
-    state.nativeShowMore = native;
-  }
   trans.style.display = "";
 
   requestAnimationFrame(() => {
@@ -750,37 +782,91 @@ function applyTranslatedOverlay(state, dialect, translated) {
   return true;
 }
 
+function liveMentionColor(state) {
+  const root = state.postElement || state.article;
+  const a =
+    root?.querySelector('a[href*="cashtag_click"]') ||
+    root?.querySelector('a[href*="/hashtag/"]') ||
+    state.postElement?.querySelector('a[href^="/"][role="link"]') ||
+    root?.querySelector('a[href^="/"][role="link"]') ||
+    state.article?.querySelector('[data-testid="User-Name"] a') ||
+    state.article?.querySelector('a[href^="/"]');
+  if (!a) return "";
+  const c = getComputedStyle(a).color;
+  return c && c !== "rgba(0, 0, 0, 0)" ? c : "";
+}
+
+function liveMutedColor(state) {
+  const time = state.article?.querySelector("time");
+  if (time) {
+    const c = getComputedStyle(time).color;
+    if (c && c !== "rgba(0, 0, 0, 0)") return c;
+  }
+  return "";
+}
+
+const OVERLAY_LINK_RE =
+  /(?:\u2066)?(@[A-Za-z0-9_]+|#[A-Za-z0-9_]+|\$(?:[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9]*)*)|(?:https?:\/\/|www\.)[^\s\u2066-\u2069]+)(?:\u2069)?/g;
+
+function appendOverlayNodes(parent, translated) {
+  const str = translated || "";
+  OVERLAY_LINK_RE.lastIndex = 0;
+  let last = 0;
+  let m;
+  while ((m = OVERLAY_LINK_RE.exec(str))) {
+    if (m.index > last) parent.appendChild(document.createTextNode(str.slice(last, m.index)));
+    const raw = m[0];
+    const inner = raw.replace(/[\u2066\u2069]/g, "");
+    const a = document.createElement("a");
+    a.className = "dialx-overlay-link";
+    a.rel = "noopener noreferrer nofollow";
+    if (inner.startsWith("@")) {
+      a.href = "/" + inner.slice(1);
+    } else if (inner.startsWith("#")) {
+      a.href = "/hashtag/" + encodeURIComponent(inner.slice(1));
+    } else if (inner.startsWith("$")) {
+      a.href = "/search?q=" + encodeURIComponent(inner) + "&src=cashtag_click";
+    } else {
+      a.href = inner.startsWith("http") ? inner : "https://" + inner;
+    }
+    a.textContent = raw;
+    a.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+    parent.appendChild(a);
+    last = m.index + m[0].length;
+  }
+  if (last < str.length) parent.appendChild(document.createTextNode(str.slice(last)));
+}
+
 function renderOverlayContent(state, translated) {
   const trans = state.transEl;
   if (!trans) return;
-  trans.textContent = translated;
+  trans.replaceChildren();
+  appendOverlayNodes(trans, translated);
+}
 
-  // Offer expansion only while the original is still truncated.
-  if (!state.fullyExpanded && findPostShowMore(state)) {
-    trans.appendChild(document.createTextNode(" "));
-    const more = document.createElement("span");
-    more.className = "dialx-overlay-showmore";
-    more.setAttribute("role", "button");
-    more.setAttribute("tabindex", "0");
-    more.textContent = Dox.locale.t("dox_show_more");
-    const run = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      expandAndRetranslate(state);
-    };
-    more.addEventListener("click", run);
-    more.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") run(e);
-    });
-    trans.appendChild(more);
+function bindNativeShowMoreExpand(state) {
+  const native = findPostShowMore(state);
+  if (!native || state.fullyExpanded) return;
+  if (native.dataset.doxExpandBound === "1") return;
+  native.dataset.doxExpandBound = "1";
+  native.style.removeProperty("display");
+  const tt = state.postElement;
+  if (tt && tt.contains(native) && state.transEl) {
+    state.transEl.after(native);
   }
+  native.addEventListener("click", () => {
+    if (state.expanding || state.fullyExpanded) return;
+    expandAndRetranslate(state, true);
+  });
 }
 
 /**
- * Triggered by OUR overlay "Show more": reveal X's real full text via its native
- * control, then translate the complete text and swap it back into the overlay.
+ * Triggered by X's native Show more: wait for the full text, then translate it
+ * and swap it into the overlay.
  */
-async function expandAndRetranslate(state) {
+async function expandAndRetranslate(state, alreadyClicked = false) {
   if (!canOperate()) return;
   let tt = state.postElement;
   if (!tt?.isConnected) return;
@@ -804,7 +890,7 @@ async function expandAndRetranslate(state) {
     if (state.transEl) state.transEl.style.display = "none";
 
     const before = (tt.textContent || "").length;
-    nativeShowMore.click();
+    if (!alreadyClicked) nativeShowMore.click();
 
     const grewNode = await new Promise((resolve) => {
       const start = performance.now();
@@ -1192,7 +1278,7 @@ function isBreakingNewsPost(article, text, handle) {
 function isNewsOrOfficialPost(article, text) {
   if (hasNewsSocialContext(article)) return true;
 
-  // Gray/silver (government/official) verified accounts always default to MSA.
+  // Gray/silver (government/official) verified accounts count as news.
   // Gold/business accounts are intentionally NOT treated as official.
   if (getVerifiedBadgeType(article) === "gray") return true;
 
@@ -1222,9 +1308,95 @@ function isNewsOrOfficialPost(article, text) {
   return false;
 }
 
-function getAutoTranslateDialect(state) {
-  if (state.isNews && newsToMsa) return "arabic_msa";
+function preferredOrDefault() {
   return isValidDialect(preferredDialect) ? preferredDialect : DEFAULT_DIALECT;
+}
+
+function dialectsForSpoken(spokenId) {
+  const spokenOf = Dox.CATALOG.spokenOf || {};
+  const out = [];
+  for (const id of Object.keys(spokenOf)) {
+    if (spokenOf[id] === spokenId) out.push(id);
+  }
+  return out;
+}
+
+/** Dutch / Chinese / Indian Cluster: one picker row, several real languages. */
+function isClusterSpoken(spokenId) {
+  const label = ((Dox.CATALOG.spokenLanguages || {})[spokenId] || {}).label || "";
+  if (/\bcluster\b/i.test(label)) return true;
+  const stems = new Set(dialectsForSpoken(spokenId).map((id) => String(id).split("_")[0]));
+  return stems.size > 1;
+}
+
+/**
+ * Picker rows that bag distinct languages, so there is no shared news standard.
+ * Cluster labels + mixed dialect-id stems cover Dutch / Chinese / Indian.
+ * Filipino, Kurdish, Persian, and Aramaic use one prefix but still group
+ * separate languages (Tagalog vs Cebuano, Kurmanji vs Sorani, Farsi vs Dari).
+ */
+function isLanguageBagSpoken(spokenId) {
+  if (!spokenId) return false;
+  if (isClusterSpoken(spokenId)) return true;
+  return (
+    spokenId === "filipino" ||
+    spokenId === "kurdish" ||
+    spokenId === "persian" ||
+    spokenId === "aramaic"
+  );
+}
+
+function localeRegion(tag) {
+  const parts = String(tag || "").toLowerCase().split("-").filter(Boolean);
+  const last = parts[parts.length - 1];
+  if (last && last.length === 2 && last !== parts[0]) return last;
+  return "";
+}
+
+/** Mexican vs Castilian, Brazilian vs Lisbon: several national standards. */
+function isPluricentricSpoken(spokenId) {
+  const locales = Dox.CATALOG.osLocaleToDialect || {};
+  const spokenOf = Dox.CATALOG.spokenOf || {};
+  const regions = new Set();
+  for (const tag of Object.keys(locales)) {
+    if (spokenOf[locales[tag]] !== spokenId) continue;
+    const region = localeRegion(tag);
+    if (region) regions.add(region);
+  }
+  return regions.size > 1;
+}
+
+/**
+ * News destination when the toggle is on. Arabic dialects share MSA as the
+ * news/formal register. Cluster/language bags keep the user's chip. Other
+ * national standards (Mexican, Carioca, Québécois, Australian) stay put.
+ * Mono-centric regional chips (Kansai, Busan) still go to that language's
+ * Standard chip.
+ */
+function newsTargetDialect(preferredId) {
+  const preferred = isValidDialect(preferredId) ? preferredId : DEFAULT_DIALECT;
+  const spoken = Dox.spokenIdOf(preferred);
+  if (!spoken || isLanguageBagSpoken(spoken)) return preferred;
+  const mapped = Dox.CATALOG.standardDialect && Dox.CATALOG.standardDialect[spoken];
+  if (!mapped || !isValidDialect(mapped)) return preferred;
+  if (preferred === mapped) return mapped;
+  if (spoken === "arabic") return mapped;
+  if (isPluricentricSpoken(spoken)) return preferred;
+  return mapped;
+}
+
+function newsLockedAsArabicMsa(state) {
+  return Boolean(
+    state?.isNews &&
+    newsToMsa &&
+    isArabicText(state.originalText) &&
+    newsTargetDialect(preferredDialect) === "arabic_msa"
+  );
+}
+
+function getAutoTranslateDialect(state) {
+  if (state.isNews && newsToMsa) return newsTargetDialect(preferredDialect);
+  return preferredOrDefault();
 }
 
 function findShowMoreElement(article, tweetTextEl) {
@@ -1313,15 +1485,29 @@ function extractPostText(el) {
     }
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const tag = node.tagName;
+    if (tag === "BR") {
+      parts.push("\n");
+      return;
+    }
     if (tag === "IMG" && node.alt) {
       parts.push(node.alt);
       return;
     }
-    if (node.classList?.contains("dialx-overlay-showmore")) return;
+    if (node.classList?.contains("dialx-translation")) return;
     for (const child of node.childNodes) walk(child);
+    if (node !== el && (tag === "P" || tag === "LI" || tag === "BLOCKQUOTE")) {
+      parts.push("\n");
+    }
   };
   walk(el);
-  return stripShowMoreLabel(parts.join("").replace(/\s+/g, " ").trim());
+  return stripShowMoreLabel(
+    parts
+      .join("")
+      .replace(/[ \t\u00a0]+/g, " ")
+      .replace(/ *\n */g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
 }
 
 /** Forget cached translations of the truncated text so the full text is re-fetched. */
@@ -1342,10 +1528,10 @@ function invalidatePostStatusCache(state) {
  * translation overlay has been injected, the bar belongs after the overlay.
  */
 function getControlBarAnchor(tweetTextEl, article) {
-  const overlay = tweetTextEl.nextElementSibling;
-  if (overlay && overlay.classList?.contains("dialx-translation")) return overlay;
   const showMore = findShowMoreElement(article, tweetTextEl);
   if (showMore && !tweetTextEl.contains(showMore)) return showMore;
+  const overlay = tweetTextEl.nextElementSibling;
+  if (overlay && overlay.classList?.contains("dialx-translation")) return overlay;
   return tweetTextEl;
 }
 
@@ -2059,9 +2245,6 @@ function setAsDefault(dialect) {
 
 function resolvePostDialect(state, overrideDialect) {
   if (overrideDialect && isValidDialect(overrideDialect)) return overrideDialect;
-  if (state.manualDialect && isValidDialect(state.manualDialect)) return state.manualDialect;
-  if (state.isNews && newsToMsa) return "arabic_msa";
-  if (state.activeDialect && isValidDialect(state.activeDialect)) return state.activeDialect;
   return getAutoTranslateDialect(state);
 }
 
@@ -2119,10 +2302,24 @@ function showBarStatus(state, message) {
   if (!el) {
     el = document.createElement("span");
     el.className = "dialx-status";
-    el.style.cssText = "font-size:11px;color:var(--dox-danger, #FF453A);margin-inline-start:6px;white-space:nowrap;";
-    state.bar.appendChild(el);
+    const logo = state.bar.querySelector(".dox-wordmark, .dialx-logo");
+    if (logo) state.bar.insertBefore(el, logo);
+    else state.bar.appendChild(el);
   }
-  el.textContent = message;
+  const busy = typeof Dox.isTranslatingStatus === "function"
+    ? Dox.isTranslatingStatus(message)
+    : message === Dox.locale.t("status_translating");
+  el.classList.toggle("is-busy", busy);
+  el.classList.toggle("is-error", !busy);
+  if (busy && typeof Dox.fillBusyStatus === "function") {
+    Dox.fillBusyStatus(el, message);
+    el.classList.add("is-busy");
+  } else if (!busy && typeof Dox.fillErrorStatus === "function") {
+    Dox.fillErrorStatus(el, message);
+    el.classList.add("is-error");
+  } else {
+    el.textContent = message;
+  }
 }
 
 function createControlBar(postElement, postId, isNews, existingState = null) {
@@ -2168,7 +2365,7 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
       mainBtn.textContent = Dox.locale.t("lens_view_original");
       return;
     }
-    const d = resolvePostDialect(state);
+    const d = state.activeDialect || resolvePostDialect(state);
     mainBtn.textContent = Dox.locale.chipButtonText(d);
   };
   state.updateMainButton();
@@ -2177,7 +2374,7 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
     e.stopPropagation();
     if (!canOperate()) return;
 
-    if (state.isNews && newsToMsa && isArabicText(state.originalText) && !state.manualDialect) return;
+    if (newsLockedAsArabicMsa(state)) return;
 
     if (!state.showingOriginal) {
       state.showingOriginal = true;
@@ -2220,8 +2417,11 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
       mode: "x",
       selectedId: preferredDialect,
       onPick: (id) => {
-        state.manualDialect = id;
         preferredDialect = id;
+        postStates.forEach((s) => {
+          if (s.manualDialect) s.manualDialect = undefined;
+          s.updateMainButton?.();
+        });
         state.showingOriginal = false;
         translatePostToDialect(postId, id, mainBtn);
       },
@@ -2229,7 +2429,7 @@ function createControlBar(postElement, postId, isNews, existingState = null) {
   };
 
   const logo = document.createElement("span");
-  logo.className = "dialx-logo";
+  logo.className = "dox-wordmark dialx-logo";
   logo.setAttribute("aria-label", "DialectsOnX");
   logo.setAttribute("role", "img");
 
@@ -2321,9 +2521,8 @@ async function maybeAutoTranslate(postId) {
 
   if (!ensurePostControlBar(state, state.article)) return;
 
-  // News/official/gray-badge posts always target MSA. If such a post is
-  // already in Arabic script, show it as-is and never request a translation.
-  if (state.isNews && isArabicText(state.originalText)) {
+  // Arabic news is already in the MSA register when that is the news target.
+  if (newsLockedAsArabicMsa(state)) {
     state.autoTranslated = true;
     state.activeDialect = "arabic_msa";
     state.appliedHtml = state.postElement.innerHTML;
@@ -2332,7 +2531,6 @@ async function maybeAutoTranslate(postId) {
     return;
   }
 
-  // News/official → MSA; everyone else → the preferred dialect.
   const dialect = getAutoTranslateDialect(state);
 
   if (applyTranslated(state, dialect)) {
@@ -2666,6 +2864,11 @@ function initObservers() {
 Dox.feed = {
   extractPostText,
   applyTranslated,
+  injectDialxStyles,
+  newsTargetDialect,
+  isLanguageBagSpoken,
+  isClusterSpoken,
+  isPluricentricSpoken,
   refreshOverlay(state) {
     if (!state?.transEl || state.overlayText == null) return;
     renderOverlayContent(state, state.overlayText);
@@ -2677,6 +2880,7 @@ Dox.feed = {
 async function bootstrapDialx() {
   if (window.__doxFeedInit) return;
   window.__doxFeedInit = true;
+  if (document.documentElement?.dataset?.doxSkipFeed === "1") return;
   if (!isExtensionContextValid()) {
     shutdownDialx();
     return;
