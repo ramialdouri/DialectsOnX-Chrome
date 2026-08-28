@@ -1,4 +1,10 @@
 /* MV3 service worker: offscreen STT + IME restore broadcast. */
+importScripts("dialects.js", "prefs.js");
+
+chrome.runtime.onInstalled.addListener(() => {
+  Dox.prefs.get();
+});
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "dox-open-settings") {
     chrome.runtime.openOptionsPage();

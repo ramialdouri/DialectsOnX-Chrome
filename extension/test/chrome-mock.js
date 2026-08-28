@@ -46,6 +46,11 @@
       onMessage: { addListener() {} },
       getContexts: async () => [],
     },
+    i18n: {
+      getUILanguage() {
+        return navigator.language || "en";
+      },
+    },
     storage: {
       sync: {
         get: storeGet(sync),

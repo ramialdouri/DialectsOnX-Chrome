@@ -136,6 +136,15 @@ def test_feed_contract() -> None:
     prefs = (EXT / "prefs.js").read_text(encoding="utf-8")
     _assert("autoTranslate: false" in prefs, "default auto off")
     _assert("arabic_msa" in prefs, "default dialect")
+    _assert("getUILanguage" in prefs, "system language from Chrome UI")
+    _assert("osLanguageTag" in prefs, "OS/Chrome language helper")
+    _assert("approvedSystemDialect" in prefs, "approved pack gate")
+    _assert("navigator.language" in prefs, "navigator fallback")
+    background = (EXT / "background.js").read_text(encoding="utf-8")
+    _assert('importScripts("dialects.js", "prefs.js")' in background, "SW loads catalog+prefs")
+    _assert("onInstalled" in background, "seed system language on install")
+    mock = (EXT / "test" / "chrome-mock.js").read_text(encoding="utf-8")
+    _assert("getUILanguage" in mock, "fixture Chrome UI language")
     locale = (EXT / "locale.js").read_text(encoding="utf-8")
     _assert("deltaKeys.has(key)" in locale, "no english fallback for delta")
     _assert("@font-face" not in locale, "no latin font")
@@ -266,6 +275,44 @@ def test_overlay_cashtags() -> None:
     _assert("cashtag_click" in content and "encodeURIComponent(inner)" in content, href)
 
 
+def test_os_locale_maps_to_standard() -> None:
+    dialects = (EXT / "dialects.js").read_text(encoding="utf-8")
+    _assert('"es-mx": "spanish_mexican"' in dialects, "Mexican OS locale maps")
+    _assert('"en-gb": "english_american"' in dialects, "British OS locale maps")
+    _assert('"spanish": "spanish_castilian"' in dialects, "Spanish prestige is Castilian")
+    _assert("return Dox.standardDialectFor(spoken)" in dialects, "OS locale collapses to prestige")
+    import shutil
+    import subprocess
+
+    node = shutil.which("node")
+    if node:
+        dialects_path = json.dumps(str(EXT / "dialects.js"))
+        script = (
+            "const fs=require('fs');const vm=require('vm');"
+            "const ctx={};ctx.globalThis=ctx;"
+            f"vm.runInNewContext(fs.readFileSync({dialects_path},'utf8'),ctx);"
+            "const d=ctx.Dox;"
+            "const out=["
+            "d.dialectFromOsLocale('es-MX'),"
+            "d.dialectFromOsLocale('en-GB'),"
+            "d.dialectFromOsLocale('en-US'),"
+            "d.dialectFromOsLocale('xx-YY')"
+            "];"
+            "process.stdout.write(out.join(','));"
+        )
+        proc = subprocess.run(
+            [node, "-e", script],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        got = proc.stdout.strip().split(",")
+        _assert(
+            got == ["spanish_castilian", "english_american", "english_american", "english_american"],
+            got,
+        )
+
+
 def test_extract_emoji() -> None:
     html = (EXT / "test" / "tweet-fixture.html").read_text(encoding="utf-8")
     _assert("alt=\"🔥\"" in html, "fixture emoji img")
@@ -331,6 +378,7 @@ def main() -> None:
     test_catalog_and_packs()
     test_feed_contract()
     test_overlay_cashtags()
+    test_os_locale_maps_to_standard()
     test_extract_emoji()
     test_faw_neighbor()
     print("chrome 0.3 structural tests ok")

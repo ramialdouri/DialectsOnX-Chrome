@@ -45,14 +45,45 @@ globalThis.Dox = globalThis.Dox || {};
     return out;
   }
 
+  function osLanguageTag() {
+    try {
+      if (typeof chrome !== "undefined" && chrome.i18n && typeof chrome.i18n.getUILanguage === "function") {
+        const ui = chrome.i18n.getUILanguage();
+        if (ui) return ui;
+      }
+    } catch (_) {
+      /* ignore */
+    }
+    if (typeof navigator !== "undefined") {
+      const fromNav =
+        navigator.language ||
+        navigator.userLanguage ||
+        (Array.isArray(navigator.languages) && navigator.languages[0]);
+      if (fromNav) return fromNav;
+    }
+    return "en";
+  }
+
+  async function approvedSystemDialect(dialectId) {
+    const spoken = Dox.spokenIdOf(dialectId);
+    const standard = spoken ? Dox.standardDialectFor(spoken) : "english_american";
+    try {
+      const url = chrome.runtime.getURL("i18n/" + standard + ".json");
+      const res = await fetch(url);
+      if (!res.ok) return "english_american";
+      const pack = await res.json();
+      if (pack.status !== "approved") return "english_american";
+      return standard;
+    } catch (_) {
+      return "english_american";
+    }
+  }
+
   async function ensureSystemLanguage(data) {
     if (data.systemDialectId && Dox.isValidDialect(data.systemDialectId)) {
       return data;
     }
-    const tag =
-      (typeof navigator !== "undefined" && (navigator.language || navigator.userLanguage)) ||
-      "en";
-    const dialectId = Dox.dialectFromOsLocale(tag);
+    const dialectId = await approvedSystemDialect(Dox.dialectFromOsLocale(osLanguageTag()));
     const spoken = Dox.spokenIdOf(dialectId) || "english";
     data.systemDialectId = dialectId;
     data.systemLanguageId = spoken;
